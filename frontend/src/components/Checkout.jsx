@@ -7,7 +7,7 @@ import RazorpayPayment from './RazorpayPayment';
 import OrderSummary from './OrderSummary';
 import Bill from './Bill';
 
-export default function Checkout({ token, cartItems, totalAmount, onClose, onOrderComplete }) {
+export default function Checkout({ token, cartItems, totalAmount, onClose, onOrderComplete, isBuyNow }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [orderData, setOrderData] = useState({
     address: null,
@@ -157,6 +157,7 @@ export default function Checkout({ token, cartItems, totalAmount, onClose, onOrd
         onBack={handleBack}
         onClose={onClose}
         onOrderComplete={onOrderComplete}
+        isBuyNow={isBuyNow}
         currentStep={currentStep}
         totalSteps={steps.length}
         loading={loading}

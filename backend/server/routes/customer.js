@@ -194,19 +194,13 @@ router.post('/cart/:userId/cleanup', async (req, res) => {
 // Customer: Clear entire cart
 router.post('/cart/:userId/clear', async (req, res) => {
   try {
-    console.log('Clear cart request received for userId:', req.params.userId);
-    console.log('Request headers:', req.headers);
-    
     const user = await User.findById(req.params.userId);
     if (!user) {
-      console.log('User not found:', req.params.userId);
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log('User found:', user.username, 'Current cart length:', user.cart.length);
     user.cart = [];
     await user.save();
-    console.log('Cart cleared successfully for user:', user.username);
     
     res.status(200).json({ 
       message: 'Cart cleared successfully',
@@ -214,8 +208,7 @@ router.post('/cart/:userId/clear', async (req, res) => {
     });
   } catch (error) {
     console.error('Clear cart error:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ error: 'Failed to clear cart', details: error.message });
+    res.status(500).json({ error: 'Failed to clear cart' });
   }
 });
 
@@ -317,12 +310,44 @@ router.post('/order/:userId', async (req, res) => {
       );
     }
     console.log('Product stocks updated');
-    
-    // Clear cart after successful order (only if using DB cart)
-    if (!cartItems) {
+    // Update user's saved cart: remove or decrement ordered products so ordered items are no longer present.
+    // The frontend can still request a full clearSavedCart; that behavior is preserved below.
+    const isBuyNow = req.body.isBuyNow === true || req.body.isBuyNow === 'true';
+    const clearSavedCart = req.body.clearSavedCart === true || req.body.clearSavedCart === 'true';
+
+    if (clearSavedCart && !isBuyNow) {
+      // Full clear (legacy/explicit request)
       user.cart = [];
       await user.save();
-      console.log('User cart cleared');
+      console.log('User cart cleared (per clearSavedCart flag)');
+    } else {
+      // Remove ordered products from the saved cart (subtract quantities if partially ordered)
+      let cartChanged = false;
+      for (const orderItem of orderItems) {
+        const prodId = orderItem.product && orderItem.product.toString ? orderItem.product.toString() : String(orderItem.product);
+        const cartIdx = user.cart.findIndex(ci => ci.product && ci.product.toString() === prodId);
+        if (cartIdx !== -1) {
+          const cartItem = user.cart[cartIdx];
+          if (cartItem.quantity > orderItem.quantity) {
+            cartItem.quantity = cartItem.quantity - orderItem.quantity;
+            cartChanged = true;
+          } else {
+            // remove the item entirely
+            user.cart.splice(cartIdx, 1);
+            cartChanged = true;
+          }
+        }
+      }
+      if (cartChanged) {
+        try {
+          await user.save();
+          console.log('User cart updated to remove ordered products');
+        } catch (saveErr) {
+          console.error('Failed to update user cart after order:', saveErr);
+        }
+      } else {
+        console.log('No matching ordered products found in user cart; preserved as-is. isBuyNow:', isBuyNow, 'clearSavedCart:', clearSavedCart);
+      }
     }
     
     res.status(201).json(order);

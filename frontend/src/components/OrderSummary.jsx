@@ -10,6 +10,7 @@ export default function OrderSummary({
   onNext, 
   onBack, 
   onOrderComplete 
+  , isBuyNow
 }) {
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [error, setError] = useState('');
@@ -26,11 +27,18 @@ export default function OrderSummary({
         totalAmount
       });
 
+      // Default behavior: clear saved cart after a normal checkout. For buy-now we preserve saved cart.
+      const clearSavedCart = typeof orderData.clearSavedCart !== 'undefined'
+        ? !!orderData.clearSavedCart
+        : !isBuyNow;
+
       const orderPayload = {
         paymentMethod: orderData.paymentMethod || 'cod',
         deliveryAddress: orderData.address,
         status: 'ordered', // Use valid enum value
-        cartItems: cartItems // Add cart items to the payload
+        cartItems: cartItems, // Add cart items to the payload
+        isBuyNow: !!isBuyNow, // inform backend whether this is a temporary buy-now order
+        clearSavedCart: clearSavedCart // explicit instruction to clear the saved DB cart after order
       };
 
       console.log('Sending order payload:', orderPayload);

@@ -40,8 +40,8 @@
 }
 
 .close-btn {
-  background: none;
-  border: none;
+  background: rgba(0, 0, 0, 0.7); /* Always visible dark background */
+  border: 2px solid rgba(255, 255, 255, 0.9); /* White border for contrast */
   color: white;
   font-size: 1.5rem;
   cursor: pointer;
@@ -52,11 +52,14 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); /* Shadow for depth */
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(220, 53, 69, 0.9); /* Red background on hover */
+  border-color: white;
   transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
 }
 
 .overlay-body {
@@ -396,6 +399,116 @@
 .qr-overlay {
   max-width: 400px;
   text-align: center;
+}
+
+/* Checkout modal: modern container and thin scrollbar */
+.checkout-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.6); /* subtle dark backdrop */
+  z-index: 11000;
+  padding: 20px;
+}
+
+.checkout-container {
+  background: #fff;
+  width: min(980px, 96%);
+  max-width: 980px;
+  max-height: 85vh;
+  border-radius: 12px;
+  overflow: hidden; /* container itself doesn't scroll */
+  box-shadow: 0 30px 80px rgba(2,6,23,0.45);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(15,23,42,0.06);
+}
+
+.checkout-container.modern {
+  border-radius: 14px;
+}
+
+.checkout-header {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #6b73ff, #8d6bff);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.checkout-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.close-checkout {
+  background: rgba(0, 0, 0, 0.7); /* Always visible dark background */
+  border: 2px solid rgba(255, 255, 255, 0.9); /* White border for contrast */
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); /* Shadow for depth */
+}
+
+.close-checkout:hover { 
+  transform: scale(1.05); 
+  background: rgba(220, 53, 69, 0.9); /* Red background on hover */
+  border-color: white;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+/* The actual scrolling area for the modal content */
+.checkout-content {
+  padding: 24px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: calc(85vh - 120px); /* leave space for header/footer */
+  background: linear-gradient(180deg, #ffffff, #fbfbfd);
+
+  /* Hide native scrollbar by default while keeping scrolling functional */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+/* WebKit: hide scrollbar by default */
+.checkout-content::-webkit-scrollbar { width: 0; height: 0; }
+
+/* Reveal a thin modern scrollbar on hover for discoverability */
+.checkout-content:hover {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99,102,241,0.9) transparent;
+}
+.checkout-content:hover::-webkit-scrollbar { width: 9px; height: 9px; }
+.checkout-content:hover::-webkit-scrollbar-track { background: transparent; }
+.checkout-content:hover::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(99,102,241,0.85), rgba(139,92,246,0.9));
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.9);
+}
+.checkout-content:hover::-webkit-scrollbar-thumb:hover { filter: brightness(.95); }
+
+/* Also hide overlay-body scrollbar by default and reveal on hover */
+.overlay-body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.overlay-body::-webkit-scrollbar { width: 0; height: 0; }
+.overlay-body:hover { scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.9) rgba(241,241,241,0.9); }
+.overlay-body:hover::-webkit-scrollbar { width: 9px; height: 9px; }
+.overlay-body:hover::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(99,102,241,0.85), rgba(139,92,246,0.9));
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.9);
 }
 
 .qr-content {

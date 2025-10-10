@@ -6,6 +6,7 @@ import MyOrders from './MyOrders.jsx';
 import ProductDetails from './ProductDetails.jsx';
 import '../css/ProfessionalEcommerce.css';
 import '../css/Overlays.css';
+import ProfessionalToast from './ProfessionalToast.jsx';
 
 export default function EnhancedHomePage() {
   const [products, setProducts] = useState([]);
@@ -20,6 +21,7 @@ export default function EnhancedHomePage() {
   const [showMyOrders, setShowMyOrders] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState(null);
+  const [toast, setToast] = useState({ visible: false, title: '', message: '', type: 'info' });
   const navigate = useNavigate();
 
   // Helper function to get product icon based on category
@@ -74,27 +76,11 @@ export default function EnhancedHomePage() {
   async function fetchProducts() {
     try {
       const response = await fetch('http://localhost:3001/api/products');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
       const data = await response.json();
       console.log('Fetched products:', data);
-      
-      // Check if data contains error
-      if (data.error) {
-        console.error('Server returned error:', data);
-        setProducts([]);
-        return;
-      }
-      
-      // Ensure we have an array
-      const productsArray = Array.isArray(data) ? data : (data.products || []);
-      setProducts(productsArray);
+      setProducts(data.products || data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
-      setProducts([]); // Set empty array on error
     }
   }
 
@@ -122,12 +108,6 @@ export default function EnhancedHomePage() {
   }
 
   function filterAndSortProducts() {
-    // Ensure products is an array
-    if (!Array.isArray(products)) {
-      console.log('Products is not an array:', products);
-      return [];
-    }
-
     let filtered = products;
     console.log('Filtering products:', { 
       totalProducts: products.length, 
@@ -178,7 +158,7 @@ export default function EnhancedHomePage() {
 
   async function handleAddToCart(productId, quantity = 1) {
     if (!isLoggedIn) {
-      alert('Please login to add items to cart');
+      setToast({ visible: true, title: 'Login required', message: 'Please login to add items to cart', type: 'error' });
       navigate('/login');
       return;
     }
@@ -198,27 +178,27 @@ export default function EnhancedHomePage() {
       });
 
       if (response.ok) {
-        alert('Product added to cart successfully!');
+        setToast({ visible: true, title: 'Added to cart', message: 'Product added to cart successfully!', type: 'success' });
         fetchCartCounts();
       } else {
         const errorData = await response.json();
         if (errorData.error === 'User not found') {
-          alert('Session expired. Please login again.');
+          setToast({ visible: true, title: 'Session expired', message: 'Please login again.', type: 'error' });
           localStorage.removeItem('customerToken');
           setIsLoggedIn(false);
           navigate('/login');
         } else {
-          alert(`Failed to add product to cart: ${errorData.error || 'Unknown error'}`);
+          setToast({ visible: true, title: 'Add to cart failed', message: `Failed to add product to cart: ${errorData.error || 'Unknown error'}`, type: 'error' });
         }
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
-      alert('Error adding product to cart. Please try again.');
+      setToast({ visible: true, title: 'Error', message: 'Error adding product to cart. Please try again.', type: 'error' });
     }
   }
 
   function handlePreorder(productId) {
-    alert('Pre-order functionality coming soon! This product will be available for pre-booking.');
+    setToast({ visible: true, title: 'Pre-order', message: 'Pre-order functionality coming soon! This product will be available for pre-booking.', type: 'info' });
   }
 
   function handleProductClick(productId) {
@@ -246,6 +226,7 @@ export default function EnhancedHomePage() {
 
   return (
     <div className="enhanced-home">
+      <ProfessionalToast visible={toast.visible} title={toast.title} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, visible: false })} />
       {/* Professional Header */}
       <header className="home-header">
         <div className="header-content">
@@ -311,6 +292,156 @@ export default function EnhancedHomePage() {
         </div>
       </header>
 
+      {/* Fertilizer Shop Welcome Banner */}
+      <div className="fertilizer-welcome-banner">
+        <div className="welcome-content">
+          <div className="welcome-text-section">
+            <div className="welcome-header">
+              <h1 className="shop-title">
+                {isLoggedIn ? (
+                  <>Welcome back to Pavithra Traders, {user?.name || 'Valued Customer'}! 🌾</>
+                ) : (
+                  <>Welcome to Pavithra Traders - Your Premium Fertilizer & Agricultural Store! 🌱</>
+                )}
+              </h1>
+              <p className="shop-subtitle">
+                {isLoggedIn ? (
+                  "Discover the finest fertilizers, seeds, and agricultural products to boost your farm's productivity. Your success is our mission!"
+                ) : (
+                  "Empowering farmers with premium quality fertilizers, seeds, and agricultural solutions since 1995. Join thousands of successful farmers who trust us for their farming needs."
+                )}
+              </p>
+            </div>
+
+            {/* Shop Highlights */}
+            <div className="shop-highlights">
+              <div className="highlight-card">
+                <div className="highlight-icon">🌾</div>
+                <h3>Premium Fertilizers</h3>
+                <p>Organic, bio, and chemical fertilizers from trusted brands to maximize your crop yield</p>
+              </div>
+              <div className="highlight-card">
+                <div className="highlight-icon">🌱</div>
+                <h3>Quality Seeds</h3>
+                <p>High-yielding, disease-resistant seed varieties for all major crops and seasons</p>
+              </div>
+              <div className="highlight-card">
+                <div className="highlight-icon">🛡️</div>
+                <p>Advanced crop protection solutions including pesticides, herbicides, and fungicides</p>
+              </div>
+              <div className="highlight-card">
+                <div className="highlight-icon">🚜</div>
+                <h3>Farm Equipment</h3>
+                <p>Modern tools and equipment to increase efficiency and reduce manual labor</p>
+              </div>
+            </div>
+
+            {/* Shop Stats */}
+            <div className="shop-stats">
+              <div className="stat-box">
+                <span className="stat-number">25+</span>
+                <span className="stat-label">Years Serving Farmers</span>
+              </div>
+              <div className="stat-box">
+                <span className="stat-number">10,000+</span>
+                <span className="stat-label">Happy Customers</span>
+              </div>
+              <div className="stat-box">
+                <span className="stat-number">500+</span>
+                <span className="stat-label">Premium Products</span>
+              </div>
+              <div className="stat-box">
+                <span className="stat-number">100%</span>
+                <span className="stat-label">Quality Guarantee</span>
+              </div>
+            </div>
+
+            {/* Call to Action */}
+            {!isLoggedIn && (
+              <div className="welcome-cta">
+                <Link to="/login" className="cta-btn primary">
+                  🌾 Start Shopping Today
+                </Link>
+                <a href="#products" className="cta-btn secondary">
+                  🛍️ Browse Products
+                </a>
+              </div>
+            )}
+
+            {isLoggedIn && (
+              <div className="user-welcome-actions">
+                <div className="user-stats">
+                  <div className="user-stat">
+                    <span className="stat-icon">🛒</span>
+                    <div className="stat-info">
+                      <span className="stat-value">{cartCount}</span>
+                      <span className="stat-name">Items in Cart</span>
+                    </div>
+                  </div>
+                  <div className="user-stat">
+                    <span className="stat-icon">⭐</span>
+                    <div className="stat-info">
+                      <span className="stat-value">4.9</span>
+                      <span className="stat-name">Your Rating</span>
+                    </div>
+                  </div>
+                  <div className="user-stat">
+                    <span className="stat-icon">🏆</span>
+                    <div className="stat-info">
+                      <span className="stat-value">Gold</span>
+                      <span className="stat-name">Member Status</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="quick-action-buttons">
+                  <button 
+                    onClick={() => setShowCart(true)}
+                    className="quick-btn cart-btn"
+                  >
+                    🛒 View Cart ({cartCount})
+                  </button>
+                  <button 
+                    onClick={() => setShowMyOrders(true)}
+                    className="quick-btn orders-btn"
+                  >
+                    📦 My Orders
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Special Offer Alert */}
+            <div className="special-offer-alert">
+              <div className="offer-content">
+                <span className="offer-icon">🎉</span>
+                <div className="offer-text">
+                  <strong>October Special Offer!</strong>
+                  <p>Get up to 20% off on premium fertilizers and 15% off on hybrid seeds. Perfect timing for winter crop season!</p>
+                </div>
+                <div className="offer-badge">Limited Time</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Visual Elements */}
+          <div className="welcome-visuals">
+            <div className="floating-farm-icons">
+              <span className="farm-icon icon-1">🌾</span>
+              <span className="farm-icon icon-2">🚜</span>
+              <span className="farm-icon icon-3">🌱</span>
+              <span className="farm-icon icon-4">🌿</span>
+              <span className="farm-icon icon-5">🌻</span>
+              <span className="farm-icon icon-6">🥕</span>
+            </div>
+            <div className="shop-badge">
+              <span className="badge-text">Trusted Since</span>
+              <span className="badge-year">1995</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Products Section */}
       <div className="products-section">
         <div className="section-title">
@@ -329,7 +460,7 @@ export default function EnhancedHomePage() {
                 >
                   <img 
                     src={product.image?.startsWith('http') 
-                      ? product.image.replace('https://greenix-3.onrender.com', 'http://localhost:3001')
+                      ? product.image 
                       : `http://localhost:3001/uploads/${product.image}`
                     }
                     alt={product.name}
