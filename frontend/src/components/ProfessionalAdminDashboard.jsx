@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import '../css/ProfessionalAdminDashboard.css';
+import '../css/ProfessionalChart.css';
+import ProfessionalChart from './ProfessionalChart';
 
 export default function ProfessionalAdminDashboard({ token, onLogout }) {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -426,6 +428,96 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     }
   }
 
+  // Enhanced chart data preparation
+  const prepareChartData = () => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // Calculate monthly revenue for the current year
+    const monthlyData = Array.from({length: 12}, (_, index) => {
+      const monthOrders = orders.filter(order => {
+        const orderDate = new Date(order.orderDate || order.createdAt);
+        return orderDate.getMonth() === index && orderDate.getFullYear() === new Date().getFullYear();
+      });
+      
+      const revenue = monthOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+      const orderCount = monthOrders.length;
+      
+      return {
+        month: monthNames[index],
+        revenue,
+        orders: orderCount
+      };
+    });
+
+    return monthlyData;
+  };
+
+  const chartData = prepareChartData();
+  const totalYearRevenue = chartData.reduce((sum, month) => sum + month.revenue, 0);
+  const totalYearOrders = chartData.reduce((sum, month) => sum + month.orders, 0);
+  const averageMonthlyRevenue = totalYearRevenue / 12;
+  const growthRate = chartData.length > 1 ? 
+    ((chartData[chartData.length - 1].revenue - chartData[chartData.length - 2].revenue) / Math.max(chartData[chartData.length - 2].revenue, 1)) * 100 : 0;
+
+  // Revenue trend line chart data
+  const revenueLineData = {
+    labels: chartData.map(item => item.month),
+    datasets: [
+      {
+        label: 'Monthly Revenue',
+        data: chartData.map(item => item.revenue),
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#3b82f6',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+      }
+    ]
+  };
+
+  // Orders bar chart data
+  const ordersBarData = {
+    labels: chartData.map(item => item.month),
+    datasets: [
+      {
+        label: 'Monthly Orders',
+        data: chartData.map(item => item.orders),
+        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+        borderColor: '#10b981',
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false,
+      }
+    ]
+  };
+
+  // Category distribution doughnut data
+  const categoryData = categories.reduce((acc, category) => {
+    const categoryProducts = products.filter(product => product.category === category.name);
+    acc[category.name] = categoryProducts.length;
+    return acc;
+  }, {});
+
+  const categoryDoughnutData = {
+    labels: Object.keys(categoryData),
+    datasets: [
+      {
+        data: Object.values(categoryData),
+        backgroundColor: [
+          '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+          '#8b5cf6', '#06d6a0', '#ff6b6b', '#4ecdc4'
+        ],
+        borderColor: '#ffffff',
+        borderWidth: 3,
+        hoverOffset: 4
+      }
+    ]
+  };
+
   function renderDashboard() {
     return (
       <div className="dashboard-content">
@@ -436,44 +528,144 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
           </button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="stats-grid">
-          <div className="stat-card orders">
-            <div className="stat-icon">📊</div>
-            <div className="stat-info">
-              <h3>Total Orders</h3>
-              <p className="stat-number">{stats.totalOrders}</p>
+        {/* Enhanced Analytics Cards */}
+        <div className="analytics-cards-grid">
+          <div className="analytics-card revenue">
+            <div className="analytics-card-header">
+              <span className="analytics-card-title">Total Revenue</span>
+              <span className="analytics-card-icon">�</span>
+            </div>
+            <div className="analytics-card-value">₹{stats.totalRevenue.toLocaleString('en-IN')}</div>
+            <div className={`analytics-card-change ${growthRate >= 0 ? 'positive' : 'negative'}`}>
+              <span>{growthRate >= 0 ? '↗️' : '↘️'}</span>
+              {Math.abs(growthRate).toFixed(1)}% from last month
             </div>
           </div>
-          <div className="stat-card products">
-            <div className="stat-icon">📦</div>
-            <div className="stat-info">
-              <h3>Total Products</h3>
-              <p className="stat-number">{stats.totalProducts}</p>
+          
+          <div className="analytics-card orders">
+            <div className="analytics-card-header">
+              <span className="analytics-card-title">Total Orders</span>
+              <span className="analytics-card-icon">📊</span>
+            </div>
+            <div className="analytics-card-value">{stats.totalOrders}</div>
+            <div className="analytics-card-change positive">
+              <span>📈</span>
+              {totalYearOrders} this year
             </div>
           </div>
-          <div className="stat-card revenue clickable" onClick={handleRevenueCardClick}>
-            <div className="stat-icon">💰</div>
-            <div className="stat-info">
-              <h3>Total Revenue</h3>
-              <p className="stat-number">₹{stats.totalRevenue.toLocaleString()}</p>
-              <small className="click-hint">Click to view monthly breakdown</small>
+          
+          <div className="analytics-card growth">
+            <div className="analytics-card-header">
+              <span className="analytics-card-title">Avg Monthly</span>
+              <span className="analytics-card-icon">�</span>
+            </div>
+            <div className="analytics-card-value">₹{Math.round(averageMonthlyRevenue).toLocaleString('en-IN')}</div>
+            <div className="analytics-card-change neutral">
+              <span>📊</span>
+              Revenue average
             </div>
           </div>
-          <div className="stat-card warning">
-            <div className="stat-icon">⚠️</div>
-            <div className="stat-info">
-              <h3>Low Stock</h3>
-              <p className="stat-number">{stats.lowStockProducts}</p>
+          
+          <div className="analytics-card conversion">
+            <div className="analytics-card-header">
+              <span className="analytics-card-title">Products</span>
+              <span className="analytics-card-icon">📦</span>
+            </div>
+            <div className="analytics-card-value">{stats.totalProducts}</div>
+            <div className={`analytics-card-change ${stats.lowStockProducts > 0 ? 'negative' : 'positive'}`}>
+              <span>{stats.lowStockProducts > 0 ? '⚠️' : '✅'}</span>
+              {stats.lowStockProducts} low stock
             </div>
           </div>
-          <div className="stat-card pending">
-            <div className="stat-icon">⏳</div>
-            <div className="stat-info">
-              <h3>Pending Orders</h3>
-              <p className="stat-number">{stats.pendingOrders}</p>
+        </div>
+
+        {/* Professional Charts Grid */}
+        <div className="dashboard-charts-grid">
+          <div className="chart-section-enhanced">
+            <div className="chart-header-enhanced">
+              <div className="chart-title">
+                📈 Revenue Trend Analysis
+              </div>
+              <div className="chart-controls-enhanced">
+                <button className="chart-control-btn active">Monthly</button>
+                <button className="chart-control-btn">Quarterly</button>
+                <button className="chart-control-btn">Yearly</button>
+              </div>
+            </div>
+            <ProfessionalChart
+              type="line"
+              data={revenueLineData}
+              title="Monthly Revenue Performance"
+              subtitle={`Total Revenue: ₹${totalYearRevenue.toLocaleString('en-IN')} • Average: ₹${Math.round(averageMonthlyRevenue).toLocaleString('en-IN')}`}
+              options={{
+                plugins: {
+                  legend: {
+                    display: false
+                  }
+                },
+                scales: {
+                  y: {
+                    ticks: {
+                      callback: function(value) {
+                        return '₹' + (value / 1000).toFixed(0) + 'K';
+                      }
+                    }
+                  }
+                }
+              }}
+            />
+          </div>
+
+          <div className="chart-section-enhanced">
+            <div className="chart-header-enhanced">
+              <div className="chart-title">
+                🏷️ Product Distribution
+              </div>
+            </div>
+            <ProfessionalChart
+              type="doughnut"
+              data={categoryDoughnutData}
+              title="Products by Category"
+              subtitle={`${stats.totalProducts} total products across ${categories.length} categories`}
+              options={{
+                plugins: {
+                  legend: {
+                    position: 'bottom',
+                    labels: {
+                      padding: 15,
+                      usePointStyle: true
+                    }
+                  }
+                }
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Orders Performance Chart */}
+        <div className="chart-section-enhanced">
+          <div className="chart-header-enhanced">
+            <div className="chart-title">
+              📊 Monthly Orders Performance
+            </div>
+            <div className="chart-controls-enhanced">
+              <button className="chart-control-btn active">Orders</button>
+              <button className="chart-control-btn">Customers</button>
             </div>
           </div>
+          <ProfessionalChart
+            type="bar"
+            data={ordersBarData}
+            title="Order Volume by Month"
+            subtitle={`${totalYearOrders} total orders • Peak month: ${chartData.reduce((max, month) => month.orders > max.orders ? month : max, chartData[0]).month}`}
+            options={{
+              plugins: {
+                legend: {
+                  display: false
+                }
+              }
+            }}
+          />
         </div>
 
         {/* Recent Orders */}

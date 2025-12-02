@@ -17,9 +17,10 @@ export default function PaymentQR({ orderData, totalAmount, onNext, onBack, curr
 
   // Generate QR code data (using your actual UPI details)
   const qrData = {
-    upiId: 'kavinesh948-1@okhdfcbank',
+    upiId: 'mithuld321@okhdfcbank',
     amount: totalAmount,
-    merchantName: 'Kavinesh V',
+    merchantName: 'Mithul S',
+    merchantPhone: '7904212501',
     transactionNote: 'Payment for agricultural products'
   };
 
@@ -160,9 +161,9 @@ export default function PaymentQR({ orderData, totalAmount, onNext, onBack, curr
       description: 'Payment for agricultural products',
       order_id: orderData.orderId,
       prefill: {
-        name: orderData.customerInfo?.name || 'Customer',
+        name: 'Pavithra Traders',
         email: orderData.customerInfo?.email || '',
-        contact: orderData.customerInfo?.phone || ''
+        contact: '7904212501'
       },
       method: {
         upi: true,
@@ -189,23 +190,51 @@ export default function PaymentQR({ orderData, totalAmount, onNext, onBack, curr
           }
         }
       },
-      handler: function (response) {
-        // Payment successful
-        setIsProcessingPayment(false);
-        setTransactionId(response.razorpay_payment_id);
+      handler: async function (response) {
+        // Payment successful - now verify on backend
+        setIsProcessingPayment(true);
         
-        // Auto-confirm the payment
-        const paymentDetails = {
-          method: 'upi',
-          upiApp: 'googlepay',
-          transactionId: response.razorpay_payment_id,
-          amount: totalAmount,
-          timestamp: new Date().toISOString(),
-          razorpayOrderId: response.razorpay_order_id,
-          razorpaySignature: response.razorpay_signature
-        };
-        
-        onNext({ paymentDetails, paymentCompleted: true });
+        try {
+          // Verify payment with backend
+          const verifyResponse = await fetch('/api/razorpay/verify-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature
+            })
+          });
+
+          const verifyData = await verifyResponse.json();
+          
+          if (verifyData.success) {
+            // Payment verified successfully
+            setIsProcessingPayment(false);
+            setTransactionId(response.razorpay_payment_id);
+            
+            const paymentDetails = {
+              method: 'upi',
+              upiApp: 'razorpay',
+              transactionId: response.razorpay_payment_id,
+              amount: totalAmount,
+              timestamp: new Date().toISOString(),
+              razorpayOrderId: response.razorpay_order_id,
+              razorpaySignature: response.razorpay_signature,
+              verified: true
+            };
+            
+            onNext({ paymentDetails, paymentCompleted: true });
+          } else {
+            throw new Error('Payment verification failed');
+          }
+        } catch (error) {
+          setIsProcessingPayment(false);
+          setError('Payment verification failed. Please contact support with payment ID: ' + response.razorpay_payment_id);
+          console.error('Payment verification error:', error);
+        }
       },
       modal: {
         ondismiss: function() {
