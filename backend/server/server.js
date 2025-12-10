@@ -136,6 +136,13 @@ try {
     console.log('💳 Razorpay routes loaded');
   }
 
+  // Reviews routes (if file exists)
+  const reviewsPath = './routes/reviews';
+  if (fs.existsSync(path.join(__dirname, 'routes/reviews.js'))) {
+    app.use('/api/reviews', require(reviewsPath));
+    console.log('⭐ Reviews routes loaded');
+  }
+
 } catch (routeError) {
   console.error('❌ Error loading routes:', routeError.message);
   process.exit(1);

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function LoginForm({ role, onLogin }) {
   const [username, setUsername] = useState('');
@@ -68,6 +69,12 @@ export default function LoginForm({ role, onLogin }) {
           disabled={isLoading}
           className="enhanced-input"
         />
+      </div>
+      
+      <div className="forgot-password-link">
+        <Link to="/forgot-password" className="link-text">
+          Forgot Password?
+        </Link>
       </div>
       
       <button 

@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  phone: { type: String }, // Optional for backward compatibility with existing users
   role: { type: String, enum: ['admin', 'customer'], default: 'customer' },
   cart: [{
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },

@@ -12,7 +12,7 @@ Your Razorpay payment is failing because you need to add **valid Razorpay API cr
    - Fill in your details:
      - Business Name: Greenix / Pavithra Traders
      - Email & Phone
-     - Password
+     - PassworFailed to add review
    
 2. **Verify Your Account:**
    - Verify email

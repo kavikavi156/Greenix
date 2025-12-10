@@ -158,6 +158,7 @@ try {
   app.use('/api/admin', require('./routes/admin'));
   app.use('/api/upload', require('./routes/upload'));
   app.use('/api/razorpay', require('./routes/razorpay')); // Add Razorpay routes
+  app.use('/api/reviews', require('./routes/reviews')); // Add Reviews routes
   app.use('/razorpay', require('./routes/razorpay')); // Also mount at /razorpay for frontend compatibility
   
   // Categories route (accessible to both admin and customer)

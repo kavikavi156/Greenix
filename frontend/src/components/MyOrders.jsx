@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import AddReview from './AddReview';
 import '../css/MyOrders.css';
 
 export default function MyOrders({ token, onClose }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [reviewingProduct, setReviewingProduct] = useState(null);
+  const [reviewRefresh, setReviewRefresh] = useState(0);
 
   console.log('MyOrders mounted with token:', !!token);
 
@@ -195,7 +198,7 @@ export default function MyOrders({ token, onClose }) {
                       className="order-status"
                       style={{ backgroundColor: getStatusColor(order.status) }}
                     >
-                      {order.status || 'Pending'}
+                      {order.status?.toUpperCase() || 'PENDING'}
                     </div>
                   </div>
 
@@ -229,6 +232,36 @@ export default function MyOrders({ token, onClose }) {
                           <h4>{item.name || item.product?.name}</h4>
                           <p>Quantity: {item.quantity}</p>
                           <p>Price: ₹{item.price}</p>
+                          
+                          {/* Review Button for delivered orders */}
+                          {(order.status?.toLowerCase() === 'delivered' || 
+                            order.status?.toLowerCase() === 'confirmed' || 
+                            order.status?.toLowerCase() === 'shipped' || 
+                            order.status?.toLowerCase() === 'ordered') && item.product?._id && (
+                            <button
+                              className="review-btn"
+                              onClick={() => setReviewingProduct({
+                                productId: item.product._id,
+                                productName: item.product.name || item.name
+                              })}
+                              style={{
+                                marginTop: '10px',
+                                padding: '8px 16px',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s'
+                              }}
+                              onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                              onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                            >
+                              ⭐ Write Review
+                            </button>
+                          )}
                         </div>
                         <div className="item-total">
                           ₹{(item.price * item.quantity).toFixed(2)}
@@ -262,6 +295,78 @@ export default function MyOrders({ token, onClose }) {
           )}
         </div>
       </div>
+
+      {/* Review Modal */}
+      {reviewingProduct && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '20px'
+          }}
+          onClick={() => setReviewingProduct(null)}
+        >
+          <div 
+            style={{
+              background: 'white',
+              borderRadius: '16px',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              padding: '30px',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setReviewingProduct(null)}
+              style={{
+                position: 'absolute',
+                top: '15px',
+                right: '15px',
+                background: '#f44336',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '35px',
+                height: '35px',
+                fontSize: '20px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 'bold'
+              }}
+            >
+              ×
+            </button>
+            
+            <h3 style={{ marginBottom: '20px', color: '#333', fontSize: '24px' }}>
+              Review: {reviewingProduct.productName}
+            </h3>
+            
+            <AddReview 
+              productId={reviewingProduct.productId}
+              token={token}
+              onReviewAdded={() => {
+                setReviewRefresh(prev => prev + 1);
+                setReviewingProduct(null);
+                // Show success message
+                alert('Thank you for your review! Your feedback has been submitted successfully.');
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 

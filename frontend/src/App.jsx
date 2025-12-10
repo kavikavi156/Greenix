@@ -4,6 +4,7 @@ import CustomerPage from './components/CustomerPage.jsx';
 import EnhancedAdminPageNew from './components/EnhancedAdminPageNew.jsx';
 import ProductShowcase from './components/ProductShowcase.jsx';
 import LoginPage from './components/LoginPage.jsx';
+import ForgotPassword from './components/ForgotPassword.jsx';
 import EnhancedHomePageNew from './components/EnhancedHomePageNew.jsx';
 import Checkout from './components/Checkout.jsx';
 import ProfessionalToast from './components/ProfessionalToast.jsx';
@@ -46,6 +47,7 @@ function App() {
       <Routes>
         <Route path="/" element={<EnhancedHomePageNew />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/checkout" element={<CheckoutWrapper />} />
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/customer" element={<Navigate to="/" replace />} />

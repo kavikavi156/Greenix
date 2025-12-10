@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ReviewSection from './ReviewSection';
 import '../css/EcommerceStyles.css';
 import '../css/ProfessionalEcommerce.css';
 
@@ -17,6 +18,8 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
   const [reviews, setReviews] = useState([]);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const [refreshReviews, setRefreshReviews] = useState(0);
+  const reviewSectionRef = useRef(null);
   const navigate = useNavigate();
 
   // Get user ID from token
@@ -159,10 +162,11 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
       });
       if (response.ok) {
         const data = await response.json();
-        setIsInWishlist(data.wishlist.some(item => item._id === productId));
+        setIsInWishlist(data.wishlist?.some(item => item._id === productId) || false);
       }
     } catch (err) {
       console.error('Error checking wishlist status:', err);
+      setIsInWishlist(false);
     }
   }
 
@@ -523,25 +527,6 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
               )}
             </div>
 
-            {/* Offers Section */}
-            <div className="offers-section">
-              <h3>Available Offers</h3>
-              <div className="offers-list">
-                <div className="offer-item">
-                  <span className="offer-icon">🏷️</span>
-                  <span>Bank Offer: 10% instant discount on SBI Credit Cards</span>
-                </div>
-                <div className="offer-item">
-                  <span className="offer-icon">💳</span>
-                  <span>No Cost EMI available for orders above ₹3,000</span>
-                </div>
-                <div className="offer-item">
-                  <span className="offer-icon">🚚</span>
-                  <span>Free delivery on orders above ₹500</span>
-                </div>
-              </div>
-            </div>
-
             {/* Features */}
             {product.features && product.features.length > 0 && (
               <div className="features-section">
@@ -642,34 +627,6 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                 >
                   {isBuyingNow ? '⏳ Processing...' : '⚡ BUY NOW'}
                 </button>
-              </div>
-            </div>
-
-            {/* Delivery Info */}
-            <div className="delivery-section">
-              <h3>Delivery Options</h3>
-              <div className="delivery-info">
-                <div className="delivery-item">
-                  <span className="delivery-icon">🚚</span>
-                  <div>
-                    <strong>Standard Delivery</strong>
-                    <div>Expected by {deliveryDate.toLocaleDateString()}</div>
-                  </div>
-                </div>
-                <div className="delivery-item">
-                  <span className="delivery-icon">🔄</span>
-                  <div>
-                    <strong>Easy Returns</strong>
-                    <div>7 days return policy</div>
-                  </div>
-                </div>
-                <div className="delivery-item">
-                  <span className="delivery-icon">💯</span>
-                  <div>
-                    <strong>Genuine Product</strong>
-                    <div>Verified by seller</div>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -811,6 +768,48 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                   )}
                 </>
               )}
+            </div>
+
+            {/* Reviews Section - Read Only */}
+            <div ref={reviewSectionRef} style={{ marginTop: '40px' }}>
+              <ReviewSection 
+                productId={productId} 
+                key={refreshReviews}
+              />
+              
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '30px', 
+                background: '#f0f7ff', 
+                borderRadius: '12px',
+                marginTop: '20px',
+                border: '2px dashed #667eea'
+              }}>
+                <p style={{ color: '#333', marginBottom: '10px', fontSize: '16px', fontWeight: '500' }}>
+                  💡 Want to review this product?
+                </p>
+                <p style={{ color: '#666', marginBottom: '15px', fontSize: '14px' }}>
+                  Purchase this product and write your review from your Orders page
+                </p>
+                {!token && (
+                  <button 
+                    onClick={() => navigate('/login')}
+                    style={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      padding: '12px 32px',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      marginTop: '5px'
+                    }}
+                  >
+                    Login to Purchase
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

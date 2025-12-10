@@ -45,6 +45,8 @@ const productSchema = new mongoose.Schema({
   sold: { type: Number, default: 0 }, // For tracking top sales
   rating: { type: Number, default: 4.0, min: 0, max: 5 },
   reviews: { type: Number, default: 0 },
+  averageRating: { type: Number, default: 0, min: 0, max: 5 },
+  reviewCount: { type: Number, default: 0 },
   
   // Product Details
   features: [{ type: String }], // Key features

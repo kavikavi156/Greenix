@@ -1010,4 +1010,417 @@ router.get('/download-report', async (req, res) => {
   }
 });
 
+// Product-wise Sales Report Download endpoint
+router.get('/download-product-report', async (req, res) => {
+  try {
+    const { startDate, endDate, productId, format } = req.query;
+    
+    console.log('Product report request:', { startDate, endDate, productId, format });
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+
+    // Parse dates and set time boundaries
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    // Build filter for orders - include all non-cancelled orders
+    const dateFilter = {
+      createdAt: { $gte: start, $lte: end },
+      status: { $nin: ['cancelled'] } // Exclude only cancelled orders
+    };
+    
+    console.log('Date filter:', dateFilter);
+
+    // Fetch orders within date range
+    let orders = await Order.find(dateFilter)
+      .populate('items.product')
+      .populate('products') // Also populate old products field
+      .populate('user', 'username phone fullName')
+      .sort({ createdAt: -1 });
+    
+    console.log(`Found ${orders.length} orders in date range`);
+
+    // Extract sales records from orders
+    let salesRecords = [];
+    console.log(`Processing ${orders.length} orders for sales records`);
+    
+    orders.forEach(order => {
+      // Handle new format with items array
+      if (order.items && order.items.length > 0) {
+        order.items.forEach(item => {
+          if (item.product) {
+            // Filter by productId if specified
+            if (!productId || productId === 'all' || item.product._id.toString() === productId) {
+              salesRecords.push({
+                date: order.createdAt,
+                productName: item.product.name,
+                category: item.product.category || 'N/A',
+                quantity: item.quantity,
+                pricePerUnit: item.price,
+                totalAmount: item.price * item.quantity,
+                customerName: order.user?.fullName || order.user?.username || order.deliveryAddress?.fullName || 'Unknown',
+                customerPhone: order.user?.phone || order.deliveryAddress?.phone || 'N/A',
+                paymentMethod: order.paymentMethod?.toUpperCase() || 'COD',
+                status: order.status
+              });
+            }
+          }
+        });
+      } 
+      // Handle old format with products array
+      else if (order.products && order.products.length > 0) {
+        order.products.forEach(product => {
+          if (product && product._id) {
+            // Filter by productId if specified
+            if (!productId || productId === 'all' || product._id.toString() === productId) {
+              const price = product.price || order.totalAmount / order.products.length;
+              salesRecords.push({
+                date: order.createdAt,
+                productName: product.name || 'Unknown Product',
+                category: product.category || 'N/A',
+                quantity: 1, // Old format doesn't have quantity
+                pricePerUnit: price,
+                totalAmount: price,
+                customerName: order.user?.fullName || order.user?.username || order.deliveryAddress?.fullName || 'Unknown',
+                customerPhone: order.user?.phone || order.deliveryAddress?.phone || 'N/A',
+                paymentMethod: order.paymentMethod?.toUpperCase() || 'COD',
+                status: order.status
+              });
+            }
+          }
+        });
+      }
+    });
+    
+    console.log(`Generated ${salesRecords.length} sales records`);
+
+
+    // Calculate summary
+    const totalRevenue = salesRecords.reduce((sum, record) => sum + record.totalAmount, 0);
+    const totalQuantity = salesRecords.reduce((sum, record) => sum + record.quantity, 0);
+    const uniqueProducts = [...new Set(salesRecords.map(r => r.productName))].length;
+
+    // Get product name for title
+    let productName = 'All Products';
+    if (productId && productId !== 'all') {
+      const product = await Product.findById(productId);
+      productName = product ? product.name : 'Product';
+    }
+
+    if (format === 'pdf') {
+      // Generate PDF
+      const PDFDocument = require('pdfkit');
+      const doc = new PDFDocument({ margin: 40, size: 'A4' });
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="sales-report-${productId === 'all' ? 'all-products' : 'product'}-${startDate}-to-${endDate}.pdf"`);
+      
+      doc.pipe(res);
+
+      // Header
+      doc.fontSize(22).font('Helvetica-Bold').fillColor('#667eea').text('Greenix Fertilizer Shop', { align: 'center' });
+      doc.moveDown(0.3);
+      doc.fontSize(18).fillColor('#000').text('Product-wise Sales Report', { align: 'center' });
+      doc.moveDown(0.8);
+      
+      // Product & Date Info
+      doc.fontSize(12).font('Helvetica');
+      doc.text(`Product: ${productName}`, { align: 'center' });
+      doc.text(`Period: ${new Date(startDate).toLocaleDateString('en-IN')} to ${new Date(endDate).toLocaleDateString('en-IN')}`, { align: 'center' });
+      doc.moveDown(0.5);
+
+      // Summary Box
+      const summaryY = doc.y;
+      doc.roundedRect(40, summaryY, 515, 100, 5).fillAndStroke('#f0f9ff', '#3b82f6');
+      
+      doc.fillColor('#000').fontSize(11).font('Helvetica-Bold');
+      doc.text('Sales Summary', 50, summaryY + 12);
+      
+      doc.fontSize(10).font('Helvetica');
+      const col1X = 50, col2X = 200, col3X = 370;
+      doc.text(`Total Sales:`, col1X, summaryY + 35);
+      doc.text(`${salesRecords.length} transactions`, col1X, summaryY + 50);
+      
+      doc.text(`Total Quantity:`, col2X, summaryY + 35);
+      doc.text(`${totalQuantity} units`, col2X, summaryY + 50);
+      
+      doc.text(`Total Revenue:`, col3X, summaryY + 35);
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#059669');
+      doc.text(`₹${totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, col3X, summaryY + 50);
+      
+      doc.fillColor('#000').fontSize(10).font('Helvetica');
+      doc.text(`Unique Products: ${uniqueProducts}`, col1X, summaryY + 75);
+
+      doc.y = summaryY + 110;
+      doc.moveDown(1);
+
+      // Table Header
+      doc.fontSize(11).font('Helvetica-Bold');
+      doc.text('Detailed Sales Records:', 40);
+      doc.moveDown(0.5);
+
+      const tableTop = doc.y;
+      const tableHeaders = ['Date', 'Product', 'Qty', 'Price', 'Total', 'Customer', 'Payment'];
+      const colWidths = [55, 110, 30, 50, 55, 95, 55];
+      let xPos = 40;
+
+      // Draw header
+      doc.roundedRect(40, tableTop, 515, 22, 3).fillAndStroke('#667eea', '#667eea');
+      
+      doc.fillColor('white').fontSize(9).font('Helvetica-Bold');
+      tableHeaders.forEach((header, i) => {
+        doc.text(header, xPos + 3, tableTop + 6, { width: colWidths[i], align: i >= 2 && i <= 4 ? 'right' : 'left' });
+        xPos += colWidths[i];
+      });
+
+      doc.fillColor('black');
+      let yPos = tableTop + 28;
+
+      // Table Rows
+      doc.fontSize(8).font('Helvetica');
+      salesRecords.forEach((record, index) => {
+        if (yPos > 720) {
+          doc.addPage();
+          yPos = 50;
+        }
+
+        // Alternate row background
+        if (index % 2 === 0) {
+          doc.roundedRect(40, yPos - 2, 515, 20, 2).fillAndStroke('#f9fafb', '#e5e7eb');
+          doc.fillColor('black');
+        }
+
+        xPos = 40;
+        const rowData = [
+          record.date.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' }),
+          record.productName.substring(0, 18),
+          record.quantity.toString(),
+          `₹${record.pricePerUnit}`,
+          `₹${record.totalAmount}`,
+          record.customerName.substring(0, 16),
+          record.paymentMethod.substring(0, 8)
+        ];
+
+        rowData.forEach((data, i) => {
+          const align = i >= 2 && i <= 4 ? 'right' : 'left';
+          doc.text(data, xPos + 3, yPos + 2, { width: colWidths[i] - 6, align });
+          xPos += colWidths[i];
+        });
+
+        yPos += 20;
+      });
+
+      // Footer
+      doc.moveDown(2);
+      const footerY = yPos + 30;
+      if (footerY > 720) {
+        doc.addPage();
+      }
+      
+      doc.fontSize(9).font('Helvetica-Oblique').fillColor('#6b7280');
+      doc.text(`Report Generated: ${new Date().toLocaleString('en-IN')}`, 40, doc.y > 720 ? 50 : footerY);
+      doc.text('Authorized Signature: _____________________', 350, doc.y);
+
+      doc.end();
+
+    } else if (format === 'excel') {
+      // Generate Excel
+      const xl = require('excel4node');
+      const wb = new xl.Workbook();
+      const ws = wb.addWorksheet('Sales Report');
+      
+      // Styles
+      const headerStyle = wb.createStyle({
+        font: { bold: true, size: 14, color: '#FFFFFF' },
+        fill: { type: 'pattern', patternType: 'solid', fgColor: '#667eea' },
+        alignment: { horizontal: 'center' }
+      });
+      
+      const subHeaderStyle = wb.createStyle({
+        font: { bold: true, size: 11 },
+        fill: { type: 'pattern', patternType: 'solid', fgColor: '#e0e7ff' }
+      });
+      
+      const dataStyle = wb.createStyle({
+        font: { size: 10 },
+        alignment: { horizontal: 'left' }
+      });
+
+      // Title
+      ws.cell(1, 1, 1, 7, true).string('Greenix Fertilizer Shop - Product-wise Sales Report').style(headerStyle);
+      ws.cell(2, 1, 2, 7, true).string(`Product: ${productName}`);
+      ws.cell(3, 1, 3, 7, true).string(`Period: ${new Date(startDate).toLocaleDateString('en-IN')} to ${new Date(endDate).toLocaleDateString('en-IN')}`);
+      
+      // Summary
+      ws.cell(5, 1).string('Summary:').style(subHeaderStyle);
+      ws.cell(6, 1).string(`Total Sales: ${salesRecords.length}`);
+      ws.cell(6, 3).string(`Total Quantity: ${totalQuantity}`);
+      ws.cell(6, 5).string(`Total Revenue: ₹${totalRevenue.toFixed(2)}`);
+      ws.cell(7, 1).string(`Unique Products: ${uniqueProducts}`);
+      
+      // Table Headers
+      const headers = ['Date', 'Product Name', 'Qty', 'Price/Unit', 'Total', 'Customer', 'Phone', 'Payment'];
+      headers.forEach((header, index) => {
+        ws.cell(9, index + 1).string(header).style(subHeaderStyle);
+      });
+      
+      // Data Rows
+      salesRecords.forEach((record, index) => {
+        const row = index + 10;
+        ws.cell(row, 1).string(record.date.toLocaleDateString('en-IN')).style(dataStyle);
+        ws.cell(row, 2).string(record.productName).style(dataStyle);
+        ws.cell(row, 3).number(record.quantity).style(dataStyle);
+        ws.cell(row, 4).number(record.pricePerUnit).style(dataStyle);
+        ws.cell(row, 5).number(record.totalAmount).style(dataStyle);
+        ws.cell(row, 6).string(record.customerName).style(dataStyle);
+        ws.cell(row, 7).string(record.customerPhone).style(dataStyle);
+        ws.cell(row, 8).string(record.paymentMethod).style(dataStyle);
+      });
+      
+      // Set column widths
+      ws.column(1).setWidth(12);
+      ws.column(2).setWidth(30);
+      ws.column(3).setWidth(8);
+      ws.column(4).setWidth(12);
+      ws.column(5).setWidth(12);
+      ws.column(6).setWidth(20);
+      ws.column(7).setWidth(15);
+      ws.column(8).setWidth(12);
+      
+      // Footer
+      const footerRow = salesRecords.length + 12;
+      ws.cell(footerRow, 1, footerRow, 7, true).string(`Generated: ${new Date().toLocaleString('en-IN')}`);
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="sales-report-${productId === 'all' ? 'all-products' : 'product'}-${startDate}-to-${endDate}.xlsx"`);
+      
+      wb.write(`sales-report.xlsx`, res);
+    } else {
+      return res.status(400).json({ error: 'Format must be either pdf or excel' });
+    }
+
+  } catch (error) {
+    console.error('Error generating product report:', error);
+    res.status(500).json({ error: 'Failed to generate product report', details: error.message });
+  }
+});
+
+// Admin Management Routes
+const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+
+// Get all admin users
+router.get('/admin-list', async (req, res) => {
+  try {
+    const admins = await User.find({ role: 'admin' })
+      .select('-password')
+      .sort({ createdAt: -1 });
+    res.json(admins);
+  } catch (error) {
+    console.error('Error fetching admin list:', error);
+    res.status(500).json({ error: 'Failed to fetch admin list' });
+  }
+});
+
+// Create new admin
+router.post('/create-admin', async (req, res) => {
+  try {
+    const { name, email, password, phone } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: 'User with this email already exists' });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create admin user
+    const admin = new User({
+      name,
+      email,
+      password: hashedPassword,
+      phone: phone || '',
+      role: 'admin',
+      isActive: true
+    });
+
+    await admin.save();
+
+    res.status(201).json({ 
+      message: 'Admin created successfully',
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+  } catch (error) {
+    console.error('Error creating admin:', error);
+    res.status(500).json({ error: 'Failed to create admin' });
+  }
+});
+
+// Delete admin
+router.delete('/delete-admin/:adminId', async (req, res) => {
+  try {
+    const { adminId } = req.params;
+
+    const admin = await User.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin not found' });
+    }
+
+    if (admin.role !== 'admin') {
+      return res.status(400).json({ error: 'User is not an admin' });
+    }
+
+    await User.findByIdAndDelete(adminId);
+
+    res.json({ message: 'Admin deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting admin:', error);
+    res.status(500).json({ error: 'Failed to delete admin' });
+  }
+});
+
+// Toggle admin active status
+router.patch('/toggle-admin-status/:adminId', async (req, res) => {
+  try {
+    const { adminId } = req.params;
+
+    const admin = await User.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin not found' });
+    }
+
+    if (admin.role !== 'admin') {
+      return res.status(400).json({ error: 'User is not an admin' });
+    }
+
+    admin.isActive = !admin.isActive;
+    await admin.save();
+
+    res.json({ 
+      message: 'Admin status updated successfully',
+      isActive: admin.isActive
+    });
+  } catch (error) {
+    console.error('Error toggling admin status:', error);
+    res.status(500).json({ error: 'Failed to update admin status' });
+  }
+});
+
 module.exports = router;
+

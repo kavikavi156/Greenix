@@ -6,7 +6,8 @@ export default function SignupForm({ role, onSignup }) {
     email: '',
     username: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    phone: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -109,6 +110,15 @@ export default function SignupForm({ role, onSignup }) {
         }));
       }
     }
+
+    if (name === 'phone' && value) {
+      if (!/^\d{10}$/.test(value)) {
+        setValidationErrors(prev => ({
+          ...prev,
+          phone: 'Phone number must be exactly 10 digits'
+        }));
+      }
+    }
   }
 
   async function handleSubmit(e) {
@@ -166,6 +176,13 @@ export default function SignupForm({ role, onSignup }) {
       errors.confirmPassword = 'Passwords do not match';
     }
 
+    // Phone validation
+    if (!formData.phone.trim()) {
+      errors.phone = 'Phone number is required';
+    } else if (!/^\d{10}$/.test(formData.phone)) {
+      errors.phone = 'Phone number must be exactly 10 digits';
+    }
+
     // If there are validation errors, show them and stop
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
@@ -182,6 +199,7 @@ export default function SignupForm({ role, onSignup }) {
         name: formData.name,
         email: formData.email,
         username: formData.username,
+        phone: formData.phone,
         role 
       });
       
@@ -193,6 +211,7 @@ export default function SignupForm({ role, onSignup }) {
           email: formData.email,
           username: formData.username, 
           password: formData.password, 
+          phone: formData.phone,
           role 
         }),
       });
@@ -214,7 +233,8 @@ export default function SignupForm({ role, onSignup }) {
         email: '',
         username: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        phone: ''
       });
       onSignup && onSignup();
     } catch (err) {
@@ -269,6 +289,24 @@ export default function SignupForm({ role, onSignup }) {
           className={`enhanced-input ${validationErrors.username ? 'error' : ''}`}
         />
         {validationErrors.username && <span className="validation-error">{validationErrors.username}</span>}
+      </div>
+
+      <div className="input-group">
+        <input
+          type="tel"
+          name="phone"
+          placeholder="Mobile Number (10 digits)"
+          value={formData.phone}
+          onChange={(e) => {
+            const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+            handleChange({ target: { name: 'phone', value } });
+          }}
+          required
+          maxLength="10"
+          disabled={isLoading}
+          className={`enhanced-input ${validationErrors.phone ? 'error' : ''}`}
+        />
+        {validationErrors.phone && <span className="validation-error">{validationErrors.phone}</span>}
       </div>
       
       <div className="input-group">

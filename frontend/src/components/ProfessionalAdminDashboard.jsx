@@ -73,6 +73,19 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     selectedMonth: new Date().getMonth() + 1
   });
 
+  // Product-wise Sales Report state
+  const [productSalesFilter, setProductSalesFilter] = useState({
+    selectedProduct: 'all',
+    startDate: new Date(new Date().setDate(1)).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+    loading: false
+  });
+
+  // Reviews state
+  const [reviews, setReviews] = useState([]);
+  const [selectedProductFilter, setSelectedProductFilter] = useState('all');
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
   useEffect(() => {
     fetchDashboardData();
     fetchCategories();
@@ -81,6 +94,9 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
   useEffect(() => {
     if (currentView === 'admin-management') {
       fetchAdminList();
+    }
+    if (currentView === 'reviews') {
+      fetchReviews();
     }
   }, [currentView]);
 
@@ -1215,6 +1231,26 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     }
   }
 
+  async function fetchReviews() {
+    setReviewsLoading(true);
+    try {
+      const response = await fetch('http://localhost:3001/api/reviews/all', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setReviews(data);
+      } else {
+        showNotification('Failed to fetch reviews', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      showNotification('Error fetching reviews', 'error');
+    } finally {
+      setReviewsLoading(false);
+    }
+  }
+
   async function handleDeleteAdmin(adminId) {
     if (window.confirm('Are you sure you want to delete this administrator?')) {
       try {
@@ -1372,6 +1408,50 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     }
   }
 
+  // Product-wise report download
+  async function handleDownloadProductReport(format) {
+    try {
+      setProductSalesFilter(prev => ({ ...prev, loading: true }));
+      
+      const params = new URLSearchParams({
+        startDate: productSalesFilter.startDate,
+        endDate: productSalesFilter.endDate,
+        format: format
+      });
+      
+      if (productSalesFilter.selectedProduct !== 'all') {
+        params.append('productId', productSalesFilter.selectedProduct);
+      }
+
+      const response = await fetch(`http://localhost:3001/api/admin/download-product-report?${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const productName = productSalesFilter.selectedProduct === 'all' 
+          ? 'all-products' 
+          : products.find(p => p._id === productSalesFilter.selectedProduct)?.name.replace(/\s+/g, '-').toLowerCase() || 'product';
+        a.download = `${productName}-sales-${productSalesFilter.startDate}-to-${productSalesFilter.endDate}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showNotification(`${format.toUpperCase()} report downloaded successfully!`, 'success');
+      } else {
+        showNotification('Failed to download report', 'error');
+      }
+      
+      setProductSalesFilter(prev => ({ ...prev, loading: false }));
+    } catch (error) {
+      showNotification('Error downloading report: ' + error.message, 'error');
+      setProductSalesFilter(prev => ({ ...prev, loading: false }));
+    }
+  }
+
   function renderAdminManagement() {
     return (
       <div className="content-section">
@@ -1443,7 +1523,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   <div className="admin-avatar">👑</div>
                   <div className="admin-details">
                     <h4>Default Administrator</h4>
-                    <p>admin@pavithratraders.com</p>
+                    <p>wrkkavi@gmail.com</p>
                     <span className="admin-role">Super Admin</span>
                   </div>
                 </div>
@@ -1484,6 +1564,168 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         </div>
       </div>
     );
+  }
+
+  function renderReviews() {
+    const filteredReviews = selectedProductFilter === 'all' 
+      ? reviews 
+      : reviews.filter(review => review.productId._id === selectedProductFilter);
+
+    // Group reviews by product
+    const reviewsByProduct = {};
+    filteredReviews.forEach(review => {
+      const productId = review.productId._id;
+      if (!reviewsByProduct[productId]) {
+        reviewsByProduct[productId] = {
+          product: review.productId,
+          reviews: []
+        };
+      }
+      reviewsByProduct[productId].reviews.push(review);
+    });
+
+    return (
+      <div className="content-section">
+        <div className="section-header">
+          <h2>⭐ Product Reviews</h2>
+          <p>Manage customer reviews and ratings</p>
+        </div>
+
+        {/* Filter and Refresh */}
+        <div className="reviews-filter">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
+            <label>Filter by Product:</label>
+            <select 
+              value={selectedProductFilter} 
+              onChange={(e) => setSelectedProductFilter(e.target.value)}
+            >
+              <option value="all">All Products</option>
+              {products.map(product => (
+                <option key={product._id} value={product._id}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button 
+            onClick={fetchReviews}
+            className="btn-primary"
+            style={{ 
+              padding: '10px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            🔄 Refresh
+          </button>
+        </div>
+
+        {reviewsLoading ? (
+          <div className="loading-spinner">Loading reviews...</div>
+        ) : reviews.length === 0 ? (
+          <div className="empty-state">
+            <p>No reviews yet</p>
+          </div>
+        ) : (
+          <div className="reviews-container">
+            {Object.values(reviewsByProduct).map(({ product, reviews }) => (
+              <div key={product._id} className="product-reviews-section">
+                <div className="product-header">
+                  <img 
+                    src={
+                      product.image 
+                        ? (product.image.startsWith('http') 
+                            ? product.image 
+                            : `http://localhost:3001/uploads/${product.image}`)
+                        : '/placeholder-product.png'
+                    }
+                    alt={product.name}
+                    className="product-thumbnail"
+                    onError={(e) => {
+                      e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNSAyNUg1NVY1NUgyNVYyNVoiIGZpbGw9IiNEMUQ1REIiLz4KPC9zdmc+';
+                    }}
+                  />
+                  <div className="product-info">
+                    <h3>{product.name}</h3>
+                    <div className="rating-summary">
+                      <span className="stars">{'⭐'.repeat(Math.round(product.averageRating || 0))}</span>
+                      <span className="rating-text">
+                        {product.averageRating ? product.averageRating.toFixed(1) : '0.0'} 
+                        ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="reviews-list">
+                  {reviews.map(review => (
+                    <div key={review._id} className="review-card">
+                      <div className="review-header">
+                        <div className="reviewer-info">
+                          <strong>{review.userId?.name || 'Anonymous'}</strong>
+                          {review.verifiedPurchase && (
+                            <span className="verified-badge" title="Verified Purchase">
+                              ✓ Verified Purchase
+                            </span>
+                          )}
+                        </div>
+                        <div className="review-rating">
+                          {'⭐'.repeat(review.rating)}
+                        </div>
+                      </div>
+                      <div className="review-date">
+                        {new Date(review.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </div>
+                      <div className="review-comment">
+                        {review.comment}
+                      </div>
+                      <div className="review-actions">
+                        <button 
+                          className="btn-danger-small"
+                          onClick={() => handleDeleteReview(review._id, product._id)}
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  async function handleDeleteReview(reviewId, productId) {
+    if (window.confirm('Are you sure you want to delete this review?')) {
+      try {
+        const response = await fetch(`http://localhost:3001/api/reviews/${reviewId}`, {
+          method: 'DELETE',
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          showNotification('Review deleted successfully!', 'success');
+          fetchReviews();
+          // Refresh products to update rating stats
+          fetchDashboardData();
+        } else {
+          showNotification('Failed to delete review', 'error');
+        }
+      } catch (error) {
+        showNotification('Error deleting review: ' + error.message, 'error');
+      }
+    }
   }
 
   function renderSalesReport() {
@@ -1696,6 +1938,128 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
               </div>
             </div>
           </div>
+
+          {/* Product-wise Sales Report Section */}
+          <div className="product-report-section" style={{ marginTop: '40px', padding: '30px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: '16px', color: 'white' }}>
+            <h3 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: 'bold' }}>📦 Product-wise Sales Report</h3>
+            <p style={{ marginBottom: '25px', opacity: 0.9 }}>Download detailed sales report for individual products within a custom date range</p>
+            
+            <div style={{ background: 'rgba(255,255,255,0.95)', padding: '25px', borderRadius: '12px', color: '#1f2937' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151', fontSize: '14px' }}>
+                    Select Product
+                  </label>
+                  <select
+                    value={productSalesFilter.selectedProduct}
+                    onChange={(e) => setProductSalesFilter(prev => ({ ...prev, selectedProduct: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: 'white',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="all">All Products</option>
+                    {products.map(product => (
+                      <option key={product._id} value={product._id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151', fontSize: '14px' }}>
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={productSalesFilter.startDate}
+                    onChange={(e) => setProductSalesFilter(prev => ({ ...prev, startDate: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+                
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151', fontSize: '14px' }}>
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={productSalesFilter.endDate}
+                    onChange={(e) => setProductSalesFilter(prev => ({ ...prev, endDate: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => handleDownloadProductReport('pdf')}
+                  disabled={productSalesFilter.loading}
+                  style={{
+                    padding: '12px 28px',
+                    background: productSalesFilter.loading ? '#9ca3af' : '#dc2626',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    fontSize: '15px',
+                    cursor: productSalesFilter.loading ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {productSalesFilter.loading ? '⏳' : '📄'} Download PDF
+                </button>
+                
+                <button
+                  onClick={() => handleDownloadProductReport('excel')}
+                  disabled={productSalesFilter.loading}
+                  style={{
+                    padding: '12px 28px',
+                    background: productSalesFilter.loading ? '#9ca3af' : '#059669',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    fontSize: '15px',
+                    cursor: productSalesFilter.loading ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {productSalesFilter.loading ? '⏳' : '📊'} Download Excel
+                </button>
+              </div>
+              
+              <div style={{ marginTop: '15px', padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #86efac' }}>
+                <p style={{ fontSize: '13px', color: '#166534', margin: 0 }}>
+                  💡 <strong>Tip:</strong> Select "All Products" to download a comprehensive report, or choose a specific product for detailed analysis.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1750,6 +2114,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
             📋 Orders
           </button>
           <button 
+            className={currentView === 'reviews' ? 'active' : ''}
+            onClick={() => setCurrentView('reviews')}
+          >
+            ⭐ Reviews
+          </button>
+          <button 
             className={currentView === 'admin-management' ? 'active' : ''}
             onClick={() => setCurrentView('admin-management')}
           >
@@ -1773,6 +2143,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         {currentView === 'products' && renderProducts()}
         {currentView === 'categories' && renderCategories()}
         {currentView === 'orders' && renderOrders()}
+        {currentView === 'reviews' && renderReviews()}
         {currentView === 'admin-management' && renderAdminManagement()}
         {currentView === 'sales-report' && renderSalesReport()}
       </div>

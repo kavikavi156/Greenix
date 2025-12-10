@@ -8,24 +8,27 @@ async function createAdmin() {
     console.log('Connected to MongoDB');
     
     // Remove existing admin if any
+    await User.deleteOne({ username: 'kavinesh' });
+    await User.deleteOne({ email: 'wrkkavi@gmail.com' });
     await User.deleteOne({ username: 'admin' });
     
     // Create new admin
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const hashedPassword = await bcrypt.hash('Admin@123', 10);
     const admin = new User({
-      name: 'Administrator',
-      email: 'admin@pavithra.com',
-      username: 'admin',
+      name: 'kavinesh',
+      email: 'wrkkavi@gmail.com',
+      username: 'kavinesh',
       password: hashedPassword,
+      phone: '7904212501',
       role: 'admin'
     });
     
     await admin.save();
     
     console.log('✅ Admin user created successfully!');
-    console.log('📧 Email: admin@pavithra.com');
-    console.log('👤 Username: admin');
-    console.log('🔑 Password: admin123');
+    console.log('📧 Email: wrkkavi@gmail.com');
+    console.log('👤 Username: kavinesh');
+    console.log('🔑 Password: Admin@123');
     console.log('🔒 Role: admin');
     
     process.exit(0);
