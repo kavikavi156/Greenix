@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import ProductList from './ProductList';
-import AddProduct from './AddProduct';
+import EnhancedAddProduct from './EnhancedAddProduct';
 import OrderManagement from './OrderManagement';
 import LoginForm from './LoginForm';
 import '../css/EnhancedAdmin.css';
@@ -211,12 +211,9 @@ export default function EnhancedAdminPage() {
             <div className="admin-content-enhanced">
               {activeTab === 'products' ? (
                 <div className="products-section">
-                  <AddProduct 
+                  <EnhancedAddProduct 
                     token={token} 
                     onAdd={handleAddProduct}
-                    product={editingProduct}
-                    onUpdate={handleUpdateProduct}
-                    onCancel={handleCancelEdit}
                   />
                   <ProductList 
                     token={token} 

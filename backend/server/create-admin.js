@@ -1,10 +1,11 @@
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const User = require('./models/User.js');
+require('dotenv').config();
 
 async function createAdmin() {
   try {
-    await mongoose.connect('mongodb://localhost:27017/pavithratraders');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/pavithratraders');
     console.log('Connected to MongoDB');
     
     // Remove existing admin if any
@@ -13,7 +14,7 @@ async function createAdmin() {
     await User.deleteOne({ username: 'admin' });
     
     // Create new admin
-    const hashedPassword = await bcrypt.hash('Admin@123', 10);
+    const hashedPassword = await bcrypt.hash('kavinesh123', 10);
     const admin = new User({
       name: 'kavinesh',
       email: 'wrkkavi@gmail.com',
@@ -28,7 +29,7 @@ async function createAdmin() {
     console.log('✅ Admin user created successfully!');
     console.log('📧 Email: wrkkavi@gmail.com');
     console.log('👤 Username: kavinesh');
-    console.log('🔑 Password: Admin@123');
+    console.log('🔑 Password: kavinesh123');
     console.log('🔒 Role: admin');
     
     process.exit(0);

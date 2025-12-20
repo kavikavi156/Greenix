@@ -10,6 +10,7 @@ const productSchema = new mongoose.Schema({
     enum: ['Seeds', 'Herbicides', 'Insecticides', 'Fertilizers', 'Fungicides', 'Tools', 'Equipment', 'Organic Products'], 
     default: 'Seeds' 
   },
+  productType: { type: String }, // e.g., "Organic Fertilizer", "NPK Fertilizer", "Weedkiller", etc.
   
   // Pricing
   price: { type: Number, required: true }, // Main price (for display, usually smallest package)

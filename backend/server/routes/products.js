@@ -96,6 +96,30 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get filter options (product types and brands by category) - Must come before /:id route
+router.get('/filters/options', async (req, res) => {
+  try {
+    const { category } = req.query;
+    
+    let filter = {};
+    if (category && category !== 'all') {
+      filter.category = category;
+    }
+    
+    // Get unique product types and brands
+    const productTypes = await Product.distinct('productType', filter);
+    const brands = await Product.distinct('brand', filter);
+    
+    res.json({
+      productTypes: productTypes.filter(Boolean), // Remove null/undefined
+      brands: brands.filter(Boolean)
+    });
+  } catch (error) {
+    console.error('Error fetching filter options:', error);
+    res.status(500).json({ error: 'Failed to fetch filter options' });
+  }
+});
+
 // Get single product
 router.get('/:id', async (req, res) => {
   try {
