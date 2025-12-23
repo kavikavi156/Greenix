@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getApiUrl } from '../config/api';
 
 export default function LoginForm({ role, onLogin }) {
   const [username, setUsername] = useState('');
@@ -15,7 +16,7 @@ export default function LoginForm({ role, onLogin }) {
     try {
       console.log('Attempting login with:', { username, role });
       
-      const res = await fetch('http://localhost:3001/api/auth/login', {
+      const res = await fetch(getApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
