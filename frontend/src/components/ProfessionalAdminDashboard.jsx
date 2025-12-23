@@ -154,10 +154,9 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     try {
       const response = await fetch('http://localhost:3001/api/categories');
       const data = await response.json();
-      setCategories(Array.isArray(data) ? data : []);
+      setCategories(data.categories || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      setCategories([]);
     }
   }
 

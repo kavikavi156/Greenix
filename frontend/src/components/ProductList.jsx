@@ -14,17 +14,11 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
   // Filter states
   const [filters, setFilters] = useState({
     category: 'all',
-    productType: 'all',
-    brand: 'all',
     sort: 'name',
     search: '',
     minPrice: '',
     maxPrice: ''
   });
-  
-  // Available options based on current filters
-  const [availableProductTypes, setAvailableProductTypes] = useState([]);
-  const [availableBrands, setAvailableBrands] = useState([]);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,11 +47,6 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
   useEffect(() => {
     applyFilters();
   }, [products, filters]);
-
-  // Update available product types and brands when category or products change
-  useEffect(() => {
-    updateAvailableOptions();
-  }, [products, filters.category, filters.productType]);
 
   async function fetchProducts() {
     console.log('Fetching products from backend...');
@@ -107,28 +96,6 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
     }
   }
 
-  function updateAvailableOptions() {
-    let relevantProducts = products;
-    
-    // Filter by category first
-    if (filters.category !== 'all') {
-      relevantProducts = relevantProducts.filter(p => p.category === filters.category);
-    }
-    
-    // Get unique product types from relevant products
-    const types = [...new Set(relevantProducts.map(p => p.productType).filter(Boolean))];
-    setAvailableProductTypes(types);
-    
-    // Filter by product type if selected
-    if (filters.productType !== 'all') {
-      relevantProducts = relevantProducts.filter(p => p.productType === filters.productType);
-    }
-    
-    // Get unique brands from relevant products
-    const brands = [...new Set(relevantProducts.map(p => p.brand).filter(Boolean))];
-    setAvailableBrands(brands);
-  }
-
   function applyFilters() {
     let filtered = [...products];
     
@@ -137,24 +104,13 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
       filtered = filtered.filter(product => product.category === filters.category);
     }
     
-    // Product type filter (only if category is selected)
-    if (filters.productType !== 'all') {
-      filtered = filtered.filter(product => product.productType === filters.productType);
-    }
-    
-    // Brand filter (cascading from category/type)
-    if (filters.brand !== 'all') {
-      filtered = filtered.filter(product => product.brand === filters.brand);
-    }
-    
     // Search filter
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
       filtered = filtered.filter(product => 
         product.name.toLowerCase().includes(searchTerm) ||
         product.description?.toLowerCase().includes(searchTerm) ||
-        product.brand?.toLowerCase().includes(searchTerm) ||
-        product.productType?.toLowerCase().includes(searchTerm)
+        product.brand?.toLowerCase().includes(searchTerm)
       );
     }
     
@@ -269,19 +225,10 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
   }
 
   function handleFilterChange(field, value) {
-    setFilters(prev => {
-      const newFilters = { ...prev, [field]: value };
-      
-      // Reset dependent filters when parent filter changes
-      if (field === 'category') {
-        newFilters.productType = 'all';
-        newFilters.brand = 'all';
-      } else if (field === 'productType') {
-        newFilters.brand = 'all';
-      }
-      
-      return newFilters;
-    });
+    setFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
   }
 
   function renderStars(rating) {
@@ -352,46 +299,8 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
               <option value="Herbicides">Herbicides</option>
               <option value="Insecticides">Insecticides</option>
               <option value="Fertilizers">Fertilizers</option>
-              <option value="Fungicides">Fungicides</option>
-              <option value="Tools">Tools</option>
-              <option value="Equipment">Equipment</option>
-              <option value="Organic Products">Organic Products</option>
             </select>
           </div>
-          
-          {/* Product Type Filter - Shows only when category is selected */}
-          {filters.category !== 'all' && availableProductTypes.length > 0 && (
-            <div className="filter-group">
-              <label>Product Type</label>
-              <select 
-                className="filter-select"
-                value={filters.productType}
-                onChange={(e) => handleFilterChange('productType', e.target.value)}
-              >
-                <option value="all">All Types</option>
-                {availableProductTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          
-          {/* Brand Filter - Shows when category or product type is selected */}
-          {(filters.category !== 'all' || filters.productType !== 'all') && availableBrands.length > 0 && (
-            <div className="filter-group">
-              <label>Brand</label>
-              <select 
-                className="filter-select"
-                value={filters.brand}
-                onChange={(e) => handleFilterChange('brand', e.target.value)}
-              >
-                <option value="all">All Brands</option>
-                {availableBrands.map(brand => (
-                  <option key={brand} value={brand}>{brand}</option>
-                ))}
-              </select>
-            </div>
-          )}
           
           <div className="filter-group">
             <label>Sort By</label>

@@ -9,7 +9,6 @@ export default function AddProduct({ token, onAdd, product, onUpdate, onCancel }
     baseUnit: 'kg', // Base unit for pricing
     originalPrice: '',
     category: 'Seeds',
-    productType: '', // e.g., Organic Fertilizer, NPK Fertilizer, etc.
     brand: '',
     weight: '',
     weightUnit: 'kg',
@@ -85,7 +84,6 @@ export default function AddProduct({ token, onAdd, product, onUpdate, onCancel }
   });
   
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('basic');
   const [categories, setCategories] = useState([
@@ -139,7 +137,6 @@ export default function AddProduct({ token, onAdd, product, onUpdate, onCancel }
         baseUnit: product.baseUnit || 'kg',
         originalPrice: product.originalPrice || '',
         category: product.category || 'Seeds',
-        productType: product.productType || '',
         brand: product.brand || '',
         weight: weightValue,
         weightUnit: weightUnitValue,
@@ -477,7 +474,6 @@ export default function AddProduct({ token, onAdd, product, onUpdate, onCancel }
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    setSuccess('');
     setLoading(true);
 
     try {
@@ -549,110 +545,51 @@ export default function AddProduct({ token, onAdd, product, onUpdate, onCancel }
 
       const data = await res.json();
       
-      // Show success message
-      setSuccess(product ? '✓ Product updated successfully!' : '✓ Product added successfully!');
-      
-      // Call parent callbacks
-      if (product) {
-        onUpdate && onUpdate(data);
-      } else {
-        onAdd && onAdd(data);
-      }
-      
-      // Reset form only if adding new product
-      if (!product) {
-        // Smooth scroll to top
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (res.ok) {
+        if (product) {
+          onUpdate && onUpdate(data);
+        } else {
+          onAdd && onAdd(data);
+        }
         
-        // Reset form after a short delay to show success message
-        setTimeout(() => {
+        // Reset form only if adding new product
+        if (!product) {
           setFormData({
-            name: '',
-            description: '',
-            basePrice: '',
-            baseUnit: 'kg',
-            originalPrice: '',
-            category: 'Seeds',
-            productType: '',
-            brand: '',
-            weight: '',
-            weightUnit: 'kg',
-            image: '',
-            packageSizes: [
-              { size: 1, unit: 'kg', priceMultiplier: 1, stock: 0 }
-            ],
-            stock: '',
-            prebookingEnabled: true,
-            features: [''],
-            tags: [''],
-            productType: 'general',
-            chemicalComposition: {
-              activeIngredients: [{ name: '', percentage: '', casNumber: '' }],
-              percentages: [''],
-              formulationType: '',
-              concentration: '',
-              concentrationUnit: 'mg/ml',
-              productType: '',
-              npkValues: {
-                nitrogen: '',
-                phosphorus: '',
-                potassium: ''
-              },
-              targetPests: '',
-              modeOfAction: '',
-              toxicityClass: '',
-              phiValue: '',
-              reiValue: ''
-            },
-            packaging: {
-              availablePackages: [{ size: '', unit: 'kg', price: '', stock: '' }],
-              minimumOrderQuantity: '',
-              moqUnit: 'kg',
-              basePrice: '',
-              bulkDiscount: '',
-              containerType: '',
-              storageInstructions: '',
-              shelfLifeValue: '',
-              shelfLifeUnit: 'months'
-            },
-            applicationDetails: {
-              dosageValue: '',
-              dosageUnit: 'ml/liter',
-              applicationMethod: '',
-              frequency: '',
-              suitableCrops: '',
-              growthStage: '',
-              season: '',
-              preparationInstructions: '',
-              applicationTips: '',
-              waterRequirement: '',
-              bestTimeToApply: '',
-              safetyPrecautions: '',
-              compatibility: ''
-            },
-            specifications: {
-              material: '',
-              color: '',
-              dimensions: '',
-              manufacturer: '',
-              countryOfOrigin: 'India',
-              warranty: '',
-              shelfLife: '',
-              storageConditions: ''
-            },
-            seoData: {
-              metaTitle: '',
-              metaDescription: '',
-              keywords: ''
-            }
-          });
-          setActiveSection('basic');
-          setSuccess('');
-        }, 2000);
+          name: '',
+          description: '',
+          price: '',
+          originalPrice: '',
+          category: 'Seeds',
+          brand: '',
+          weight: '',
+          weightUnit: 'kg',
+          image: '',
+          unit: 'bags',
+          stock: '',
+          prebookingEnabled: true,
+          features: [''],
+          tags: [''],
+          specifications: {
+            material: '',
+            color: '',
+            dimensions: '',
+            manufacturer: '',
+            countryOfOrigin: 'India',
+            warranty: ''
+          },
+          seoData: {
+            metaTitle: '',
+            metaDescription: '',
+            keywords: ''
+          }
+        });
+        setActiveSection('basic');
+        }
+      } else {
+        throw new Error(data.error || (product ? 'Failed to update product' : 'Failed to add product'));
       }
     } catch (err) {
       setError(err.message);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -669,48 +606,6 @@ export default function AddProduct({ token, onAdd, product, onUpdate, onCancel }
           </button>
         )}
       </div>
-
-      {/* Success Message */}
-      {success && (
-        <div style={{
-          backgroundColor: '#d4edda',
-          color: '#155724',
-          padding: '15px 20px',
-          marginBottom: '20px',
-          borderRadius: '8px',
-          border: '1px solid #c3e6cb',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          fontSize: '16px',
-          fontWeight: '500',
-          animation: 'slideDown 0.3s ease-out'
-        }}>
-          <span style={{ fontSize: '20px' }}>✓</span>
-          {success}
-        </div>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <div style={{
-          backgroundColor: '#f8d7da',
-          color: '#721c24',
-          padding: '15px 20px',
-          marginBottom: '20px',
-          borderRadius: '8px',
-          border: '1px solid #f5c6cb',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          fontSize: '16px',
-          fontWeight: '500',
-          animation: 'slideDown 0.3s ease-out'
-        }}>
-          <span style={{ fontSize: '20px' }}>⚠️</span>
-          {error}
-        </div>
-      )}
 
       <div className="form-navigation">
         <button 
@@ -842,20 +737,6 @@ export default function AddProduct({ token, onAdd, product, onUpdate, onCancel }
                     </div>
                   </div>
                 )}
-              </div>
-
-              <div className="form-group">
-                <label>Product Type</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Organic Fertilizer, NPK Fertilizer, Weedkiller"
-                  value={formData.productType}
-                  onChange={e => handleInputChange('productType', e.target.value)}
-                  className="form-input"
-                />
-                <small style={{ color: '#666', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
-                  Specify the type within the category (e.g., for Fertilizers: Organic, NPK, Urea, etc.)
-                </small>
               </div>
 
               <div className="form-group span-full">
@@ -1844,6 +1725,13 @@ export default function AddProduct({ token, onAdd, product, onUpdate, onCancel }
             )}
           </button>
         </div>
+
+        {error && (
+          <div className="error-message-box">
+            <span className="error-icon">⚠️</span>
+            <span>{error}</span>
+          </div>
+        )}
       </form>
     </div>
   );
