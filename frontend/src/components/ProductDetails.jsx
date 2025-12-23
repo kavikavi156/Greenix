@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ReviewSection from './ReviewSection';
 import '../css/EcommerceStyles.css';
 import '../css/ProfessionalEcommerce.css';
+import { getApiUrl, getImageUrl } from '../config/api';
 
 export default function ProductDetails({ productId, token, onClose, onAddToCart }) {
   const [product, setProduct] = useState(null);
@@ -132,7 +133,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
     setLoading(true);
     try {
       console.log('Fetching product details for ID:', productId);
-      const response = await fetch(`http://localhost:3001/api/products/${productId}`);
+      const response = await fetch(getApiUrl(`/api/products/${productId}`));
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
       
@@ -157,7 +158,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
 
   async function checkWishlistStatus() {
     try {
-      const response = await fetch(`http://localhost:3001/api/customer/wishlist/${userId}`, {
+      const response = await fetch(getApiUrl(`/api/customer/wishlist/${userId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -178,7 +179,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
 
     try {
       const endpoint = isInWishlist ? 'remove-from-wishlist' : 'add-to-wishlist';
-      const response = await fetch(`http://localhost:3001/api/customer/${endpoint}`, {
+      const response = await fetch(getApiUrl(`/api/customer/${endpoint}`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -369,12 +370,12 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                     const selectedImage = product.images[selectedImageIndex] || product.image;
                     return selectedImage?.startsWith('http') 
                       ? selectedImage 
-                      : `http://localhost:3001/uploads/${selectedImage}`;
+                      : getImageUrl(selectedImage);
                   }
                   // Otherwise show the main product image
                   return product.image?.startsWith('http') 
                     ? product.image 
-                    : `http://localhost:3001/uploads/${product.image}`;
+                    : getImageUrl(product.image);
                 })()}
                 alt={product.name}
                 onError={(e) => {
@@ -397,7 +398,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                     key={index}
                     src={image?.startsWith('http') 
                       ? image 
-                      : `http://localhost:3001/uploads/${image}`
+                      : getImageUrl(image)
                     }
                     alt={`${product.name} view ${index + 1}`}
                     className={`thumbnail ${index === selectedImageIndex ? 'active' : ''}`}
