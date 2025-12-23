@@ -46,15 +46,30 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // MongoDB connection with environment variable
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+async function connectDB() {
+  try {
+    await mongoose.connect(MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+    });
+    console.log('✅ Connected to MongoDB');
+    console.log('📊 Database:', mongoose.connection.db.databaseName);
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error.message);
+    console.error('💡 Hint: Check if your IP is whitelisted in MongoDB Atlas');
+    console.error('⚠️  Server will continue running but database operations will fail');
+    // Don't exit - let the server run and show helpful error messages
+  }
+}
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-db.once('open', () => {
-  console.log('Connected to MongoDB');
+db.on('disconnected', () => {
+  console.log('MongoDB disconnected. Attempting to reconnect...');
+});
+db.on('connected', () => {
+  console.log('✅ MongoDB reconnected');
 });
 
 // Error handling middleware
@@ -250,6 +265,9 @@ app.listen(PORT, () => {
 }).on('error', (err) => {
   console.error('Server startup error:', err);
 });
+
+// Connect to MongoDB before starting the server
+connectDB();
 
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);

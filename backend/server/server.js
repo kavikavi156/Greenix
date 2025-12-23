@@ -69,17 +69,29 @@ if (NODE_ENV === 'development') {
   });
 }
 
-// MongoDB Connection
-mongoose.connect(MONGODB_URI, {
+// MongoDB Connection with better error handling
+const mongoOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+  bufferCommands: false, // Disable buffering to fail fast
+  tls: true,
+  tlsAllowInvalidCertificates: true, // For development only
+  tlsAllowInvalidHostnames: true, // For development only
+};
+
+mongoose.connect(MONGODB_URI, mongoOptions).catch(err => {
+  console.error('❌ Initial MongoDB connection error:', err.message);
+  console.log('⚠️  Server will continue running, but database operations will fail');
 });
 
 const db = mongoose.connection;
 
 db.on('error', (error) => {
-  console.error('❌ MongoDB connection error:', error);
-  process.exit(1);
+  console.error('❌ MongoDB connection error:', error.message);
+  // Don't exit - let server continue running
+  console.log('⚠️  Database operations will fail until connection is restored');
 });
 
 db.once('open', () => {
@@ -228,20 +240,28 @@ app.use((err, req, res, next) => {
 });
 
 // Graceful shutdown handling
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('📛 SIGTERM received. Shutting down gracefully...');
-  mongoose.connection.close(() => {
+  try {
+    await mongoose.connection.close();
     console.log('📊 MongoDB connection closed.');
     process.exit(0);
-  });
+  } catch (err) {
+    console.error('Error closing MongoDB:', err.message);
+    process.exit(1);
+  }
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('📛 SIGINT received. Shutting down gracefully...');
-  mongoose.connection.close(() => {
+  try {
+    await mongoose.connection.close();
     console.log('📊 MongoDB connection closed.');
     process.exit(0);
-  });
+  } catch (err) {
+    console.error('Error closing MongoDB:', err.message);
+    process.exit(1);
+  }
 });
 
 // Handle uncaught exceptions

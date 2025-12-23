@@ -87,10 +87,24 @@ router.get('/', async (req, res) => {
     console.error('Error stack:', error.stack);
     console.error('MongoDB connection state:', require('mongoose').connection.readyState);
     
+    // Provide helpful error message based on connection state
+    const mongoState = require('mongoose').connection.readyState;
+    let errorMessage = 'Failed to fetch products';
+    let hint = '';
+    
+    if (mongoState === 0) {
+      errorMessage = 'Database not connected';
+      hint = 'MongoDB connection is not established. Please check MongoDB Atlas IP whitelist or connection string.';
+    } else if (mongoState === 2) {
+      errorMessage = 'Database is connecting';
+      hint = 'MongoDB is still connecting. Please wait a moment and try again.';
+    }
+    
     res.status(500).json({ 
-      error: 'Failed to fetch products',
+      error: errorMessage,
+      hint: hint,
       details: error.message,
-      mongoState: require('mongoose').connection.readyState,
+      mongoState: mongoState,
       timestamp: new Date().toISOString()
     });
   }

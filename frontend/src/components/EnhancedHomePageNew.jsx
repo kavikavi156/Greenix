@@ -76,11 +76,18 @@ export default function EnhancedHomePage() {
   async function fetchProducts() {
     try {
       const response = await fetch('http://localhost:3001/api/products');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       console.log('Fetched products:', data);
-      setProducts(data.products || data || []);
+      // Ensure we always set an array
+      const productsArray = Array.isArray(data) ? data : (Array.isArray(data.products) ? data.products : []);
+      setProducts(productsArray);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setProducts([]); // Set empty array on error
+      setToast({ visible: true, title: 'Error', message: 'Failed to load products. Please try again.', type: 'error' });
     }
   }
 
@@ -108,6 +115,13 @@ export default function EnhancedHomePage() {
   }
 
   function filterAndSortProducts() {
+    // Ensure products is an array before filtering
+    if (!Array.isArray(products)) {
+      console.error('Products is not an array:', products);
+      setFilteredProducts([]);
+      return;
+    }
+    
     let filtered = products;
     console.log('Filtering products:', { 
       totalProducts: products.length, 
