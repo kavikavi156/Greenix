@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getApiUrl } from '../config/api';
 
 export default function SignupForm({ role, onSignup }) {
   const [formData, setFormData] = useState({
@@ -203,7 +204,7 @@ export default function SignupForm({ role, onSignup }) {
         role 
       });
       
-      const res = await fetch('http://localhost:3001/api/auth/register', {
+      const res = await fetch(getApiUrl('/api/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
