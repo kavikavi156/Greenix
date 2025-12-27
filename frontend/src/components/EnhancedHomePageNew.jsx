@@ -23,6 +23,7 @@ export default function EnhancedHomePage() {
   const [cartItems, setCartItems] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [toast, setToast] = useState({ visible: false, title: '', message: '', type: 'info' });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   // Helper function to get product icon based on category
@@ -110,9 +111,9 @@ export default function EnhancedHomePage() {
 
   function filterAndSortProducts() {
     let filtered = products;
-    console.log('Filtering products:', { 
-      totalProducts: products.length, 
-      selectedCategory, 
+    console.log('Filtering products:', {
+      totalProducts: products.length,
+      selectedCategory,
       searchTerm,
       availableCategories: [...new Set(products.map(p => p.category))]
     });
@@ -163,7 +164,7 @@ export default function EnhancedHomePage() {
       navigate('/login');
       return;
     }
-    
+
     try {
       const token = localStorage.getItem('customerToken');
       const decodedToken = jwtDecode(token);
@@ -228,220 +229,217 @@ export default function EnhancedHomePage() {
   return (
     <div className="enhanced-home">
       <ProfessionalToast visible={toast.visible} title={toast.title} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, visible: false })} />
-      {/* Professional Header */}
-      <header className="home-header">
-        <div className="header-content">
-          <div className="logo-section">
-            <Link to="/" className="logo">
-              <span className="logo-icon">🌾</span>
-              <span>Pavithra Traders</span>
+
+      {/* Fresh Flow Header */}
+      <header className="fresh-flow-header">
+        <div className="header-top">
+          <div className="header-container">
+            {/* Logo */}
+            <Link to="/" className="fresh-logo">
+              <svg className="leaf-icon" width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <path d="M20 5C20 5 8 10 8 22C8 28 12 32 18 34C18 34 15 28 18 24C21 20 20 15 20 15C20 15 19 20 22 24C25 28 22 34 22 34C28 32 32 28 32 22C32 10 20 5 20 5Z" fill="currentColor" />
+              </svg>
+              <div className="logo-text">
+                <span className="brand-name">Greenixx</span>
+              </div>
             </Link>
-          </div>
-          
-          <div className="nav-actions">
-            <div className="search-container">
-              <span className="search-icon">🔍</span>
+
+            {/* Search Bar */}
+            <div className="header-search">
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder="Search for fertilizers, seeds, pesticides..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
               />
+              <button className="search-button">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M9 17A8 8 0 1 0 9 1a8 8 0 0 0 0 16zM19 19l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
             </div>
-            
-            <div className="user-actions">
-              {isLoggedIn ? (
-                <>
-                  <div className="user-welcome">
-                    <span className="user-greeting">Welcome, {user?.name || 'Customer'}</span>
-                  </div>
-                  <div className="cart-wishlist-icons">
-                    <button 
-                      onClick={() => setShowCart(true)}
-                      className="icon-button"
-                    >
-                      🛒
-                      {cartCount > 0 && <span className="count-badge">{cartCount}</span>}
+
+            {/* User Actions */}
+            <div className="header-actions">
+              <button className="icon-action" title="Wishlist">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>Wishlist</span>
+              </button>
+
+              <button
+                onClick={() => setShowCart(true)}
+                className="icon-action cart-action"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 2L7.17 4H3a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-4.17L15 2H9zm-6 6v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8H3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>Cart</span>
+                {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+              </button>
+
+              <div className="user-profile">
+                {isLoggedIn ? (
+                  <div className="profile-menu">
+                    <button className="profile-button">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <div className="profile-info">
+                        <span className="profile-name">{user?.name || 'User'}</span>
+                        <span className="profile-email">{user?.email?.substring(0, 20) || ''}</span>
+                      </div>
                     </button>
-                    <button 
-                      onClick={() => setShowMyOrders(true)}
-                      className="icon-button"
-                    >
-                      📦
-                    </button>
+                    <div className="profile-dropdown">
+                      <button onClick={() => setShowMyOrders(true)} className="dropdown-item">
+                        📦 My Orders
+                      </button>
+                      <button
+                        onClick={() => {
+                          localStorage.removeItem('customerToken');
+                          setIsLoggedIn(false);
+                          setCartCount(0);
+                          setUser(null);
+                        }}
+                        className="dropdown-item logout"
+                      >
+                        🚪 Logout
+                      </button>
+                    </div>
                   </div>
-                  <button 
-                    onClick={() => {
-                      localStorage.removeItem('customerToken');
-                      setIsLoggedIn(false);
-                      setCartCount(0);
-                      setUser(null);
-                    }} 
-                    className="auth-button logout-button"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <Link to="/login" className="auth-button login-button">
-                  Login
-                </Link>
-              )}
+                ) : (
+                  <Link to="/login" className="login-link">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </Link>
+                )}
+              </div>
             </div>
+            {/* Mobile Menu Toggle */}
+            <button
+              className="mobile-menu-toggle"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle Menu"
+            >
+              <span className="hamburger-icon">{isMobileMenuOpen ? '✕' : '☰'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation Menu */}
+        <div className={`header-nav ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+          <div className="header-container">
+            <nav className="main-nav">
+              <button
+                className={selectedCategory === 'all' ? 'nav-item active' : 'nav-item'}
+                onClick={() => setSelectedCategory('all')}
+              >
+                All Products
+              </button>
+              <button
+                className={selectedCategory === 'fertilizers' ? 'nav-item active' : 'nav-item'}
+                onClick={() => setSelectedCategory('fertilizers')}
+              >
+                Fertilizers
+              </button>
+              <button
+                className={selectedCategory === 'seeds' ? 'nav-item active' : 'nav-item'}
+                onClick={() => setSelectedCategory('seeds')}
+              >
+                Seeds
+              </button>
+              <button
+                className={selectedCategory === 'pesticides' ? 'nav-item active' : 'nav-item'}
+                onClick={() => setSelectedCategory('pesticides')}
+              >
+                Pesticides
+              </button>
+              <button
+                className={selectedCategory === 'tools' ? 'nav-item active' : 'nav-item'}
+                onClick={() => setSelectedCategory('tools')}
+              >
+                Tools & Equipment
+              </button>
+              <button
+                className={selectedCategory === 'organic' ? 'nav-item active' : 'nav-item'}
+                onClick={() => setSelectedCategory('organic')}
+              >
+                Organic Products
+              </button>
+              <Link to="/admin" className="admin-dashboard-btn">
+                <span className="admin-icon">⚙️</span>
+                Admin Dashboard
+              </Link>
+            </nav>
           </div>
         </div>
       </header>
 
-      {/* Fertilizer Shop Welcome Banner */}
-      <div className="fertilizer-welcome-banner">
-        <div className="welcome-content">
-          <div className="welcome-text-section">
-            <div className="welcome-header">
-              <h1 className="shop-title">
-                {isLoggedIn ? (
-                  <>Welcome back to Pavithra Traders, {user?.name || 'Valued Customer'}! 🌾</>
-                ) : (
-                  <>Welcome to Pavithra Traders - Your Premium Fertilizer & Agricultural Store! 🌱</>
-                )}
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="hero-container">
+          <div className="hero-content">
+            <div className="hero-text">
+              <h1 className="hero-title">
+                Premium Agricultural
+                <br />
+                <span className="hero-title-highlight">Solutions</span>
               </h1>
-              <p className="shop-subtitle">
-                {isLoggedIn ? (
-                  "Discover the finest fertilizers, seeds, and agricultural products to boost your farm's productivity. Your success is our mission!"
-                ) : (
-                  "Empowering farmers with premium quality fertilizers, seeds, and agricultural solutions since 1995. Join thousands of successful farmers who trust us for their farming needs."
-                )}
+              <p className="hero-subtitle">
+                Empowering Farmers Nationwide
               </p>
+              <p className="hero-description">
+                Quality fertilizers, seeds, and agricultural products for maximum crop yield. Trusted by thousands of farmers for over 25 years.
+              </p>
+              <button className="shop-now-btn">
+                Shop Now
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
             </div>
 
-            {/* Shop Highlights */}
-            <div className="shop-highlights">
-              <div className="highlight-card">
-                <div className="highlight-icon">🌾</div>
-                <h3>Premium Fertilizers</h3>
-                <p>Organic, bio, and chemical fertilizers from trusted brands to maximize your crop yield</p>
-              </div>
-              <div className="highlight-card">
-                <div className="highlight-icon">🌱</div>
-                <h3>Quality Seeds</h3>
-                <p>High-yielding, disease-resistant seed varieties for all major crops and seasons</p>
-              </div>
-              <div className="highlight-card">
-                <div className="highlight-icon">🛡️</div>
-                <p>Advanced crop protection solutions including pesticides, herbicides, and fungicides</p>
-              </div>
-              <div className="highlight-card">
-                <div className="highlight-icon">🚜</div>
-                <h3>Farm Equipment</h3>
-                <p>Modern tools and equipment to increase efficiency and reduce manual labor</p>
-              </div>
-            </div>
-
-            {/* Shop Stats */}
-            <div className="shop-stats">
-              <div className="stat-box">
-                <span className="stat-number">25+</span>
-                <span className="stat-label">Years Serving Farmers</span>
-              </div>
-              <div className="stat-box">
-                <span className="stat-number">10,000+</span>
-                <span className="stat-label">Happy Customers</span>
-              </div>
-              <div className="stat-box">
-                <span className="stat-number">500+</span>
-                <span className="stat-label">Premium Products</span>
-              </div>
-              <div className="stat-box">
-                <span className="stat-number">100%</span>
-                <span className="stat-label">Quality Guarantee</span>
-              </div>
-            </div>
-
-            {/* Call to Action */}
-            {!isLoggedIn && (
-              <div className="welcome-cta">
-                <Link to="/login" className="cta-btn primary">
-                  🌾 Start Shopping Today
-                </Link>
-                <a href="#products" className="cta-btn secondary">
-                  🛍️ Browse Products
-                </a>
-              </div>
-            )}
-
-            {isLoggedIn && (
-              <div className="user-welcome-actions">
-                <div className="user-stats">
-                  <div className="user-stat">
-                    <span className="stat-icon">🛒</span>
-                    <div className="stat-info">
-                      <span className="stat-value">{cartCount}</span>
-                      <span className="stat-name">Items in Cart</span>
+            <div className="hero-image">
+              <div className="hero-image-wrapper">
+                {/* Agricultural products showcase */}
+                <div className="agri-showcase">
+                  <div className="agri-visual">
+                    <div className="agri-circle circle-1">
+                      <div className="agri-icon">🌾</div>
+                      <span className="agri-label">Seeds</span>
+                    </div>
+                    <div className="agri-circle circle-2">
+                      <div className="agri-icon">🌱</div>
+                      <span className="agri-label">Fertilizers</span>
+                    </div>
+                    <div className="agri-circle circle-3">
+                      <div className="agri-icon">🚜</div>
+                      <span className="agri-label">Equipment</span>
+                    </div>
+                    <div className="agri-circle circle-4">
+                      <div className="agri-icon">💧</div>
+                      <span className="agri-label">Irrigation</span>
                     </div>
                   </div>
-                  <div className="user-stat">
-                    <span className="stat-icon">⭐</span>
-                    <div className="stat-info">
-                      <span className="stat-value">4.9</span>
-                      <span className="stat-name">Your Rating</span>
+                  <div className="agri-stats">
+                    <div className="stat-badge">
+                      <span className="stat-number">25+</span>
+                      <span className="stat-text">Years</span>
                     </div>
-                  </div>
-                  <div className="user-stat">
-                    <span className="stat-icon">🏆</span>
-                    <div className="stat-info">
-                      <span className="stat-value">Gold</span>
-                      <span className="stat-name">Member Status</span>
+                    <div className="stat-badge">
+                      <span className="stat-number">10K+</span>
+                      <span className="stat-text">Farmers</span>
                     </div>
                   </div>
                 </div>
-                
-                <div className="quick-action-buttons">
-                  <button 
-                    onClick={() => setShowCart(true)}
-                    className="quick-btn cart-btn"
-                  >
-                    🛒 View Cart ({cartCount})
-                  </button>
-                  <button 
-                    onClick={() => setShowMyOrders(true)}
-                    className="quick-btn orders-btn"
-                  >
-                    📦 My Orders
-                  </button>
-                </div>
               </div>
-            )}
-
-            {/* Special Offer Alert */}
-            <div className="special-offer-alert">
-              <div className="offer-content">
-                <span className="offer-icon">🎉</span>
-                <div className="offer-text">
-                  <strong>October Special Offer!</strong>
-                  <p>Get up to 20% off on premium fertilizers and 15% off on hybrid seeds. Perfect timing for winter crop season!</p>
-                </div>
-                <div className="offer-badge">Limited Time</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Visual Elements */}
-          <div className="welcome-visuals">
-            <div className="floating-farm-icons">
-              <span className="farm-icon icon-1">🌾</span>
-              <span className="farm-icon icon-2">🚜</span>
-              <span className="farm-icon icon-3">🌱</span>
-              <span className="farm-icon icon-4">🌿</span>
-              <span className="farm-icon icon-5">🌻</span>
-              <span className="farm-icon icon-6">🥕</span>
-            </div>
-            <div className="shop-badge">
-              <span className="badge-text">Trusted Since</span>
-              <span className="badge-year">1995</span>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Products Section */}
       <div className="products-section">
@@ -449,19 +447,19 @@ export default function EnhancedHomePage() {
           <h2>Our Products</h2>
           <p>Premium quality agricultural products for your farming needs</p>
         </div>
-        
+
         <div className="products-grid">
           {filteredProducts.length > 0 ? (
             filteredProducts.map(product => (
               <div key={product._id} className="product-card">
-                <div 
+                <div
                   className="product-image-container"
                   onClick={() => handleProductClick(product._id)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <img 
-                    src={product.image?.startsWith('http') 
-                      ? product.image 
+                  <img
+                    src={product.image?.startsWith('http')
+                      ? product.image
                       : getImageUrl(product.image)
                     }
                     alt={product.name}
@@ -480,8 +478,8 @@ export default function EnhancedHomePage() {
                     {product.stock > 10 ? 'In Stock' : product.stock > 0 ? `${product.stock} left` : 'Out of Stock'}
                   </div>
                 </div>
-                
-                <div 
+
+                <div
                   className="product-info"
                   onClick={() => handleProductClick(product._id)}
                   style={{ cursor: 'pointer' }}
@@ -491,10 +489,10 @@ export default function EnhancedHomePage() {
                   <p className="product-description">{product.description?.substring(0, 100)}...</p>
                   <div className="product-price">₹{product.price}</div>
                   <div className="view-details-hint">👁️ Click to view details</div>
-                  
+
                   <div className="product-actions">
                     {product.stock > 0 ? (
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleAddToCart(product._id);
@@ -504,7 +502,7 @@ export default function EnhancedHomePage() {
                         🛒 Add to Cart
                       </button>
                     ) : (
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handlePreorder(product._id);
@@ -528,8 +526,8 @@ export default function EnhancedHomePage() {
       </div>
 
       {/* Enhanced Cart Component */}
-      <EnhancedCart 
-        isOpen={showCart} 
+      <EnhancedCart
+        isOpen={showCart}
         onClose={() => setShowCart(false)}
         onCartUpdate={(count) => {
           console.log('Cart count updated to:', count);
@@ -539,9 +537,9 @@ export default function EnhancedHomePage() {
 
       {/* My Orders Component */}
       {showMyOrders && (
-        <MyOrders 
-          token={localStorage.getItem('customerToken')} 
-          onClose={() => setShowMyOrders(false)} 
+        <MyOrders
+          token={localStorage.getItem('customerToken')}
+          onClose={() => setShowMyOrders(false)}
         />
       )}
 
@@ -585,9 +583,9 @@ export default function EnhancedHomePage() {
         }}>
           {/* Company Info */}
           <div>
-            <h3 style={{ 
-              margin: '0 0 16px 0', 
-              fontSize: '20px', 
+            <h3 style={{
+              margin: '0 0 16px 0',
+              fontSize: '20px',
               fontWeight: '600',
               display: 'flex',
               alignItems: 'center',
@@ -595,28 +593,28 @@ export default function EnhancedHomePage() {
             }}>
               🌱 Pavithra Traders
             </h3>
-            <p style={{ 
-              margin: '0 0 16px 0', 
-              lineHeight: '1.6', 
+            <p style={{
+              margin: '0 0 16px 0',
+              lineHeight: '1.6',
               opacity: '0.9',
               fontSize: '14px'
             }}>
-              Leading supplier of high-quality agricultural products, seeds, fertilizers, and farming tools. 
+              Leading supplier of high-quality agricultural products, seeds, fertilizers, and farming tools.
               Committed to supporting farmers with premium products for better yields.
             </p>
             <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-              <span style={{ 
-                background: 'rgba(255, 255, 255, 0.2)', 
-                padding: '8px 12px', 
+              <span style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                padding: '8px 12px',
                 borderRadius: '20px',
                 fontSize: '12px',
                 fontWeight: '500'
               }}>
                 🏆 Premium Quality
               </span>
-              <span style={{ 
-                background: 'rgba(255, 255, 255, 0.2)', 
-                padding: '8px 12px', 
+              <span style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                padding: '8px 12px',
                 borderRadius: '20px',
                 fontSize: '12px',
                 fontWeight: '500'
@@ -634,14 +632,14 @@ export default function EnhancedHomePage() {
             <ul style={{ margin: '0', padding: '0', listStyle: 'none' }}>
               {['All Products', 'Seeds', 'Fertilizers', 'Herbicides', 'Tools', 'New Arrivals'].map(link => (
                 <li key={link} style={{ marginBottom: '8px' }}>
-                  <a href="#" style={{ 
-                    color: 'rgba(255, 255, 255, 0.8)', 
+                  <a href="#" style={{
+                    color: 'rgba(255, 255, 255, 0.8)',
                     textDecoration: 'none',
                     fontSize: '14px',
                     transition: 'color 0.2s ease'
                   }}
-                  onMouseEnter={(e) => e.target.style.color = '#ffffff'}
-                  onMouseLeave={(e) => e.target.style.color = 'rgba(255, 255, 255, 0.8)'}
+                    onMouseEnter={(e) => e.target.style.color = '#ffffff'}
+                    onMouseLeave={(e) => e.target.style.color = 'rgba(255, 255, 255, 0.8)'}
                   >
                     {link}
                   </a>
@@ -669,7 +667,7 @@ export default function EnhancedHomePage() {
                 🕒 Mon-Sat: 9:00 AM - 7:00 PM
               </p>
             </div>
-            
+
             {/* Social Links */}
             <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
               {['📘', '📷', '🐦', '📱'].map((icon, idx) => (
@@ -685,14 +683,14 @@ export default function EnhancedHomePage() {
                   fontSize: '16px',
                   transition: 'all 0.2s ease'
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-                  e.target.style.transform = 'scale(1.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-                  e.target.style.transform = 'scale(1)';
-                }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                    e.target.style.transform = 'scale(1.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                    e.target.style.transform = 'scale(1)';
+                  }}
                 >
                   {icon}
                 </a>

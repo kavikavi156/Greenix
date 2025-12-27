@@ -1,15 +1,16 @@
-/* Modern E-commerce Styles */
+/* Modern E-commerce Styles - Professional Blue Theme */
 :root {
   --primary-color: #2874f0;
   --secondary-color: #fb641b;
+  --accent-color: #2196F3;
   --success-color: #388e3c;
   --warning-color: #ff9800;
-  --danger-color: #f44336;
-  --dark-color: #212121;
-  --light-color: #fafafa;
-  --border-color: #e0e0e0;
-  --shadow: 0 2px 4px rgba(0,0,0,0.1);
-  --shadow-hover: 0 4px 12px rgba(0,0,0,0.15);
+  --danger-color: #dc2626;
+  --dark-color: #1f2937;
+  --light-color: #f8fafc;
+  --border-color: #d1d5db;
+  --shadow: 0 2px 8px rgba(40, 116, 240, 0.1);
+  --shadow-hover: 0 8px 24px rgba(40, 116, 240, 0.15);
   --border-radius: 8px;
 }
 
@@ -417,14 +418,15 @@
 }
 
 .btn-primary {
-  background: var(--secondary-color);
+  background: var(--primary-color);
   color: white;
   flex: 1;
 }
 
 .btn-primary:hover {
-  background: #e55a00;
+  background: #1565c0;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 116, 240, 0.3);
 }
 
 .btn-secondary {
@@ -437,6 +439,7 @@
 .btn-secondary:hover {
   background: var(--primary-color);
   color: white;
+  border-color: var(--primary-color);
 }
 
 .btn-wishlist {
@@ -803,8 +806,8 @@
 
 .form-input:focus {
   outline: none;
-  border-color: #2196F3;
-  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(40, 116, 240, 0.1);
 }
 
 .form-input:invalid {
@@ -845,8 +848,8 @@
 }
 
 .btn-outline:hover {
-  border-color: #2196F3;
-  color: #2196F3;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 .btn-spinner {
@@ -2613,11 +2616,11 @@
 
 .nav-btn:hover {
   background: #f5f5f5;
-  color: #2874f0;
+  color: var(--primary-color);
 }
 
 .nav-btn.active {
-  background: #2874f0;
+  background: var(--primary-color);
   color: white;
   box-shadow: 0 1px 3px rgba(40, 116, 240, 0.3);
 }
@@ -2745,10 +2748,10 @@
   text-align: center;
   margin-bottom: 40px;
   padding: 30px;
-  background: linear-gradient(135deg, var(--primary-color), #1976D2);
+  background: linear-gradient(135deg, #2874f0, #1976D2);
   color: #ffffff !important;
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(33, 150, 243, 0.3);
+  box-shadow: 0 8px 32px rgba(40, 116, 240, 0.3);
 }
 
 .admin-form-header h2 {
@@ -2977,13 +2980,13 @@ select:focus {
 
 .nav-btn:hover {
   background: #f5f5f5;
-  color: var(--primary-color);
+  color: #2874f0;
 }
 
 .nav-btn.active {
-  background: linear-gradient(135deg, var(--primary-color), #1976D2);
+  background: linear-gradient(135deg, #2874f0, #1976D2);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+  box-shadow: 0 4px 12px rgba(40, 116, 240, 0.3);
 }
 
 /* Section headers */
@@ -3275,7 +3278,7 @@ input[type="radio"] {
 }
 
 .btn-primary {
-  background: #2874f0;
+  background: var(--primary-color);
   color: #ffffff !important;
   border: none;
   padding: 14px 24px;
@@ -3314,7 +3317,7 @@ input[type="radio"] {
 
 /* Add and Remove buttons */
 .add-btn {
-  background: #2874f0;
+  background: var(--primary-color);
   color: #ffffff !important;
   border: none;
   padding: 10px 16px;
@@ -3378,7 +3381,7 @@ input[type="radio"] {
 }
 
 .add-category-btn {
-  background: #2874f0;
+  background: var(--primary-color);
   color: #ffffff !important;
   border: none;
   padding: 12px 16px;
@@ -4016,7 +4019,7 @@ input[type="radio"] {
   width: 50px;
   height: 50px;
   border: 4px solid #f0f0f0;
-  border-top: 4px solid #2874f0;
+  border-top: 4px solid var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
