@@ -267,11 +267,13 @@ body {
   min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
+  font-size: 16px;
 }
 
 #root {
   min-height: 100vh;
   width: 100%;
+  font-size: 16px;
 }
 
 /* Flipkart-inspired Header */
@@ -289,12 +291,12 @@ body {
   border-bottom: 2px solid #388e3c;
 }
 .flipkart-nav {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1rem;
+  padding: 0 2rem;
 }
 .flipkart-logo {
   font-size: 1.8rem;
@@ -388,9 +390,9 @@ body {
   padding: 2rem 0;
 }
 .flipkart-container {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 2rem;
 }
 .flipkart-features {
   display: grid;
@@ -447,9 +449,9 @@ body {
   font-size: 0.9rem;
 }
 .flipkart-footer-content {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 2rem;
 }
 .flipkart-footer p {
   margin: 0;
@@ -1531,4 +1533,42 @@ body {
 .checkbox-group input[type="checkbox"]:hover {
   border-color: #4caf50;
   box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+}
+
+/* Improved image responsiveness and mobile layout tweaks */
+.product-image img,
+.product-image .product-image-container img,
+.image-preview img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Make horizontal product lists stack on small screens */
+.products-scroll {
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .products-scroll {
+    flex-direction: column;
+    overflow-x: visible;
+  }
+  .product-card-horizontal, .product-card {
+    min-width: auto;
+    max-width: 100%;
+    width: 100%;
+  }
+  .product-image {
+    height: 180px;
+  }
+  .flipkart-nav {
+    padding: 0 12px;
+  }
+  .flipkart-hero h1 {
+    font-size: 1.6rem;
+  }
+  .flipkart-container {
+    padding: 0 12px;
+  }
 }

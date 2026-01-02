@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import '../css/EnhancedAdminDashboard.css';
+import { getImageUrl } from '../config/api';
 
 export default function EnhancedAdminDashboard({ token, onLogout }) {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -125,8 +126,8 @@ export default function EnhancedAdminDashboard({ token, onLogout }) {
                     <img 
                       src={
                         product.images?.length > 0 
-                          ? (product.images[0].startsWith('http') ? product.images[0] : `http://localhost:3001/uploads/${product.images[0].replace(/^\/uploads\//, '')}`)
-                          : (product.image.startsWith('http') ? product.image : `http://localhost:3001/uploads/${product.image.replace(/^\/uploads\//, '')}`)
+                          ? (product.images[0].startsWith('http') ? product.images[0] : getImageUrl(product.images[0]))
+                          : (product.image.startsWith('http') ? product.image : getImageUrl(product.image))
                       }
                       alt={product.name}
                     />
@@ -224,8 +225,8 @@ export default function EnhancedAdminDashboard({ token, onLogout }) {
                   <img 
                     src={
                       product.images?.length > 0 
-                        ? (product.images[0].startsWith('http') ? product.images[0] : `http://localhost:3001/uploads/${product.images[0].replace(/^\/uploads\//, '')}`)
-                        : (product.image.startsWith('http') ? product.image : `http://localhost:3001/uploads/${product.image.replace(/^\/uploads\//, '')}`)
+                        ? (product.images[0].startsWith('http') ? product.images[0] : getImageUrl(product.images[0]))
+                        : (product.image.startsWith('http') ? product.image : getImageUrl(product.image))
                     }
                     alt={product.name}
                   />

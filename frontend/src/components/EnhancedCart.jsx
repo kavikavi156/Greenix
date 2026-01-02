@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import '../css/EnhancedCart.css';
+import { getImageUrl } from '../config/api';
 
 export default function EnhancedCart({ isOpen, onClose, onCartUpdate }) {
   const [cartItems, setCartItems] = useState([]);
@@ -23,7 +24,7 @@ export default function EnhancedCart({ isOpen, onClose, onCartUpdate }) {
   const fetchCartItems = async () => {
     setLoading(true);
     setError('');
-    
+
     try {
       const token = localStorage.getItem('customerToken');
       if (!token) {
@@ -50,14 +51,14 @@ export default function EnhancedCart({ isOpen, onClose, onCartUpdate }) {
 
       const data = await response.json();
       console.log('Cart data received:', data);
-      
+
       // Filter out items with invalid or null products
-      const validItems = (data.items || []).filter(item => 
+      const validItems = (data.items || []).filter(item =>
         item.product && item.product._id
       );
-      
+
       setCartItems(validItems);
-      
+
       // Notify parent component about cart update
       if (onCartUpdate) {
         onCartUpdate(validItems.length);
@@ -139,21 +140,21 @@ export default function EnhancedCart({ isOpen, onClose, onCartUpdate }) {
       alert('Your cart is empty');
       return;
     }
-    
+
     const token = localStorage.getItem('customerToken');
     if (!token) {
       alert('Please login to proceed with checkout');
       navigate('/login');
       return;
     }
-    
+
     // Navigate to checkout page with cart data
-    navigate('/checkout', { 
-      state: { 
-        cartItems, 
+    navigate('/checkout', {
+      state: {
+        cartItems,
         totalAmount: total,
-        token 
-      } 
+        token
+      }
     });
     onClose(); // Close the cart overlay
   };
@@ -194,8 +195,8 @@ export default function EnhancedCart({ isOpen, onClose, onCartUpdate }) {
           <h2>🛒 Shopping Cart</h2>
           <div className="cart-header-actions">
             {cartItems.length > 0 && (
-              <button 
-                onClick={cleanupCart} 
+              <button
+                onClick={cleanupCart}
                 className="cleanup-btn"
                 title="Clean up invalid items"
               >
@@ -208,9 +209,9 @@ export default function EnhancedCart({ isOpen, onClose, onCartUpdate }) {
 
         <div className="cart-body">
           {loading && <div className="cart-loading">Loading cart items...</div>}
-          
+
           {error && <div className="cart-error">{error}</div>}
-          
+
           {!loading && !error && cartItems.length === 0 && (
             <div className="cart-empty">
               <p>Your cart is empty</p>
@@ -227,11 +228,8 @@ export default function EnhancedCart({ isOpen, onClose, onCartUpdate }) {
                   <div key={item._id} className="cart-item">
                     <div className="cart-item-image">
                       {item.product?.image ? (
-                        <img 
-                          src={item.product?.image?.startsWith('http') 
-                            ? item.product?.image 
-                            : `http://localhost:3001/uploads/${item.product?.image}`
-                          }
+                        <img
+                          src={getImageUrl(item.product?.image)}
                           alt={item.product?.name || 'Product'}
                           onError={(e) => {
                             e.target.style.display = 'none';
@@ -243,19 +241,19 @@ export default function EnhancedCart({ isOpen, onClose, onCartUpdate }) {
                         📦
                       </div>
                     </div>
-                    
+
                     <div className="cart-item-details">
                       <h4>{item.product?.name || 'Unknown Product'}</h4>
                       <p className="cart-item-price">₹{item.product?.price || 0}</p>
                       <div className="cart-item-quantity">
-                        <button 
+                        <button
                           onClick={() => updateQuantity(item.product?._id, item.quantity - 1)}
                           className="quantity-btn"
                         >
                           -
                         </button>
                         <span className="quantity-display">{item.quantity}</span>
-                        <button 
+                        <button
                           onClick={() => updateQuantity(item.product?._id, item.quantity + 1)}
                           className="quantity-btn"
                         >
@@ -263,10 +261,10 @@ export default function EnhancedCart({ isOpen, onClose, onCartUpdate }) {
                         </button>
                       </div>
                     </div>
-                    
+
                     <div className="cart-item-total">
                       <p>₹{(item.product?.price || 0) * item.quantity}</p>
-                      <button 
+                      <button
                         onClick={() => removeItem(item.product?._id)}
                         className="remove-item-btn"
                       >

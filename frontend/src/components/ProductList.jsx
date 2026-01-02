@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import '../css/EcommerceStyles.css';
 import ProductDetails from './ProductDetails';
+import { getImageUrl } from '../config/api';
 
 export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, onEdit }) {
   const [products, setProducts] = useState([]);
@@ -10,7 +11,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
   const [error, setError] = useState('');
   const [wishlist, setWishlist] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState(null);
-  
+
   // Filter states
   const [filters, setFilters] = useState({
     category: 'all',
@@ -19,7 +20,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
     minPrice: '',
     maxPrice: ''
   });
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [productsPerPage] = useState(12);
@@ -54,17 +55,17 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
     try {
       const res = await fetch('http://localhost:3001/api/products');
       console.log('Products response status:', res.status);
-      
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const data = await res.json();
       console.log('Products data received:', data);
-      
+
       // Handle both old and new API response formats
       const productsArray = data.products || data;
-      
+
       if (Array.isArray(productsArray) && productsArray.length > 0) {
         setProducts(productsArray);
         setError('');
@@ -98,22 +99,22 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
 
   function applyFilters() {
     let filtered = [...products];
-    
+
     // Category filter
     if (filters.category !== 'all') {
       filtered = filtered.filter(product => product.category === filters.category);
     }
-    
+
     // Search filter
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
-      filtered = filtered.filter(product => 
+      filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(searchTerm) ||
         product.description?.toLowerCase().includes(searchTerm) ||
         product.brand?.toLowerCase().includes(searchTerm)
       );
     }
-    
+
     // Price range filter
     if (filters.minPrice) {
       filtered = filtered.filter(product => product.price >= Number(filters.minPrice));
@@ -121,7 +122,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
     if (filters.maxPrice) {
       filtered = filtered.filter(product => product.price <= Number(filters.maxPrice));
     }
-    
+
     // Sorting
     filtered.sort((a, b) => {
       switch (filters.sort) {
@@ -139,7 +140,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
           return a.name.localeCompare(b.name);
       }
     });
-    
+
     setFilteredProducts(filtered);
     setCurrentPage(1); // Reset to first page when filters change
   }
@@ -153,12 +154,12 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
     try {
       const isInWishlist = wishlist.includes(productId);
       const method = isInWishlist ? 'DELETE' : 'POST';
-      
+
       const res = await fetch(`http://localhost:3001/api/customer/wishlist/${userId}/${productId}`, {
         method,
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (res.ok) {
         if (isInWishlist) {
           setWishlist(prev => prev.filter(id => id !== productId));
@@ -209,10 +210,10 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
         },
         body: JSON.stringify({ enabled: !currentStatus }),
       });
-      
+
       if (res.ok) {
         const updatedProduct = await res.json();
-        setProducts(prev => prev.map(p => 
+        setProducts(prev => prev.map(p =>
           p._id === productId ? { ...p, prebookingEnabled: updatedProduct.prebookingEnabled } : p
         ));
       } else {
@@ -235,7 +236,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5;
-    
+
     for (let i = 0; i < fullStars; i++) {
       stars.push(<span key={i}>★</span>);
     }
@@ -245,7 +246,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
     while (stars.length < 5) {
       stars.push(<span key={`empty-${stars.length}`}>☆</span>);
     }
-    
+
     return stars;
   }
 
@@ -286,10 +287,10 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
               onChange={(e) => handleFilterChange('search', e.target.value)}
             />
           </div>
-          
+
           <div className="filter-group">
             <label>Category</label>
-            <select 
+            <select
               className="filter-select"
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
@@ -301,10 +302,10 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
               <option value="Fertilizers">Fertilizers</option>
             </select>
           </div>
-          
+
           <div className="filter-group">
             <label>Sort By</label>
-            <select 
+            <select
               className="filter-select"
               value={filters.sort}
               onChange={(e) => handleFilterChange('sort', e.target.value)}
@@ -317,7 +318,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
               <option value="newest">Newest First</option>
             </select>
           </div>
-          
+
           <div className="filter-group">
             <label>Price Range</label>
             <div style={{ display: 'flex', gap: '5px' }}>
@@ -359,18 +360,21 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
         {currentProducts.map((product) => {
           const stockStatus = getStockStatus(product.stock);
           const isInWishlist = wishlist.includes(product._id);
-          
+
           return (
             <div key={product._id} className="product-card">
-              <div 
+              <div
                 className="product-image-container"
                 onClick={() => setSelectedProductId(product._id)}
                 style={{ cursor: 'pointer' }}
               >
-                <img 
-                  src={product.image || 'https://via.placeholder.com/300x250?text=No+Image'} 
+                <img
+                  src={getImageUrl(product.image) || 'https://via.placeholder.com/300x250?text=No+Image'}
                   alt={product.name}
                   className="product-image"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/300x250?text=Error+Loading';
+                  }}
                 />
                 {product.discount > 0 && (
                   <div className="discount-badge">
@@ -378,7 +382,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
                   </div>
                 )}
                 {!isAdmin && (
-                  <button 
+                  <button
                     className={`wishlist-btn ${isInWishlist ? 'active' : ''}`}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -390,8 +394,8 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
                   </button>
                 )}
               </div>
-              
-              <div 
+
+              <div
                 className="product-info"
                 onClick={() => setSelectedProductId(product._id)}
                 style={{ cursor: 'pointer' }}
@@ -399,9 +403,9 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
                 {product.brand && (
                   <div className="product-brand">{product.brand}</div>
                 )}
-                
+
                 <h3 className="product-name">{product.name}</h3>
-                
+
                 {product.rating && (
                   <div className="product-rating">
                     <div className="rating-stars">
@@ -412,7 +416,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
                     </span>
                   </div>
                 )}
-                
+
                 <div className="product-pricing">
                   <span className="current-price">₹{product.price}</span>
                   {product.originalPrice && product.originalPrice > product.price && (
@@ -422,7 +426,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
                     </>
                   )}
                 </div>
-                
+
                 <div className={`stock-status ${stockStatus.status}`}>
                   <div className="stock-indicator"></div>
                   <span>{stockStatus.text}</span>
@@ -432,7 +436,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
                     </span>
                   )}
                 </div>
-                
+
                 {product.features && product.features.length > 0 && (
                   <div className="product-features">
                     {product.features.slice(0, 3).map((feature, index) => (
@@ -440,19 +444,19 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
                     ))}
                   </div>
                 )}
-                
+
                 <div className="product-actions">
                   {!isAdmin ? (
                     <>
                       {product.stock > 0 ? (
-                        <button 
+                        <button
                           className="btn btn-primary"
                           onClick={() => handleAddToCartClick(product._id)}
                         >
                           🛒 Add to Cart
                         </button>
                       ) : (
-                        <button 
+                        <button
                           className="btn btn-warning"
                           onClick={() => onPrebook && onPrebook(product._id)}
                         >
@@ -462,7 +466,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
                     </>
                   ) : (
                     <div className="admin-actions">
-                      <button 
+                      <button
                         className="btn btn-secondary"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -471,7 +475,7 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
                       >
                         Edit
                       </button>
-                      <button 
+                      <button
                         className="btn btn-danger"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -501,19 +505,19 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="pagination">
-          <button 
+          <button
             className="pagination-btn"
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
             ← Previous
           </button>
-          
+
           {[...Array(totalPages)].map((_, index) => {
             const page = index + 1;
             if (
-              page === 1 || 
-              page === totalPages || 
+              page === 1 ||
+              page === totalPages ||
               (page >= currentPage - 1 && page <= currentPage + 1)
             ) {
               return (
@@ -530,8 +534,8 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
             }
             return null;
           })}
-          
-          <button 
+
+          <button
             className="pagination-btn"
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}

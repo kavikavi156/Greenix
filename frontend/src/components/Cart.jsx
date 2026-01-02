@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import '../css/EcommerceStyles.css';
 import Checkout from './Checkout';
+import { getImageUrl } from '../config/api';
 
 export default function Cart({ token, onClose }) {
   const [cart, setCart] = useState([]);
@@ -268,8 +269,8 @@ export default function Cart({ token, onClose }) {
                         <img 
                           src={
                             product.images && product.images.length > 0
-                              ? `http://localhost:3001/uploads/product.images[0]`
-                              : 'https://via.placeholder.com/150x150?text=No+Image'
+                              ? getImageUrl(product.images[0])
+                              : (product.image ? getImageUrl(product.image) : 'https://via.placeholder.com/150x150?text=No+Image')
                           } 
                           alt={product.name}
                           onError={(e) => {

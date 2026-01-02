@@ -4,6 +4,7 @@ import { jwtDecode } from 'jwt-decode';
 import EnhancedCart from './EnhancedCart.jsx';
 import MyOrders from './MyOrders.jsx';
 import ProductDetails from './ProductDetails.jsx';
+import ChatBot from './ChatBot.jsx';
 import '../css/ProfessionalEcommerce.css';
 import '../css/Overlays.css';
 import ProfessionalToast from './ProfessionalToast.jsx';
@@ -262,11 +263,17 @@ export default function EnhancedHomePage() {
 
             {/* User Actions */}
             <div className="header-actions">
-              <button className="icon-action" title="Wishlist">
+              <button 
+                onClick={() => setShowMyOrders(true)} 
+                className="icon-action" 
+                title="My Orders"
+              >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <span>Wishlist</span>
+                <span>My Orders</span>
               </button>
 
               <button
@@ -563,135 +570,55 @@ export default function EnhancedHomePage() {
       )}
 
       {/* Professional Footer */}
-      <footer style={{
-        background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-        color: 'white',
-        marginTop: '64px',
-        width: '100%',
-        position: 'relative',
-        zIndex: 10,
-        boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.1)'
-      }}>
+      {/* Professional Footer */}
+      <footer className="professional-footer">
         {/* Main Footer Content */}
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '48px 24px 32px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '40px'
-        }}>
+        <div className="footer-content">
           {/* Company Info */}
-          <div>
-            <h3 style={{
-              margin: '0 0 16px 0',
-              fontSize: '20px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
+          <div className="footer-section">
+            <h3>
               🌱 Pavithra Traders
             </h3>
-            <p style={{
-              margin: '0 0 16px 0',
-              lineHeight: '1.6',
-              opacity: '0.9',
-              fontSize: '14px'
-            }}>
+            <p>
               Leading supplier of high-quality agricultural products, seeds, fertilizers, and farming tools.
               Committed to supporting farmers with premium products for better yields.
             </p>
-            <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-              <span style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                padding: '8px 12px',
-                borderRadius: '20px',
-                fontSize: '12px',
-                fontWeight: '500'
-              }}>
+            <div className="footer-badges">
+              <span className="footer-badge">
                 🏆 Premium Quality
               </span>
-              <span style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                padding: '8px 12px',
-                borderRadius: '20px',
-                fontSize: '12px',
-                fontWeight: '500'
-              }}>
+              <span className="footer-badge">
                 🚚 Fast Delivery
               </span>
             </div>
           </div>
 
           {/* Quick Links */}
-          <div>
-            <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600' }}>
-              Quick Links
-            </h4>
-            <ul style={{ margin: '0', padding: '0', listStyle: 'none' }}>
+          <div className="footer-section">
+            <h4>Quick Links</h4>
+            <ul className="footer-links">
               {['All Products', 'Seeds', 'Fertilizers', 'Herbicides', 'Tools', 'New Arrivals'].map(link => (
-                <li key={link} style={{ marginBottom: '8px' }}>
-                  <a href="#" style={{
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    transition: 'color 0.2s ease'
-                  }}
-                    onMouseEnter={(e) => e.target.style.color = '#ffffff'}
-                    onMouseLeave={(e) => e.target.style.color = 'rgba(255, 255, 255, 0.8)'}
-                  >
-                    {link}
-                  </a>
+                <li key={link}>
+                  <a href="#">{link}</a>
                 </li>
               ))}
             </ul>
           </div>
 
           {/* Contact Info */}
-          <div>
-            <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600' }}>
-              Contact Information
-            </h4>
-            <div style={{ fontSize: '14px', lineHeight: '1.8', opacity: '0.9' }}>
-              <p style={{ margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                📍 Agricultural Market, Main Street
-              </p>
-              <p style={{ margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                📞 +91 98765 43210
-              </p>
-              <p style={{ margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                ✉️ info@pavithratraders.com
-              </p>
-              <p style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                🕒 Mon-Sat: 9:00 AM - 7:00 PM
-              </p>
+          <div className="footer-section footer-contact">
+            <h4>Contact Information</h4>
+            <div>
+              <p>📍 Agricultural Market, Main Street</p>
+              <p>📞 +91 98765 43210</p>
+              <p>✉️ info@pavithratraders.com</p>
+              <p>🕒 Mon-Sat: 9:00 AM - 7:00 PM</p>
             </div>
 
             {/* Social Links */}
-            <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+            <div className="social-links">
               {['📘', '📷', '🐦', '📱'].map((icon, idx) => (
-                <a key={idx} href="#" style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '36px',
-                  height: '36px',
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '50%',
-                  textDecoration: 'none',
-                  fontSize: '16px',
-                  transition: 'all 0.2s ease'
-                }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-                    e.target.style.transform = 'scale(1.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-                    e.target.style.transform = 'scale(1)';
-                  }}
-                >
+                <a key={idx} href="#" className="social-link">
                   {icon}
                 </a>
               ))}
@@ -700,20 +627,18 @@ export default function EnhancedHomePage() {
         </div>
 
         {/* Bottom Bar */}
-        <div style={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          padding: '24px',
-          textAlign: 'center',
-          background: 'rgba(0, 0, 0, 0.2)'
-        }}>
-          <p style={{ margin: '0 0 8px 0', fontSize: '14px', opacity: '0.8' }}>
+        <div className="footer-bottom">
+          <p className="copyright-text">
             © 2025 Pavithra Traders. All rights reserved.
           </p>
-          <p style={{ margin: '0', fontSize: '12px', opacity: '0.6' }}>
+          <p className="footer-tagline">
             Empowering Agriculture • Growing Together • Quality Assured
           </p>
         </div>
       </footer>
+
+      {/* ChatBot - Only on Customer Page */}
+      <ChatBot />
     </div>
   );
 }

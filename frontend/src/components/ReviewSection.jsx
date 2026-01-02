@@ -76,75 +76,77 @@ export default function ReviewSection({ productId }) {
 
   return (
     <div className="review-section">
-      <div className="review-summary">
-        <h3>Customer Reviews</h3>
-        
-        <div className="rating-overview">
-          <div className="average-rating">
-            <div className="rating-number">{stats.averageRating}</div>
-            {renderStars(Math.round(stats.averageRating))}
-            <div className="total-reviews">{stats.totalReviews} reviews</div>
-          </div>
-
-          <div className="rating-bars">
-            {[5, 4, 3, 2, 1].map((rating) => {
-              const count = stats.ratingDistribution[rating];
-              const percentage = stats.totalReviews > 0 
-                ? (count / stats.totalReviews) * 100 
-                : 0;
-
-              return (
-                <div key={rating} className="rating-bar-row">
-                  <span className="rating-label">{rating} ★</span>
-                  <div className="rating-bar">
-                    <div 
-                      className="rating-bar-fill" 
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                  <span className="rating-count">{count}</span>
-                </div>
-              );
-            })}
-          </div>
+      <h3>Customer Reviews</h3>
+      
+      {stats.totalReviews === 0 ? (
+        <div className="no-reviews">
+          <p>No reviews yet. Be the first to review this product!</p>
         </div>
-      </div>
-
-      <div className="reviews-list">
-        {reviews.length === 0 ? (
-          <div className="no-reviews">
-            <p>No reviews yet. Be the first to review this product!</p>
-          </div>
-        ) : (
-          reviews.map((review) => (
-            <div key={review._id} className="review-card">
-              <div className="review-header">
-                <div className="reviewer-info">
-                  <div className="reviewer-avatar">
-                    {review.userName.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="reviewer-name">
-                      {review.userName}
-                      {review.verifiedPurchase && (
-                        <span className="verified-badge" title="Verified Purchase">
-                          ✓ Verified Purchase
-                        </span>
-                      )}
-                    </div>
-                    <div className="review-date">{formatDate(review.createdAt)}</div>
-                  </div>
-                </div>
-                {renderStars(review.rating)}
+      ) : (
+        <>
+          <div className="review-summary">
+            <div className="rating-overview">
+              <div className="average-rating">
+                <div className="rating-number">{stats.averageRating}</div>
+                {renderStars(Math.round(stats.averageRating))}
+                <div className="total-reviews">({stats.totalReviews} {stats.totalReviews === 1 ? 'review' : 'reviews'})</div>
               </div>
-              
-              <div className="review-content">
-                <p>{review.comment}</p>
+
+              <div className="rating-bars">
+                {[5, 4, 3, 2, 1].map((rating) => {
+                  const count = stats.ratingDistribution[rating];
+                  const percentage = stats.totalReviews > 0 
+                    ? (count / stats.totalReviews) * 100 
+                    : 0;
+
+                  return (
+                    <div key={rating} className="rating-bar-row">
+                      <span className="rating-label">{rating} ★</span>
+                      <div className="rating-bar">
+                        <div 
+                          className="rating-bar-fill" 
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                      <span className="rating-count">{count}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          ))
-        )}
-      </div>
+          </div>
+
+          <div className="reviews-list">
+            {reviews.map((review) => (
+              <div key={review._id} className="review-card">
+                <div className="review-header">
+                  <div className="reviewer-info">
+                    <div className="reviewer-avatar">
+                      {review.userName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="reviewer-name">
+                        {review.userName}
+                        {review.verifiedPurchase && (
+                          <span className="verified-badge" title="Verified Purchase">
+                            ✓ Verified Purchase
+                          </span>
+                        )}
+                      </div>
+                      <div className="review-date">{formatDate(review.createdAt)}</div>
+                    </div>
+                  </div>
+                  {renderStars(review.rating)}
+                </div>
+                
+                <div className="review-content">
+                  <p>{review.comment}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

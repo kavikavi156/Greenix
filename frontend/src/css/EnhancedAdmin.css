@@ -6,7 +6,7 @@
   background: linear-gradient(135deg, 
     #1e3c72 0%, 
     #2a5298 50%, 
-    #667eea 100%);
+    #1e3c72 100%);
 }
 
 /* Animated Background */
@@ -193,7 +193,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #1e3c72, #2a5298, #667eea);
+  background: linear-gradient(90deg, #1e3c72, #2a5298, #1e3c72);
 }
 
 .admin-form-header {
@@ -206,7 +206,7 @@
   font-weight: 700;
   color: #1e3c72;
   margin: 0 0 0.5rem 0;
-  background: linear-gradient(135deg, #1e3c72, #667eea);
+  background: linear-gradient(135deg, #1e3c72, #1e3c72);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -252,7 +252,7 @@
 
 .enhanced-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #1e3c72;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   transform: translateY(-2px);
 }
@@ -269,7 +269,7 @@
 
 .enhanced-submit-btn {
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #1e3c72, #667eea);
+  background: linear-gradient(135deg, #1e3c72, #1e3c72);
   color: white;
   border: none;
   border-radius: 15px;
@@ -364,7 +364,7 @@
 
 .admin-form-container form input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #1e3c72;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   transform: translateY(-2px);
 }
@@ -375,7 +375,7 @@
 
 .admin-form-container form button {
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #1e3c72, #667eea);
+  background: linear-gradient(135deg, #1e3c72, #1e3c72);
   color: white;
   border: none;
   border-radius: 15px;
@@ -603,7 +603,7 @@
 
 .admin-panel-header {
   padding: 3rem 3rem 2rem 3rem;
-  background: linear-gradient(135deg, #1e3c72, #667eea);
+  background: linear-gradient(135deg, #1e3c72, #1e3c72);
   color: white;
   text-align: center;
 }
@@ -644,12 +644,12 @@
 
 .tab-btn-enhanced:hover {
   background: rgba(102, 126, 234, 0.1);
-  color: #667eea;
+  color: #1e3c72;
 }
 
 .tab-btn-enhanced.active {
   background: white;
-  color: #667eea;
+  color: #1e3c72;
 }
 
 .tab-btn-enhanced.active::after {
@@ -659,7 +659,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #667eea, #764ba2);
+  background: linear-gradient(90deg, #1e3c72, #2a5298);
 }
 
 .tab-icon {
@@ -809,13 +809,13 @@
 }
 
 .status-select:hover {
-  border-color: #667eea;
+  border-color: #1e3c72;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .status-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #1e3c72;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
@@ -1024,12 +1024,12 @@
 }
 
 .submit-btn {
-  background: linear-gradient(135deg, #4299e1, #3182ce);
+  background: linear-gradient(135deg, #4299e1, #1e3c72);
   color: white;
 }
 
 .submit-btn:hover {
-  background: linear-gradient(135deg, #3182ce, #2c5282);
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
 }

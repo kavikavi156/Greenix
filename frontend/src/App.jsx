@@ -18,15 +18,15 @@ function CheckoutWrapper() {
   const location = useLocation();
   const { cartItems, totalAmount, token, isBuyNow } = location.state || {};
   const [toast, setToast] = useState({ visible: false, title: '', message: '', type: 'info' });
-  
+
   if (!cartItems || !token) {
     return <Navigate to="/" replace />;
   }
-  
+
   return (
     <>
       <ProfessionalToast visible={toast.visible} title={toast.title} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, visible: false })} />
-      <Checkout 
+      <Checkout
         token={token}
         cartItems={cartItems}
         totalAmount={totalAmount}

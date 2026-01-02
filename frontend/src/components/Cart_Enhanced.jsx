@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import '../css/EcommerceStyles.css';
 import Checkout from './Checkout';
+import { getImageUrl } from '../config/api';
 
 export default function Cart({ token, onClose }) {
   const [cart, setCart] = useState([]);
@@ -38,7 +39,7 @@ export default function Cart({ token, onClose }) {
       const res = await fetch(`http://localhost:3001/api/customer/cart/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         setCart(data.cart || []);
@@ -70,10 +71,10 @@ export default function Cart({ token, onClose }) {
         },
         body: JSON.stringify({ quantity: newQuantity })
       });
-      
+
       if (res.ok) {
-        setCart(prev => prev.map(item => 
-          item.product._id === productId 
+        setCart(prev => prev.map(item =>
+          item.product._id === productId
             ? { ...item, quantity: newQuantity }
             : item
         ));
@@ -95,7 +96,7 @@ export default function Cart({ token, onClose }) {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (res.ok) {
         setCart(prev => prev.filter(item => item.product._id !== productId));
       } else {
@@ -199,18 +200,18 @@ export default function Cart({ token, onClose }) {
                   return (
                     <div key={product._id} className="cart-item">
                       <div className="cart-item-image">
-                        <img 
-                          src={product.image || 'https://via.placeholder.com/150x150?text=No+Image'} 
+                        <img
+                          src={getImageUrl(product.image) || 'https://via.placeholder.com/150x150?text=No+Image'}
                           alt={product.name}
                         />
                       </div>
-                      
+
                       <div className="cart-item-details">
                         {product.brand && (
                           <div className="cart-item-brand">{product.brand}</div>
                         )}
                         <h3 className="cart-item-name">{product.name}</h3>
-                        
+
                         <div className="cart-item-pricing">
                           <span className="cart-item-price">₹{product.price}</span>
                           {product.originalPrice && product.originalPrice > product.price && (
@@ -229,10 +230,10 @@ export default function Cart({ token, onClose }) {
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="cart-item-actions">
                         <div className="quantity-controls">
-                          <button 
+                          <button
                             className="quantity-btn"
                             onClick={() => updateQuantity(product._id, item.quantity - 1)}
                             disabled={updating || item.quantity <= 1}
@@ -240,7 +241,7 @@ export default function Cart({ token, onClose }) {
                             -
                           </button>
                           <span className="quantity-display">{item.quantity}</span>
-                          <button 
+                          <button
                             className="quantity-btn"
                             onClick={() => updateQuantity(product._id, item.quantity + 1)}
                             disabled={updating || item.quantity >= product.stock}
@@ -248,15 +249,15 @@ export default function Cart({ token, onClose }) {
                             +
                           </button>
                         </div>
-                        
+
                         <div className="cart-item-total">
                           <span className="total-price">₹{itemTotal}</span>
                           {itemSavings > 0 && (
                             <span className="savings">Save ₹{itemSavings}</span>
                           )}
                         </div>
-                        
-                        <button 
+
+                        <button
                           className="remove-btn"
                           onClick={() => removeFromCart(product._id)}
                           disabled={updating}
@@ -276,44 +277,44 @@ export default function Cart({ token, onClose }) {
             <div className="cart-summary">
               <div className="summary-card">
                 <h3>Order Summary</h3>
-                
+
                 <div className="summary-row">
                   <span>Items ({getTotalItems()})</span>
                   <span>₹{calculateTotal() + calculateSavings()}</span>
                 </div>
-                
+
                 {calculateSavings() > 0 && (
                   <div className="summary-row discount">
                     <span>Discount</span>
                     <span>-₹{calculateSavings()}</span>
                   </div>
                 )}
-                
+
                 <div className="summary-row">
                   <span>Delivery</span>
                   <span>FREE</span>
                 </div>
-                
+
                 <hr />
-                
+
                 <div className="summary-row total">
                   <span>Total Amount</span>
                   <span>₹{calculateTotal()}</span>
                 </div>
-                
+
                 {calculateSavings() > 0 && (
                   <div className="total-savings">
                     You will save ₹{calculateSavings()} on this order
                   </div>
                 )}
-                
-                <button 
+
+                <button
                   className="checkout-btn"
                   onClick={() => setShowCheckout(true)}
                 >
                   Proceed to Checkout
                 </button>
-                
+
                 <div className="secure-checkout">
                   🔒 Secure and safe checkout
                 </div>

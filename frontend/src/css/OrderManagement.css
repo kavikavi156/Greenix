@@ -95,7 +95,7 @@
 }
 
 .summary-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   color: white;
   padding: 20px;
   border-radius: 12px;
@@ -162,7 +162,7 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   color: white;
   padding: 20px;
   border-radius: 12px;
@@ -435,7 +435,7 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   color: white;
   padding: 20px;
   border-radius: 12px;
@@ -544,7 +544,7 @@
 .product-price {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #2874f0;
+  color: #1e3c72;
   margin: 0 0 15px 0;
 }
 
@@ -598,7 +598,7 @@
   padding: 12px;
   background: #f8f9fa;
   border-radius: 8px;
-  border-left: 3px solid #2874f0;
+  border-left: 3px solid #1e3c72;
 }
 
 .stock-label {
@@ -626,7 +626,7 @@
 
 .stock-input:focus {
   outline: none;
-  border-color: #2874f0;
+  border-color: #1e3c72;
   box-shadow: 0 0 0 2px rgba(40, 116, 240, 0.1);
 }
 
@@ -678,7 +678,7 @@
 }
 
 .btn-primary {
-  background: #2874f0;
+  background: #1e3c72;
   color: white;
 }
 
@@ -692,7 +692,7 @@
   padding: 25px;
   margin-top: 30px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  border-left: 4px solid #2874f0;
+  border-left: 4px solid #1e3c72;
 }
 
 .detail-header {

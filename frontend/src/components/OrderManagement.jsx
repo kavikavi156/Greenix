@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../css/OrderManagement.css';
+import { getImageUrl } from '../config/api';
 
 export default function OrderManagement({ token }) {
   const [orders, setOrders] = useState([]);
@@ -356,7 +357,16 @@ export default function OrderManagement({ token }) {
                       <div className="product-image-section">
                         {product.images && product.images.length > 0 ? (
                           <img 
-                            src={`http://localhost:3001/uploads/product.images[0]`} 
+                            src={getImageUrl(product.images[0])} 
+                            alt={product.name}
+                            className="product-thumbnail"
+                            onError={(e) => {
+                              e.target.src = 'https://via.placeholder.com/150x100/f0f0f0/666?text=No+Image';
+                            }}
+                          />
+                        ) : product.image ? (
+                          <img 
+                            src={getImageUrl(product.image)} 
                             alt={product.name}
                             className="product-thumbnail"
                             onError={(e) => {

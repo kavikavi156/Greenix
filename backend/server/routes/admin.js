@@ -35,7 +35,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
@@ -68,7 +68,7 @@ router.get('/categories', async (req, res) => {
 router.post('/categories', async (req, res) => {
   try {
     const { name, description, icon } = req.body;
-    
+
     if (!name || !description) {
       return res.status(400).json({ error: 'Name and description are required' });
     }
@@ -95,7 +95,7 @@ router.get('/stock-alerts', async (req, res) => {
   try {
     const lowStockProducts = await Product.find({ stock: { $lt: 10 } });
     const outOfStockProducts = await Product.find({ stock: { $lte: 0 } });
-    
+
     res.json({
       lowStockProducts,
       outOfStockProducts,
@@ -114,7 +114,7 @@ router.post('/notify-out-of-stock/:productId', async (req, res) => {
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
+
     const result = await whatsappService.sendOutOfStockNotification(product);
     res.json(result);
   } catch (error) {
@@ -129,7 +129,7 @@ router.post('/notify-low-stock', async (req, res) => {
     if (lowStockProducts.length === 0) {
       return res.json({ message: 'No low stock products found' });
     }
-    
+
     const result = await whatsappService.sendLowStockAlert(lowStockProducts);
     res.json(result);
   } catch (error) {
@@ -145,7 +145,7 @@ router.get('/orders', async (req, res) => {
       .populate('items.product', 'name price category brand')
       .populate('products', 'name price category')
       .sort({ createdAt: -1 });
-    
+
     console.log('Orders fetched:', orders.length);
     if (orders.length > 0) {
       console.log('Sample order structure:', {
@@ -156,7 +156,7 @@ router.get('/orders', async (req, res) => {
         itemsLength: orders[0].items?.length || 0
       });
     }
-    
+
     // Transform orders to include customer name and formatted date
     const transformedOrders = orders.map(order => ({
       ...order.toObject(),
@@ -165,7 +165,7 @@ router.get('/orders', async (req, res) => {
       formattedDate: order.createdAt.toLocaleDateString('en-IN'),
       formattedTime: order.createdAt.toLocaleTimeString('en-IN')
     }));
-    
+
     res.json(transformedOrders);
   } catch (error) {
     console.error('Error fetching orders:', error);
@@ -178,22 +178,22 @@ router.get('/orders/:type', async (req, res) => {
   try {
     const { type } = req.params;
     let filter = {};
-    
+
     console.log('Fetching orders for type:', type);
-    
+
     if (type === 'prebooked') {
       filter.status = 'prebooked';
     } else if (type === 'ordered') {
       filter.status = { $in: ['ordered', 'confirmed', 'shipped', 'delivered'] };
     }
-    
+
     console.log('Filter:', filter);
-    
+
     const orders = await Order.find(filter)
       .populate('user', 'username')
       .populate('products', 'name price category')
       .sort({ createdAt: -1 });
-      
+
     console.log('Found orders:', orders.length);
     res.json(orders);
   } catch (error) {
@@ -206,7 +206,7 @@ router.get('/orders/:type', async (req, res) => {
 router.get('/prebooking-stats', async (req, res) => {
   try {
     console.log('Fetching prebooking statistics...');
-    
+
     const prebookingStats = await Order.aggregate([
       { $match: { status: 'prebooked' } },
       { $unwind: '$products' },
@@ -236,9 +236,9 @@ router.get('/prebooking-stats', async (req, res) => {
     ]);
 
     const totalPrebookings = await Order.countDocuments({ status: 'prebooked' });
-    
+
     console.log('Prebooking stats:', { totalPrebookings, byProduct: prebookingStats });
-    
+
     res.json({
       totalPrebookings,
       byProduct: prebookingStats
@@ -254,22 +254,22 @@ router.put('/orders/:orderId/status', async (req, res) => {
   try {
     const { status } = req.body;
     const orderId = req.params.orderId;
-    
+
     // Get the current order to check previous status
     const currentOrder = await Order.findById(orderId);
     if (!currentOrder) {
       return res.status(404).json({ error: 'Order not found' });
     }
-    
+
     const previousStatus = currentOrder.status;
-    
+
     // Update the order status
     const order = await Order.findByIdAndUpdate(
       orderId,
       { status, updatedAt: new Date() },
       { new: true }
     ).populate('user', 'username').populate('products', 'name price category');
-    
+
     // Handle inventory updates when status changes from prebooked to ordered
     if (previousStatus === 'prebooked' && status === 'ordered') {
       // Decrease prebook count and stock, increase sold count
@@ -319,7 +319,7 @@ router.put('/orders/:orderId/status', async (req, res) => {
             updateObj.stock = item.quantity;
             updateObj.sold = -item.quantity;
           }
-          
+
           if (Object.keys(updateObj).length > 0) {
             await Product.findByIdAndUpdate(item.product, { $inc: updateObj });
           }
@@ -333,14 +333,14 @@ router.put('/orders/:orderId/status', async (req, res) => {
             updateObj.stock = 1;
             updateObj.sold = -1;
           }
-          
+
           if (Object.keys(updateObj).length > 0) {
             await Product.findByIdAndUpdate(productId, { $inc: updateObj });
           }
         }
       }
     }
-    
+
     res.json(order);
   } catch (error) {
     console.error('Update order status error:', error);
@@ -357,11 +357,11 @@ router.put('/products/:productId/prebooking', async (req, res) => {
       { prebookingEnabled: enabled },
       { new: true }
     );
-    
+
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
+
     res.json(product);
   } catch (error) {
     res.status(500).json({ error: 'Failed to toggle prebooking' });
@@ -375,7 +375,7 @@ router.get('/stats', async (req, res) => {
     const totalOrders = await Order.countDocuments();
     const pendingOrders = await Order.countDocuments({ status: 'ordered' });
     const prebookedOrders = await Order.countDocuments({ status: 'prebooked' });
-    
+
     res.json({
       totalProducts,
       totalOrders,
@@ -392,14 +392,14 @@ router.get('/revenue/monthly', async (req, res) => {
   try {
     const { year } = req.query;
     const targetYear = year ? parseInt(year) : new Date().getFullYear();
-    
+
     // Create date range for the year
     const startDate = new Date(targetYear, 0, 1); // January 1st
     const endDate = new Date(targetYear + 1, 0, 1); // January 1st of next year
-    
+
     console.log(`Fetching revenue data for year: ${targetYear}`);
     console.log(`Date range: ${startDate} to ${endDate}`);
-    
+
     // Aggregate monthly revenue
     const monthlyData = await Order.aggregate([
       {
@@ -422,9 +422,9 @@ router.get('/revenue/monthly', async (req, res) => {
         $sort: { '_id': 1 }
       }
     ]);
-    
+
     console.log('Raw monthly data:', monthlyData);
-    
+
     // Fill in missing months with zero revenue
     const monthlyRevenue = [];
     for (let month = 1; month <= 12; month++) {
@@ -435,9 +435,9 @@ router.get('/revenue/monthly', async (req, res) => {
         orders: existingData ? existingData.orders : 0
       });
     }
-    
+
     console.log('Processed monthly revenue:', monthlyRevenue);
-    
+
     res.json({
       year: targetYear,
       monthlyRevenue
@@ -465,16 +465,16 @@ router.get('/categories', async (req, res) => {
 router.post('/categories', async (req, res) => {
   try {
     const { name, description } = req.body;
-    
+
     if (!name) {
       return res.status(400).json({ message: 'Category name is required' });
     }
 
     // Check if category already exists
-    const existingCategory = await Category.findOne({ 
-      name: { $regex: new RegExp(`^${name}$`, 'i') } 
+    const existingCategory = await Category.findOne({
+      name: { $regex: new RegExp(`^${name}$`, 'i') }
     });
-    
+
     if (existingCategory) {
       return res.status(400).json({ message: 'Category already exists' });
     }
@@ -486,9 +486,9 @@ router.post('/categories', async (req, res) => {
     });
 
     await newCategory.save();
-    res.status(201).json({ 
-      message: 'Category added successfully', 
-      category: newCategory 
+    res.status(201).json({
+      message: 'Category added successfully',
+      category: newCategory
     });
   } catch (error) {
     console.error('Error adding category:', error);
@@ -508,10 +508,10 @@ router.put('/categories/:id', async (req, res) => {
 
     const category = await Category.findByIdAndUpdate(
       id,
-      { 
-        name: name?.trim(), 
-        description: description || '', 
-        isActive: isActive !== undefined ? isActive : true 
+      {
+        name: name?.trim(),
+        description: description || '',
+        isActive: isActive !== undefined ? isActive : true
       },
       { new: true }
     );
@@ -520,9 +520,9 @@ router.put('/categories/:id', async (req, res) => {
       return res.status(404).json({ message: 'Category not found' });
     }
 
-    res.json({ 
-      message: 'Category updated successfully', 
-      category 
+    res.json({
+      message: 'Category updated successfully',
+      category
     });
   } catch (error) {
     console.error('Error updating category:', error);
@@ -557,29 +557,29 @@ router.put('/products/:productId/stock', async (req, res) => {
   try {
     const { productId } = req.params;
     const { stock } = req.body;
-    
+
     console.log('Updating stock for product:', productId, 'New stock:', stock);
-    
+
     // Get current product
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
-    
+
     const oldStock = product.stock || 0;
     const newStock = parseInt(stock);
-    
+
     // Update product stock
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
       { stock: newStock },
       { new: true }
     );
-    
+
     // If stock increased from 0 to positive, process pending prebookings
     if (oldStock === 0 && newStock > 0) {
       console.log('Stock replenished! Processing prebookings...');
-      
+
       // Find all pending prebookings for this product
       const prebookings = await Order.find({
         status: 'prebooked',
@@ -588,28 +588,28 @@ router.put('/products/:productId/stock', async (req, res) => {
           { 'items.product': productId }
         ]
       }).populate('user', 'username email');
-      
+
       console.log(`Found ${prebookings.length} prebookings to process`);
-      
+
       let processedCount = 0;
       let availableStock = newStock;
-      
+
       // Process prebookings in order of creation (FIFO)
       for (const prebooking of prebookings) {
         if (availableStock <= 0) break;
-        
+
         let quantityNeeded = 1; // Default for old format
-        
+
         // Calculate quantity needed for new format
         if (prebooking.items && prebooking.items.length > 0) {
-          const item = prebooking.items.find(item => 
+          const item = prebooking.items.find(item =>
             item.product.toString() === productId.toString()
           );
           if (item) {
             quantityNeeded = item.quantity;
           }
         }
-        
+
         // Check if we have enough stock for this prebooking
         if (availableStock >= quantityNeeded) {
           try {
@@ -619,7 +619,7 @@ router.put('/products/:productId/stock', async (req, res) => {
               convertedAt: new Date(),
               updatedAt: new Date()
             });
-            
+
             // Update product counts
             await Product.findByIdAndUpdate(productId, {
               $inc: {
@@ -628,23 +628,23 @@ router.put('/products/:productId/stock', async (req, res) => {
                 prebooked: -quantityNeeded
               }
             });
-            
+
             availableStock -= quantityNeeded;
             processedCount++;
-            
+
             console.log(`Converted prebooking ${prebooking._id} to order for user ${prebooking.user.username}`);
-            
+
             // Here you could send notification to customer
             // await sendNotification(prebooking.user.email, 'Your prebooking is now available!');
-            
+
           } catch (conversionError) {
             console.error('Error converting prebooking:', conversionError);
           }
         }
       }
-      
+
       console.log(`Successfully processed ${processedCount} prebookings`);
-      
+
       return res.json({
         message: 'Stock updated successfully',
         product: updatedProduct,
@@ -652,12 +652,12 @@ router.put('/products/:productId/stock', async (req, res) => {
         remainingStock: availableStock
       });
     }
-    
+
     res.json({
       message: 'Stock updated successfully',
       product: updatedProduct
     });
-    
+
   } catch (error) {
     console.error('Error updating stock:', error);
     res.status(500).json({ message: 'Error updating stock' });
@@ -682,27 +682,27 @@ router.post('/products', upload.single('image'), async (req, res) => {
   try {
     console.log('Received product data:', req.body);
     console.log('Received file:', req.file);
-    
+
     // Map category to correct enum value
     const validCategories = ['Seeds', 'Herbicides', 'Insecticides', 'Fertilizers', 'Fungicides', 'Tools', 'Equipment', 'Organic Products'];
     let category = req.body.category;
-    
+
     // Try to find a matching category (case-insensitive)
-    const matchedCategory = validCategories.find(cat => 
+    const matchedCategory = validCategories.find(cat =>
       cat.toLowerCase() === category.toLowerCase()
     );
-    
+
     if (!matchedCategory) {
       // If no exact match, try partial matches
-      const partialMatch = validCategories.find(cat => 
-        cat.toLowerCase().includes(category.toLowerCase()) || 
+      const partialMatch = validCategories.find(cat =>
+        cat.toLowerCase().includes(category.toLowerCase()) ||
         category.toLowerCase().includes(cat.toLowerCase())
       );
       category = partialMatch || 'Tools'; // Default to Tools if no match
     } else {
       category = matchedCategory;
     }
-    
+
     const productData = {
       name: req.body.name,
       description: req.body.description,
@@ -718,17 +718,21 @@ router.post('/products', upload.single('image'), async (req, res) => {
       features: req.body.features ? req.body.features.split(',').map(f => f.trim()) : [],
       tags: req.body.tags ? req.body.tags.split(',').map(t => t.trim()) : [],
       isActive: true,
-      featured: false
+      featured: false,
+      lowStockThreshold: Number(req.body.lowStockThreshold) || 10
     };
-    
+
     // Add image filename if uploaded
     if (req.file) {
       productData.image = req.file.filename;
+    } else if (req.body.image) {
+      // Normalize any incoming image path ("/uploads/.." or full URL) to just the filename
+      productData.image = req.body.image.replace(/^.*\/uploads\//, '');
     }
-    
+
     const product = new Product(productData);
     await product.save();
-    
+
     console.log('Product created successfully:', product._id);
     res.status(201).json(product);
   } catch (error) {
@@ -743,27 +747,27 @@ router.put('/products/:id', upload.single('image'), async (req, res) => {
     console.log('Updating product:', req.params.id);
     console.log('Update data:', req.body);
     console.log('New file:', req.file);
-    
+
     // Map category to correct enum value
     const validCategories = ['Seeds', 'Herbicides', 'Insecticides', 'Fertilizers', 'Fungicides', 'Tools', 'Equipment', 'Organic Products'];
     let category = req.body.category;
-    
+
     // Try to find a matching category (case-insensitive)
-    const matchedCategory = validCategories.find(cat => 
+    const matchedCategory = validCategories.find(cat =>
       cat.toLowerCase() === category.toLowerCase()
     );
-    
+
     if (!matchedCategory) {
       // If no exact match, try partial matches
-      const partialMatch = validCategories.find(cat => 
-        cat.toLowerCase().includes(category.toLowerCase()) || 
+      const partialMatch = validCategories.find(cat =>
+        cat.toLowerCase().includes(category.toLowerCase()) ||
         category.toLowerCase().includes(cat.toLowerCase())
       );
       category = partialMatch || 'Tools'; // Default to Tools if no match
     } else {
       category = matchedCategory;
     }
-    
+
     const updateData = {
       name: req.body.name,
       description: req.body.description,
@@ -776,19 +780,22 @@ router.put('/products/:id', upload.single('image'), async (req, res) => {
       brand: req.body.brand || 'Generic',
       weight: req.body.weight || '1 unit',
       features: req.body.features ? req.body.features.split(',').map(f => f.trim()) : [],
-      tags: req.body.tags ? req.body.tags.split(',').map(t => t.trim()) : []
+      tags: req.body.tags ? req.body.tags.split(',').map(t => t.trim()) : [],
+      lowStockThreshold: Number(req.body.lowStockThreshold) || 10
     };
-    
-    // Add new image filename if uploaded, otherwise keep existing
+
+    // Add new image filename if uploaded, otherwise use image path from body if provided
     if (req.file) {
       updateData.image = req.file.filename;
+    } else if (req.body.image) {
+      updateData.image = req.body.image.replace(/^.*\/uploads\//, '');
     }
-    
+
     const product = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
+
     console.log('Product updated successfully:', product._id);
     res.json(product);
   } catch (error) {
@@ -816,19 +823,19 @@ router.get('/products/:id/price/:quantity', async (req, res) => {
   try {
     const { id, quantity } = req.params;
     const product = await Product.findById(id);
-    
+
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
+
     const qty = parseInt(quantity);
     if (qty <= 0) {
       return res.status(400).json({ error: 'Quantity must be greater than 0' });
     }
-    
+
     const pricePerUnit = product.calculatePrice(qty);
     const totalPrice = product.calculateTotalPrice(qty);
-    
+
     res.json({
       productId: id,
       quantity: qty,
@@ -845,7 +852,7 @@ router.get('/products/:id/price/:quantity', async (req, res) => {
 
 // Test endpoint for download reports
 router.get('/test-download', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Download endpoint is accessible',
     availableFormats: ['pdf', 'excel', 'json'],
     availablePeriods: ['yearly', 'monthly']
@@ -856,13 +863,13 @@ router.get('/test-download', (req, res) => {
 router.get('/download-report', async (req, res) => {
   try {
     const { period, year, month, format } = req.query;
-    
+
     console.log('Download report request:', { period, year, month, format });
-    
+
     // Build date filter based on period
     let dateFilter = {};
     const currentYear = parseInt(year) || new Date().getFullYear();
-    
+
     if (period === 'yearly') {
       dateFilter = {
         createdAt: {
@@ -894,48 +901,48 @@ router.get('/download-report', async (req, res) => {
     if (format === 'pdf') {
       const PDFDocument = require('pdfkit');
       const doc = new PDFDocument();
-      
+
       // Set response headers for PDF download
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="report-${period}-${year}${month ? `-${month + 1}` : ''}.pdf"`);
-      
+
       // Pipe PDF to response
       doc.pipe(res);
-      
+
       // PDF Content
       doc.fontSize(20).text('Sales Report', 100, 100);
       doc.fontSize(12).text(`Period: ${period === 'yearly' ? 'Yearly' : 'Monthly'} - ${year}${month !== undefined ? `/${month + 1}` : ''}`, 100, 130);
       doc.text(`Generated: ${new Date().toLocaleDateString()}`, 100, 150);
-      
+
       // Summary
       doc.text('Summary:', 100, 180);
       doc.text(`Total Orders: ${totalOrders}`, 120, 200);
       doc.text(`Completed Orders: ${completedOrders}`, 120, 220);
       doc.text(`Total Revenue: ₹${totalRevenue.toFixed(2)}`, 120, 240);
-      
+
       // Orders table header
       let yPos = 280;
       doc.text('Order Details:', 100, yPos);
       yPos += 30;
-      
+
       doc.text('Date', 100, yPos);
       doc.text('Order ID', 180, yPos);
       doc.text('Customer', 280, yPos);
       doc.text('Status', 380, yPos);
       doc.text('Amount', 450, yPos);
       yPos += 20;
-      
+
       // Draw line
       doc.moveTo(100, yPos).lineTo(500, yPos).stroke();
       yPos += 10;
-      
+
       // Orders data
       orders.forEach(order => {
         if (yPos > 750) { // New page if needed
           doc.addPage();
           yPos = 100;
         }
-        
+
         doc.text(order.createdAt.toLocaleDateString(), 100, yPos);
         doc.text(order._id.toString().substring(0, 8), 180, yPos);
         doc.text(order.user?.username || 'N/A', 280, yPos);
@@ -943,30 +950,30 @@ router.get('/download-report', async (req, res) => {
         doc.text(`₹${(order.totalAmount || 0).toFixed(2)}`, 450, yPos);
         yPos += 20;
       });
-      
+
       doc.end();
     } else if (format === 'excel') {
       const xl = require('excel4node');
       const wb = new xl.Workbook();
       const ws = wb.addWorksheet('Sales Report');
-      
+
       // Headers
       ws.cell(1, 1).string('Sales Report');
       ws.cell(2, 1).string(`Period: ${period === 'yearly' ? 'Yearly' : 'Monthly'} - ${year}${month !== undefined ? `/${month + 1}` : ''}`);
       ws.cell(3, 1).string(`Generated: ${new Date().toLocaleDateString()}`);
-      
+
       // Summary
       ws.cell(5, 1).string('Summary:');
       ws.cell(6, 1).string(`Total Orders: ${totalOrders}`);
       ws.cell(7, 1).string(`Completed Orders: ${completedOrders}`);
       ws.cell(8, 1).string(`Total Revenue: ₹${totalRevenue.toFixed(2)}`);
-      
+
       // Headers for orders table
       const headers = ['Date', 'Order ID', 'Customer', 'Status', 'Amount'];
       headers.forEach((header, index) => {
         ws.cell(10, index + 1).string(header);
       });
-      
+
       // Orders data
       orders.forEach((order, index) => {
         const row = index + 11;
@@ -976,11 +983,11 @@ router.get('/download-report', async (req, res) => {
         ws.cell(row, 4).string(order.status || 'pending');
         ws.cell(row, 5).number(order.totalAmount || 0);
       });
-      
+
       // Set response headers for Excel download
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="report-${period}-${year}${month ? `-${month + 1}` : ''}.xlsx"`);
-      
+
       wb.write(`report-${period}-${year}${month ? `-${month + 1}` : ''}.xlsx`, res);
     } else {
       // Default JSON response
@@ -1003,7 +1010,7 @@ router.get('/download-report', async (req, res) => {
         }))
       });
     }
-    
+
   } catch (error) {
     console.error('Error generating report:', error);
     res.status(500).json({ error: 'Failed to generate report' });
@@ -1014,9 +1021,9 @@ router.get('/download-report', async (req, res) => {
 router.get('/download-product-report', async (req, res) => {
   try {
     const { startDate, endDate, productId, format } = req.query;
-    
+
     console.log('Product report request:', { startDate, endDate, productId, format });
-    
+
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'Start date and end date are required' });
     }
@@ -1024,7 +1031,7 @@ router.get('/download-product-report', async (req, res) => {
     // Parse dates and set time boundaries
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
-    
+
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
@@ -1033,7 +1040,7 @@ router.get('/download-product-report', async (req, res) => {
       createdAt: { $gte: start, $lte: end },
       status: { $nin: ['cancelled'] } // Exclude only cancelled orders
     };
-    
+
     console.log('Date filter:', dateFilter);
 
     // Fetch orders within date range
@@ -1042,13 +1049,13 @@ router.get('/download-product-report', async (req, res) => {
       .populate('products') // Also populate old products field
       .populate('user', 'username phone fullName')
       .sort({ createdAt: -1 });
-    
+
     console.log(`Found ${orders.length} orders in date range`);
 
     // Extract sales records from orders
     let salesRecords = [];
     console.log(`Processing ${orders.length} orders for sales records`);
-    
+
     orders.forEach(order => {
       // Handle new format with items array
       if (order.items && order.items.length > 0) {
@@ -1071,7 +1078,7 @@ router.get('/download-product-report', async (req, res) => {
             }
           }
         });
-      } 
+      }
       // Handle old format with products array
       else if (order.products && order.products.length > 0) {
         order.products.forEach(product => {
@@ -1096,7 +1103,7 @@ router.get('/download-product-report', async (req, res) => {
         });
       }
     });
-    
+
     console.log(`Generated ${salesRecords.length} sales records`);
 
 
@@ -1116,10 +1123,10 @@ router.get('/download-product-report', async (req, res) => {
       // Generate PDF
       const PDFDocument = require('pdfkit');
       const doc = new PDFDocument({ margin: 40, size: 'A4' });
-      
+
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="sales-report-${productId === 'all' ? 'all-products' : 'product'}-${startDate}-to-${endDate}.pdf"`);
-      
+
       doc.pipe(res);
 
       // Header
@@ -1127,7 +1134,7 @@ router.get('/download-product-report', async (req, res) => {
       doc.moveDown(0.3);
       doc.fontSize(18).fillColor('#000').text('Product-wise Sales Report', { align: 'center' });
       doc.moveDown(0.8);
-      
+
       // Product & Date Info
       doc.fontSize(12).font('Helvetica');
       doc.text(`Product: ${productName}`, { align: 'center' });
@@ -1137,22 +1144,22 @@ router.get('/download-product-report', async (req, res) => {
       // Summary Box
       const summaryY = doc.y;
       doc.roundedRect(40, summaryY, 515, 100, 5).fillAndStroke('#f0f9ff', '#3b82f6');
-      
+
       doc.fillColor('#000').fontSize(11).font('Helvetica-Bold');
       doc.text('Sales Summary', 50, summaryY + 12);
-      
+
       doc.fontSize(10).font('Helvetica');
       const col1X = 50, col2X = 200, col3X = 370;
       doc.text(`Total Sales:`, col1X, summaryY + 35);
       doc.text(`${salesRecords.length} transactions`, col1X, summaryY + 50);
-      
+
       doc.text(`Total Quantity:`, col2X, summaryY + 35);
       doc.text(`${totalQuantity} units`, col2X, summaryY + 50);
-      
+
       doc.text(`Total Revenue:`, col3X, summaryY + 35);
       doc.fontSize(12).font('Helvetica-Bold').fillColor('#059669');
       doc.text(`₹${totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, col3X, summaryY + 50);
-      
+
       doc.fillColor('#000').fontSize(10).font('Helvetica');
       doc.text(`Unique Products: ${uniqueProducts}`, col1X, summaryY + 75);
 
@@ -1171,7 +1178,7 @@ router.get('/download-product-report', async (req, res) => {
 
       // Draw header
       doc.roundedRect(40, tableTop, 515, 22, 3).fillAndStroke('#667eea', '#667eea');
-      
+
       doc.fillColor('white').fontSize(9).font('Helvetica-Bold');
       tableHeaders.forEach((header, i) => {
         doc.text(header, xPos + 3, tableTop + 6, { width: colWidths[i], align: i >= 2 && i <= 4 ? 'right' : 'left' });
@@ -1221,7 +1228,7 @@ router.get('/download-product-report', async (req, res) => {
       if (footerY > 720) {
         doc.addPage();
       }
-      
+
       doc.fontSize(9).font('Helvetica-Oblique').fillColor('#6b7280');
       doc.text(`Report Generated: ${new Date().toLocaleString('en-IN')}`, 40, doc.y > 720 ? 50 : footerY);
       doc.text('Authorized Signature: _____________________', 350, doc.y);
@@ -1233,19 +1240,19 @@ router.get('/download-product-report', async (req, res) => {
       const xl = require('excel4node');
       const wb = new xl.Workbook();
       const ws = wb.addWorksheet('Sales Report');
-      
+
       // Styles
       const headerStyle = wb.createStyle({
         font: { bold: true, size: 14, color: '#FFFFFF' },
         fill: { type: 'pattern', patternType: 'solid', fgColor: '#667eea' },
         alignment: { horizontal: 'center' }
       });
-      
+
       const subHeaderStyle = wb.createStyle({
         font: { bold: true, size: 11 },
         fill: { type: 'pattern', patternType: 'solid', fgColor: '#e0e7ff' }
       });
-      
+
       const dataStyle = wb.createStyle({
         font: { size: 10 },
         alignment: { horizontal: 'left' }
@@ -1255,20 +1262,20 @@ router.get('/download-product-report', async (req, res) => {
       ws.cell(1, 1, 1, 7, true).string('Greenix Fertilizer Shop - Product-wise Sales Report').style(headerStyle);
       ws.cell(2, 1, 2, 7, true).string(`Product: ${productName}`);
       ws.cell(3, 1, 3, 7, true).string(`Period: ${new Date(startDate).toLocaleDateString('en-IN')} to ${new Date(endDate).toLocaleDateString('en-IN')}`);
-      
+
       // Summary
       ws.cell(5, 1).string('Summary:').style(subHeaderStyle);
       ws.cell(6, 1).string(`Total Sales: ${salesRecords.length}`);
       ws.cell(6, 3).string(`Total Quantity: ${totalQuantity}`);
       ws.cell(6, 5).string(`Total Revenue: ₹${totalRevenue.toFixed(2)}`);
       ws.cell(7, 1).string(`Unique Products: ${uniqueProducts}`);
-      
+
       // Table Headers
       const headers = ['Date', 'Product Name', 'Qty', 'Price/Unit', 'Total', 'Customer', 'Phone', 'Payment'];
       headers.forEach((header, index) => {
         ws.cell(9, index + 1).string(header).style(subHeaderStyle);
       });
-      
+
       // Data Rows
       salesRecords.forEach((record, index) => {
         const row = index + 10;
@@ -1281,7 +1288,7 @@ router.get('/download-product-report', async (req, res) => {
         ws.cell(row, 7).string(record.customerPhone).style(dataStyle);
         ws.cell(row, 8).string(record.paymentMethod).style(dataStyle);
       });
-      
+
       // Set column widths
       ws.column(1).setWidth(12);
       ws.column(2).setWidth(30);
@@ -1291,14 +1298,14 @@ router.get('/download-product-report', async (req, res) => {
       ws.column(6).setWidth(20);
       ws.column(7).setWidth(15);
       ws.column(8).setWidth(12);
-      
+
       // Footer
       const footerRow = salesRecords.length + 12;
       ws.cell(footerRow, 1, footerRow, 7, true).string(`Generated: ${new Date().toLocaleString('en-IN')}`);
-      
+
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="sales-report-${productId === 'all' ? 'all-products' : 'product'}-${startDate}-to-${endDate}.xlsx"`);
-      
+
       wb.write(`sales-report.xlsx`, res);
     } else {
       return res.status(400).json({ error: 'Format must be either pdf or excel' });
@@ -1357,7 +1364,7 @@ router.post('/create-admin', async (req, res) => {
 
     await admin.save();
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'Admin created successfully',
       admin: {
         id: admin._id,
@@ -1412,7 +1419,7 @@ router.patch('/toggle-admin-status/:adminId', async (req, res) => {
     admin.isActive = !admin.isActive;
     await admin.save();
 
-    res.json({ 
+    res.json({
       message: 'Admin status updated successfully',
       isActive: admin.isActive
     });

@@ -41,7 +41,7 @@
   align-items: center;
   padding: 20px 24px;
   border-bottom: 2px solid #f0f0f0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   color: white;
 }
 
@@ -124,7 +124,7 @@
 }
 
 .continue-shopping-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -208,7 +208,7 @@
 }
 
 .quantity-btn {
-  background: #667eea;
+  background: #1e3c72;
   color: white;
   border: none;
   width: 32px;

@@ -20,6 +20,10 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [refreshReviews, setRefreshReviews] = useState(0);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
+  const [showSpecifications, setShowSpecifications] = useState(true);
+  const [showReviews, setShowReviews] = useState(true);
   const reviewSectionRef = useRef(null);
   const navigate = useNavigate();
 
@@ -44,6 +48,9 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
       }
     }
     
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+    
     // Add keyboard event listener for ESC key
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -55,9 +62,17 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
     
     // Cleanup function
     return () => {
+      document.body.style.overflow = 'auto';
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [productId, userId, onClose]);
+
+  // Fetch related products when product category is known
+  useEffect(() => {
+    if (product?.category) {
+      fetchRelatedProducts();
+    }
+  }, [product?.category, productId]);
 
   // Set default package when product loads
   useEffect(() => {
@@ -126,6 +141,34 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
       });
     } finally {
       setIsCalculatingPrice(false);
+    }
+  }
+
+  async function fetchRelatedProducts() {
+    if (!product) return;
+    
+    setLoadingRelated(true);
+    try {
+      // Fetch products from the same category
+      const response = await fetch(getApiUrl('/api/products'));
+      if (response.ok) {
+        const allProducts = await response.json();
+        
+        // Filter products: same category but exclude current product
+        const related = allProducts
+          .filter(p => 
+            p._id !== productId && 
+            p.category === product.category &&
+            p.stock > 0 // Only show products in stock
+          )
+          .slice(0, 6); // Limit to 6 related products
+        
+        setRelatedProducts(related);
+      }
+    } catch (error) {
+      console.error('Error fetching related products:', error);
+    } finally {
+      setLoadingRelated(false);
     }
   }
 
@@ -350,183 +393,349 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
   deliveryDate.setDate(deliveryDate.getDate() + 3);
 
   return (
-    <div className="product-details-overlay">
-      <div className="product-details-modal">
-        <div className="modal-header">
-          <button className="back-btn" onClick={onClose}>
-            ← Back to Products
-          </button>
-          <button className="close-btn" onClick={onClose}>×</button>
+    <div className="product-details-overlay" style={{ 
+      background: 'rgba(0, 0, 0, 0.75)',
+      backdropFilter: 'blur(4px)',
+      overflowY: 'auto'
+    }}>
+      <div className="product-details-modal" style={{
+        background: '#ffffff',
+        borderRadius: '8px',
+        maxWidth: '1100px',
+        width: '95%',
+        maxHeight: '90vh',
+        height: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+        margin: '20px auto'
+      }}>
+        {/* Professional Header */}
+        <div style={{
+          background: '#fff',
+          borderBottom: '1px solid #e5e7eb',
+          padding: '10px 20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexShrink: 0
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#565959', flexWrap: 'wrap' }}>
+            <span onClick={onClose} style={{ cursor: 'pointer', color: '#007185' }}>Products</span>
+            <span>›</span>
+            <span>{product.category}</span>
+            <span>›</span>
+            <span style={{ color: '#0F1111' }}>{product.name}</span>
+          </div>
+          <button onClick={onClose} style={{
+            background: 'transparent',
+            border: 'none',
+            fontSize: '28px',
+            color: '#565959',
+            cursor: 'pointer',
+            padding: '0',
+            lineHeight: '1'
+          }}>×</button>
         </div>
         
-        <div className="product-details-content">
-          {/* Left Section - Images */}
-          <div className="product-images-section">
-            <div className="main-image">
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          {/* Left Section - Sticky Image */}
+          <div style={{ 
+            width: '48%',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            borderRight: '1px solid #e5e7eb',
+            overflow: 'hidden'
+          }}>
+            {/* Main Image Container - Centered */}
+            <div style={{ 
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              padding: '24px',
+              background: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '500px',
+              maxHeight: '600px',
+              position: 'relative'
+            }}>
               <img 
                 src={(() => {
-                  // If there are multiple images, show the selected one
                   if (product.images && product.images.length > 0) {
                     const selectedImage = product.images[selectedImageIndex] || product.image;
                     return selectedImage?.startsWith('http') 
                       ? selectedImage 
                       : getImageUrl(selectedImage);
                   }
-                  // Otherwise show the main product image
                   return product.image?.startsWith('http') 
                     ? product.image 
                     : getImageUrl(product.image);
                 })()}
                 alt={product.name}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  width: 'auto',
+                  height: 'auto',
+                  objectFit: 'contain'
+                }}
                 onError={(e) => {
-                  console.log('Image load error in details:', e.target.src);
-                  e.target.src = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect fill="%23f1f5f9" width="400" height="400"/><text fill="%236b7280" x="50%" y="50%" text-anchor="middle" dy=".3em" font-size="60">📦</text><text fill="%236b7280" x="50%" y="70%" text-anchor="middle" dy=".3em" font-size="16">No Image Available</text></svg>`;
+                  e.target.src = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect fill="%23f8f8f8" width="400" height="400"/><text fill="%23999" x="50%" y="50%" text-anchor="middle" dy=".3em" font-size="50">📦</text></svg>`;
                 }}
               />
               {product.discount > 0 && (
-                <div className="discount-badge-large">
+                <div style={{
+                  position: 'absolute',
+                  top: '16px',
+                  left: '16px',
+                  background: '#CC0C39',
+                  color: '#fff',
+                  padding: '6px 12px',
+                  borderRadius: '4px',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                }}>
                   {product.discount}% OFF
                 </div>
               )}
             </div>
             
-            {/* Only show thumbnails if there are actually multiple images */}
-            {product.images && product.images.length > 1 && product.images.some(img => img !== product.image) && (
-              <div className="image-thumbnails">
+            {/* Thumbnail Gallery */}
+            {product.images && product.images.length > 1 && (
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                overflowX: 'auto',
+                padding: '4px 0',
+                justifyContent: 'center'
+              }}>
                 {product.images.map((image, index) => (
                   <img
                     key={index}
-                    src={image?.startsWith('http') 
-                      ? image 
-                      : getImageUrl(image)
-                    }
-                    alt={`${product.name} view ${index + 1}`}
-                    className={`thumbnail ${index === selectedImageIndex ? 'active' : ''}`}
+                    src={image?.startsWith('http') ? image : getImageUrl(image)}
+                    alt={`View ${index + 1}`}
                     onClick={() => setSelectedImageIndex(index)}
-                    onError={(e) => {
-                      e.target.src = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23f1f5f9" width="100" height="100"/><text fill="%236b7280" x="50%" y="50%" text-anchor="middle" dy=".3em" font-size="20">📦</text></svg>`;
+                    style={{
+                      width: '75px',
+                      height: '75px',
+                      objectFit: 'contain',
+                      border: index === selectedImageIndex ? '2px solid #007185' : '1px solid #ddd',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      background: '#fff',
+                      padding: '6px',
+                      transition: 'all 0.2s'
                     }}
+                    onError={(e) => e.target.style.display = 'none'}
                   />
                 ))}
               </div>
             )}
             
-            <div className="product-actions-mobile">
-              <button 
-                className={`wishlist-btn-large ${isInWishlist ? 'active' : ''}`}
-                onClick={toggleWishlist}
-              >
-                {isInWishlist ? '💖 WISHLISTED' : '🤍 WISHLIST'}
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={toggleWishlist} style={{
+                flex: 1,
+                padding: '10px',
+                border: '1px solid #d5d9d9',
+                borderRadius: '8px',
+                background: isInWishlist ? '#FFE6E6' : '#fff',
+                color: isInWishlist ? '#C7511F' : '#0F1111',
+                fontSize: '13px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}>
+                {isInWishlist ? '❤️ Wishlisted' : '🤍 Wishlist'}
               </button>
-              <button 
-                className="share-btn"
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({
-                      title: product.name,
-                      text: `Check out this ${product.name}`,
-                      url: window.location.href
-                    });
-                  }
-                }}
-              >
-                📤 SHARE
+              <button onClick={() => navigator.share && navigator.share({ title: product.name, url: window.location.href })} style={{
+                flex: 1,
+                padding: '10px',
+                border: '1px solid #d5d9d9',
+                borderRadius: '8px',
+                background: '#fff',
+                color: '#0F1111',
+                fontSize: '13px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}>
+                📤 Share
               </button>
             </div>
           </div>
 
-          {/* Right Section - Product Info */}
-          <div className="product-info-section">
-            <div className="product-header">
-              {product.brand && (
-                <div className="product-brand-large">{product.brand}</div>
-              )}
-              <h1 className="product-title">{product.name}</h1>
-              
+          {/* Right Section - Scrollable Product Details */}
+          <div style={{ 
+            width: '52%',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            {/* Scrollable Content */}
+            <div style={{ 
+              flex: 1,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              padding: '20px 24px 80px 24px'
+            }}>
+            {/* Product Title & Brand */}
+            {product.brand && (
+              <div style={{ marginBottom: '4px' }}>
+                <a href="#" style={{ color: '#007185', fontSize: '12px', textDecoration: 'none' }}>
+                  Visit the {product.brand} Store
+                </a>
+              </div>
+            )}
+            
+            <h1 style={{
+              fontSize: '20px',
+              fontWeight: '500',
+              lineHeight: '1.3',
+              color: '#0F1111',
+              marginBottom: '8px'
+            }}>
+              {product.name}
+            </h1>
+            
+            {/* Rating & Reviews */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
               {product.rating && (
-                <div className="product-rating-large">
-                  <div className="rating-container">
-                    <span className="rating-score">{product.rating}</span>
-                    <div className="rating-stars">
-                      {renderStars(product.rating)}
-                    </div>
-                    <span className="rating-count">
-                      ({product.reviews || 0} reviews)
-                    </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {renderStars(product.rating)}
                   </div>
-                  {product.sold > 0 && (
-                    <div className="sales-count">
-                      {product.sold} sold recently
+                  <span style={{ color: '#007185', fontSize: '13px', cursor: 'pointer' }}>
+                    {product.rating} out of 5
+                  </span>
+                </div>
+              )}
+              {(product.reviews || 0) > 0 && (
+                <>
+                  <span style={{ color: '#d5d9d9' }}>|</span>
+                  <span style={{ color: '#007185', fontSize: '13px', cursor: 'pointer' }}>
+                    {product.reviews} ratings
+                  </span>
+                </>
+              )}
+              {product.sold > 0 && (
+                <>
+                  <span style={{ color: '#d5d9d9' }}>|</span>
+                  <span style={{ color: '#565959', fontSize: '13px' }}>
+                    {product.sold}+ bought
+                  </span>
+                </>
+              )}
+            </div>
+            
+            {/* Badges */}
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
+              {stockStatus.status === 'in-stock' && (
+                <span style={{
+                  background: '#F0F2F2',
+                  color: '#0F1111',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: '600'
+                }}>
+                  ✓ In Stock
+                </span>
+              )}
+              {product.discount > 0 && (
+                <span style={{
+                  background: '#CC0C39',
+                  color: '#fff',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: '600'
+                }}>
+                  Limited time deal
+                </span>
+              )}
+            </div>
+            
+            <hr style={{ border: 'none', borderTop: '1px solid #e7e7e7', margin: '10px 0' }} />
+
+            {/* Pricing Amazon Style */}
+            <div style={{ marginBottom: '10px' }}>
+              {isCalculatingPrice ? (
+                <span style={{ fontSize: '14px', color: '#565959' }}>Calculating...</span>
+              ) : (
+                <div>
+                  {product.originalPrice && product.originalPrice > (selectedPackage?.price || product.price) && (
+                    <div style={{ marginBottom: '3px' }}>
+                      <span style={{ fontSize: '12px', color: '#565959' }}>List Price: </span>
+                      <span style={{
+                        fontSize: '12px',
+                        color: '#565959',
+                        textDecoration: 'line-through'
+                      }}>₹{product.originalPrice}</span>
+                    </div>
+                  )}
+                  
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '3px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '13px', color: '#0F1111' }}>Price:</span>
+                    <span style={{
+                      fontSize: '18px',
+                      color: '#B12704',
+                      fontWeight: '600'
+                    }}>₹{dynamicPrice?.pricePerUnit || selectedPackage?.price || product.price}</span>
+                    {selectedPackage && (
+                      <span style={{ fontSize: '12px', color: '#565959' }}>
+                        ({selectedPackage.size} {selectedPackage.unit})
+                      </span>
+                    )}
+                  </div>
+                  
+                  {product.originalPrice && product.originalPrice > (selectedPackage?.price || product.price) && (
+                    <div style={{ marginBottom: '6px' }}>
+                      <span style={{ color: '#CC0C39', fontSize: '12px', fontWeight: '400' }}>
+                        Save ₹{(product.originalPrice - (selectedPackage?.price || product.price)).toFixed(2)} ({product.discount}%)
+                      </span>
+                    </div>
+                  )}
+                  
+                  {quantity > 1 && dynamicPrice && (
+                    <div style={{ fontSize: '13px', color: '#565959', marginBottom: '3px' }}>
+                      Total: ₹{dynamicPrice.totalPrice} for {quantity} {quantity > 1 ? 'units' : 'unit'}
                     </div>
                   )}
                 </div>
               )}
             </div>
-
-            <div className="product-pricing-large">
-              <div className="price-section">
-                {isCalculatingPrice ? (
-                  <span className="calculating-price">Calculating...</span>
-                ) : dynamicPrice && selectedPackage ? (
-                  <>
-                    <span className="current-price-large">₹{dynamicPrice.pricePerUnit}</span>
-                    <span className="price-per-unit"> per {selectedPackage.size} {selectedPackage.unit} package</span>
-                    {quantity > 1 && (
-                      <div className="total-price">
-                        Total: ₹{dynamicPrice.totalPrice} for {quantity} packages ({quantity * selectedPackage.size} {selectedPackage.unit} total)
-                      </div>
-                    )}
-                    {dynamicPrice.savings > 0 && (
-                      <div className="bulk-savings">
-                        You save: ₹{dynamicPrice.savings} with bulk pricing!
-                      </div>
-                    )}
-                    <div className="unit-price-breakdown">
-                      Price per {product.baseUnit || 'unit'}: ₹{(dynamicPrice.pricePerUnit / selectedPackage.size).toFixed(2)}
+            
+            {/* Delivery Info - Amazon Prime Style */}
+            {stockStatus.status === 'in-stock' && (
+              <div style={{
+                background: '#F7F7F7',
+                border: '1px solid #D5D9D9',
+                borderRadius: '8px',
+                padding: '12px',
+                marginBottom: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '24px' }}>🚚</span>
+                  <div>
+                    <div style={{ fontWeight: '700', color: '#0F1111', fontSize: '14px' }}>
+                      FREE Delivery {deliveryDate.toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric' })}
                     </div>
-                  </>
-                ) : selectedPackage ? (
-                  <>
-                    <span className="current-price-large">₹{selectedPackage.price}</span>
-                    <span className="price-per-unit"> per {selectedPackage.size} {selectedPackage.unit} package</span>
-                    {product.originalPrice && product.originalPrice > product.basePrice && (
-                      <>
-                        <span className="original-price-large">₹{(product.originalPrice * selectedPackage.size).toFixed(2)}</span>
-                        <span className="discount-percent-large">{Math.round(((product.originalPrice - product.basePrice) / product.originalPrice) * 100)}% off</span>
-                      </>
-                    )}
-                    <div className="unit-price-breakdown">
-                      Price per {product.baseUnit || 'unit'}: ₹{(selectedPackage.price / selectedPackage.size).toFixed(2)}
+                    <div style={{ fontSize: '12px', color: '#565959' }}>
+                      Order within 4 hrs for delivery by tomorrow
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="current-price-large">₹{product.price}</span>
-                    {product.originalPrice && product.originalPrice > product.price && (
-                      <>
-                        <span className="original-price-large">₹{product.originalPrice}</span>
-                        <span className="discount-percent-large">{product.discount}% off</span>
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-              {selectedPackage && product.originalPrice && product.originalPrice > product.basePrice && (
-                <div className="savings-info">
-                  You save: ₹{((product.originalPrice - product.basePrice) * selectedPackage.size).toFixed(2)} per package
+                  </div>
                 </div>
-              )}
-            </div>
-
-            <div className={`stock-status-large ${stockStatus.status}`}>
-              <div className="stock-indicator-large"></div>
-              <span className="stock-text">{stockStatus.text}</span>
-              {stockStatus.status === 'in-stock' && (
-                <span className="delivery-info">
-                  Get it by {deliveryDate.toLocaleDateString()}
-                </span>
-              )}
-            </div>
+                <div style={{ fontSize: '12px', color: '#007185', cursor: 'pointer' }}>
+                  Select delivery location
+                </div>
+              </div>
+            )}
 
             {/* Features */}
             {product.features && product.features.length > 0 && (
@@ -543,93 +752,130 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
               </div>
             )}
 
-            {/* Quantity and Actions */}
-            <div className="purchase-section">
-              {/* Package Size Selection */}
-              {product.packageSizes && product.packageSizes.length > 0 ? (
-                <div className="package-selection-section">
-                  <label>Select Package Size:</label>
-                  <div className="package-options">
-                    {product.packageSizes.map((pkg, index) => (
-                      <div 
-                        key={index}
-                        className={`package-option ${selectedPackage === pkg ? 'selected' : ''}`}
-                        onClick={() => setSelectedPackage(pkg)}
-                      >
-                        <div className="package-size">
-                          {pkg.size} {pkg.unit}
-                        </div>
-                        <div className="package-price">
-                          ₹{pkg.price}
-                        </div>
-                        {pkg.stock > 0 ? (
-                          <div className="package-stock">
-                            {pkg.stock} available
-                          </div>
-                        ) : (
-                          <div className="package-stock out-of-stock">
-                            Out of stock
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+            {/* Package Selection - Amazon Style */}
+            {product.packageSizes && product.packageSizes.length > 0 ? (
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ fontSize: '14px', fontWeight: '700', color: '#0F1111', marginBottom: '8px' }}>
+                  Size: <span style={{ fontWeight: '400' }}>{selectedPackage?.size} {selectedPackage?.unit}</span>
                 </div>
-              ) : (
-                <div className="package-selection-section">
-                  <label>Product Unit:</label>
-                  <div className="package-options">
-                    <div className="package-option selected">
-                      <div className="package-size">
-                        1 {product.unit || 'unit'}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {product.packageSizes.map((pkg, index) => (
+                    <div 
+                      key={index}
+                      onClick={() => pkg.stock > 0 && setSelectedPackage(pkg)}
+                      style={{
+                        border: selectedPackage === pkg ? '2px solid #007185' : '1px solid #D5D9D9',
+                        borderRadius: '8px',
+                        padding: '12px 16px',
+                        cursor: pkg.stock > 0 ? 'pointer' : 'not-allowed',
+                        opacity: pkg.stock > 0 ? 1 : 0.5,
+                        background: selectedPackage === pkg ? '#F0F8FF' : '#fff',
+                        transition: 'all 0.2s',
+                        minWidth: '120px'
+                      }}
+                    >
+                      <div style={{ fontWeight: '600', fontSize: '14px', color: '#0F1111', marginBottom: '4px' }}>
+                        {pkg.size} {pkg.unit}
                       </div>
-                      <div className="package-price">
-                        ₹{product.price}
+                      <div style={{ fontSize: '16px', color: '#B12704', fontWeight: '700' }}>
+                        ₹{pkg.price}
                       </div>
-                      <div className="package-stock">
-                        {product.stock} available
+                      <div style={{ fontSize: '11px', color: pkg.stock > 0 ? '#007600' : '#B12704', marginTop: '4px' }}>
+                        {pkg.stock > 0 ? `${pkg.stock} in stock` : 'Out of stock'}
                       </div>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="quantity-section">
-                <label>Number of {selectedPackage ? `${selectedPackage.size} ${selectedPackage.unit} packages` : 'Units'}:</label>
-                <div className="quantity-controls-large">
-                  <button 
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={quantity <= 1}
-                  >
-                    -
-                  </button>
-                  <span className="quantity-display-large">{quantity}</span>
-                  <button 
-                    onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
-                    disabled={quantity >= currentStock}
-                  >
-                    +
-                  </button>
+                  ))}
                 </div>
               </div>
+            ) : null}
 
-              <div className="action-buttons">
+            {/* Quantity Selector - Amazon Style */}
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: '#0F1111', marginBottom: '8px' }}>
+                Quantity:
+              </div>
+              <div style={{
+                display: 'inline-flex',
+                border: '1px solid #D5D9D9',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                background: '#F0F2F2'
+              }}>
                 <button 
-                  className="btn btn-secondary add-to-cart-large"
-                  onClick={handleAddToCart}
-                  disabled={stockStatus.status === 'out-of-stock'}
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  disabled={quantity <= 1}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    border: 'none',
+                    background: '#F0F2F2',
+                    cursor: quantity > 1 ? 'pointer' : 'not-allowed',
+                    fontSize: '18px',
+                    color: '#0F1111',
+                    fontWeight: '400'
+                  }}
                 >
-                  🛒 ADD TO CART
+                  -
                 </button>
+                <div style={{
+                  width: '50px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: '#fff',
+                  borderLeft: '1px solid #D5D9D9',
+                  borderRight: '1px solid #D5D9D9',
+                  fontSize: '16px',
+                  fontWeight: '400',
+                  color: '#0F1111'
+                }}>
+                  {quantity}
+                </div>
                 <button 
-                  className="btn btn-primary buy-now-large"
-                  onClick={handleBuyNow}
-                  disabled={stockStatus.status === 'out-of-stock' || isBuyingNow}
+                  onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
+                  disabled={quantity >= currentStock}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    border: 'none',
+                    background: '#F0F2F2',
+                    cursor: quantity < currentStock ? 'pointer' : 'not-allowed',
+                    fontSize: '18px',
+                    color: '#0F1111',
+                    fontWeight: '400'
+                  }}
                 >
-                  {isBuyingNow ? '⏳ Processing...' : '⚡ BUY NOW'}
+                  +
                 </button>
               </div>
             </div>
+
+            {/* Security & Trust Badges */}
+            <div style={{
+              border: '1px solid #D5D9D9',
+              borderRadius: '8px',
+              padding: '12px',
+              background: '#F7FAFA',
+              marginBottom: '12px'
+            }}>
+              <div style={{ fontSize: '12px', color: '#565959', lineHeight: '16px' }}>
+                <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>✓</span>
+                  <span>Secure transaction</span>
+                </div>
+                <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>✓</span>
+                  <span>7-day return policy</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>✓</span>
+                  <span>Authentic products guaranteed</span>
+                </div>
+              </div>
+            </div>
+            
+            <hr style={{ border: 'none', borderTop: '1px solid #e7e7e7', margin: '12px 0' }} />
 
             {/* Product Description */}
             <div className="description-section">
@@ -652,28 +898,33 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
 
             {/* Specifications */}
             <div className="specifications-section">
-              <h3>Product Specifications</h3>
-              <div className="spec-table">
-                <div className="spec-row">
-                  <span className="spec-label">Brand</span>
-                  <span className="spec-value">{product.brand || 'Generic'}</span>
-                </div>
-                <div className="spec-row">
-                  <span className="spec-label">Category</span>
-                  <span className="spec-value">{product.category || 'General'}</span>
-                </div>
-                <div className="spec-row">
-                  <span className="spec-label">Stock Available</span>
-                  <span className="spec-value">{product.stock} units</span>
-                </div>
-                <div className="spec-row">
-                  <span className="spec-label">Weight</span>
-                  <span className="spec-value">{product.weight || 'As per product'}</span>
-                </div>
-              </div>
-              
-              {/* Agricultural Product Details */}
-              {(product.chemicalComposition || product.packaging || product.application) && (
+              <h3 onClick={() => setShowSpecifications(!showSpecifications)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Product Specifications</span>
+                <span style={{ fontSize: '18px' }}>{showSpecifications ? '−' : '+'}</span>
+              </h3>
+              {showSpecifications && (
+                <>
+                  <div className="spec-table">
+                    <div className="spec-row">
+                      <span className="spec-label">Brand</span>
+                      <span className="spec-value">{product.brand || 'Generic'}</span>
+                    </div>
+                    <div className="spec-row">
+                      <span className="spec-label">Category</span>
+                      <span className="spec-value">{product.category || 'General'}</span>
+                    </div>
+                    <div className="spec-row">
+                      <span className="spec-label">Stock Available</span>
+                      <span className="spec-value">{product.stock} units</span>
+                    </div>
+                    <div className="spec-row">
+                      <span className="spec-label">Weight</span>
+                      <span className="spec-value">{product.weight || 'As per product'}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Agricultural Product Details */}
+                  {(product.chemicalComposition || product.packaging || product.application) && (
                 <>
                   <h3 style={{ marginTop: '2rem' }}>Agricultural Product Details</h3>
                   
@@ -769,51 +1020,308 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                   )}
                 </>
               )}
+                </>
+              )}
             </div>
 
             {/* Reviews Section - Read Only */}
-            <div ref={reviewSectionRef} style={{ marginTop: '40px' }}>
-              <ReviewSection 
-                productId={productId} 
-                key={refreshReviews}
-              />
-              
-              <div style={{ 
-                textAlign: 'center', 
-                padding: '30px', 
-                background: '#f0f7ff', 
-                borderRadius: '12px',
-                marginTop: '20px',
-                border: '2px dashed #667eea'
-              }}>
-                <p style={{ color: '#333', marginBottom: '10px', fontSize: '16px', fontWeight: '500' }}>
-                  💡 Want to review this product?
-                </p>
-                <p style={{ color: '#666', marginBottom: '15px', fontSize: '14px' }}>
-                  Purchase this product and write your review from your Orders page
-                </p>
-                {!token && (
-                  <button 
-                    onClick={() => navigate('/login')}
-                    style={{
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      color: 'white',
-                      padding: '12px 32px',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      marginTop: '5px'
-                    }}
-                  >
-                    Login to Purchase
-                  </button>
-                )}
+            <div ref={reviewSectionRef} style={{ marginTop: '20px' }}>
+              <div onClick={() => setShowReviews(!showReviews)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Customer Reviews</h3>
+                <span style={{ fontSize: '18px' }}>{showReviews ? '−' : '+'}</span>
               </div>
+              {showReviews && (
+                <>
+                  <ReviewSection 
+                    productId={productId} 
+                    key={refreshReviews}
+                  />
+                  
+                  {!token && (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: '16px', 
+                      background: '#f7f7f7', 
+                      borderRadius: '6px',
+                      marginTop: '12px',
+                      border: '1px solid #e0e0e0'
+                    }}>
+                      <p style={{ color: '#565959', marginBottom: '8px', fontSize: '13px', fontWeight: '500' }}>
+                        💡 Want to review this product?
+                      </p>
+                      <p style={{ color: '#565959', marginBottom: '12px', fontSize: '12px' }}>
+                        Purchase this product and write your review from your Orders page
+                      </p>
+                      <button 
+                        onClick={() => navigate('/login')}
+                        style={{
+                          background: '#FFA41C',
+                          color: '#0F1111',
+                          padding: '8px 20px',
+                          border: '1px solid #FF8F00',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Login to Purchase
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            </div>
+
+            {/* Sticky Action Buttons at Bottom */}
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: '#fff',
+              borderTop: '1px solid #e5e7eb',
+              padding: '12px 24px',
+              display: 'flex',
+              gap: '10px',
+              boxShadow: '0 -2px 10px rgba(0,0,0,0.05)'
+            }}>
+              <button 
+                onClick={handleAddToCart}
+                disabled={stockStatus.status === 'out-of-stock'}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: stockStatus.status === 'out-of-stock' ? '#D5D9D9' : '#FFD814',
+                  border: '1px solid #FCD200',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#0F1111',
+                  cursor: stockStatus.status === 'out-of-stock' ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => stockStatus.status !== 'out-of-stock' && (e.target.style.background = '#F7CA00')}
+                onMouseLeave={(e) => stockStatus.status !== 'out-of-stock' && (e.target.style.background = '#FFD814')}
+              >
+                Add to Cart
+              </button>
+              
+              <button 
+                onClick={handleBuyNow}
+                disabled={stockStatus.status === 'out-of-stock' || isBuyingNow}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: stockStatus.status === 'out-of-stock' || isBuyingNow ? '#D5D9D9' : '#FFA41C',
+                  border: '1px solid #FF8F00',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#0F1111',
+                  cursor: (stockStatus.status === 'out-of-stock' || isBuyingNow) ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => !(stockStatus.status === 'out-of-stock' || isBuyingNow) && (e.target.style.background = '#FA8900')}
+                onMouseLeave={(e) => !(stockStatus.status === 'out-of-stock' || isBuyingNow) && (e.target.style.background = '#FFA41C')}
+              >
+                {isBuyingNow ? 'Processing...' : 'Buy Now'}
+              </button>
             </div>
           </div>
         </div>
+        
+        {/* Related Products Section - Amazon Style Horizontal Carousel */}
+        {relatedProducts.length > 0 && (
+          <div style={{ 
+            background: '#fff',
+            padding: '24px 32px 32px',
+            borderTop: '1px solid #E7E7E7'
+          }}>
+            <h2 style={{ 
+              fontSize: '21px', 
+              fontWeight: '700', 
+              marginBottom: '16px',
+              color: '#0F1111'
+            }}>
+              Related products
+            </h2>
+            
+            {/* Horizontal Scrollable Container */}
+            <div style={{
+              display: 'flex',
+              gap: '16px',
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              paddingBottom: '16px',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#888 #f1f1f1',
+              WebkitOverflowScrolling: 'touch'
+            }}>
+              {relatedProducts.map((relatedProduct) => {
+                const relatedPrice = relatedProduct.packageSizes?.[0]?.price || relatedProduct.price;
+                const relatedOriginalPrice = relatedProduct.originalPrice;
+                const relatedDiscount = relatedOriginalPrice ? Math.round(((relatedOriginalPrice - relatedPrice) / relatedOriginalPrice) * 100) : 0;
+                
+                return (
+                  <div 
+                    key={relatedProduct._id}
+                    onClick={() => {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      setProduct(null);
+                      setLoading(true);
+                      if (onClose) {
+                        onClose();
+                        setTimeout(() => {
+                          window.location.hash = `#product-${relatedProduct._id}`;
+                          window.location.reload();
+                        }, 300);
+                      }
+                    }}
+                    style={{
+                      minWidth: '200px',
+                      maxWidth: '200px',
+                      background: '#fff',
+                      border: '1px solid #DDD',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      flexShrink: 0
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                      e.currentTarget.style.borderColor = '#C7C7C7';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = 'none';
+                      e.currentTarget.style.borderColor = '#DDD';
+                    }}
+                  >
+                    {/* Product Image */}
+                    <div style={{ 
+                      position: 'relative', 
+                      width: '100%',
+                      height: '200px',
+                      background: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                      padding: '16px'
+                    }}>
+                      <img 
+                        src={relatedProduct.image?.startsWith('http') ? relatedProduct.image : getImageUrl(relatedProduct.image)}
+                        alt={relatedProduct.name}
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                          objectFit: 'contain'
+                        }}
+                      />
+                      {relatedDiscount > 0 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '8px',
+                          left: '8px',
+                          background: '#CC0C39',
+                          color: '#fff',
+                          padding: '4px 6px',
+                          borderRadius: '3px',
+                          fontSize: '11px',
+                          fontWeight: '600'
+                        }}>
+                          -{relatedDiscount}%
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Product Info */}
+                    <div style={{ padding: '12px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <div style={{
+                        fontSize: '13px',
+                        lineHeight: '18px',
+                        color: '#0F1111',
+                        marginBottom: '8px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: '2',
+                        WebkitBoxOrient: 'vertical',
+                        minHeight: '36px',
+                        fontWeight: '400'
+                      }}>
+                        {relatedProduct.name}
+                      </div>
+                      
+                      {/* Rating */}
+                      {relatedProduct.rating > 0 && (
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '4px',
+                          marginBottom: '6px',
+                          fontSize: '12px'
+                        }}>
+                          <span style={{ color: '#007185', fontSize: '12px' }}>{relatedProduct.rating}</span>
+                          <div style={{ color: '#FFA41C', fontSize: '12px' }}>★★★★☆</div>
+                          <span style={{ color: '#565959', fontSize: '11px' }}>({relatedProduct.reviews || 0})</span>
+                        </div>
+                      )}
+                      
+                      {/* Price */}
+                      <div style={{ marginTop: 'auto' }}>
+                        <div style={{
+                          fontSize: '18px',
+                          color: '#B12704',
+                          fontWeight: '400',
+                          marginBottom: '2px'
+                        }}>
+                          ₹{relatedPrice}
+                        </div>
+                        {relatedOriginalPrice && relatedOriginalPrice > relatedPrice && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                            <span style={{
+                              fontSize: '12px',
+                              color: '#565959',
+                              textDecoration: 'line-through'
+                            }}>
+                              ₹{relatedOriginalPrice}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Stock Badge */}
+                        <div style={{ marginTop: '4px' }}>
+                          {relatedProduct.stock > 0 ? (
+                            <span style={{
+                              fontSize: '11px',
+                              color: '#007600',
+                              fontWeight: '400'
+                            }}>
+                              In Stock
+                            </span>
+                          ) : (
+                            <span style={{
+                              fontSize: '11px',
+                              color: '#B12704',
+                              fontWeight: '400'
+                            }}>
+                              Currently unavailable
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

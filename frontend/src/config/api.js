@@ -11,8 +11,9 @@ export const getApiUrl = (endpoint) => {
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return '';
   if (imagePath.startsWith('http')) return imagePath;
-  
-  const cleanPath = imagePath.replace(/^\/uploads\//, '');
+
+  // Remove 'uploads/' or '/uploads/' from the beginning of the path
+  const cleanPath = imagePath.replace(/^(\/)?uploads\//, '');
   return `${API_BASE_URL}/uploads/${cleanPath}`;
 };
 

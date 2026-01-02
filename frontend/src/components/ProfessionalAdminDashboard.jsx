@@ -2,6 +2,60 @@ import { useState, useEffect } from 'react';
 import '../css/ProfessionalAdminDashboard.css';
 import '../css/ProfessionalChart.css';
 import ProfessionalChart from './ProfessionalChart';
+import { getImageUrl } from '../config/api';
+
+
+// Configuration for dynamic category fields
+const CATEGORY_CONFIG = {
+  'Fertilizers': {
+    weightLabel: 'Bag Weight (e.g., 50kg)',
+    unitLabel: 'Unit (e.g., Bags)',
+    weightPlaceholder: '50kg',
+    unitPlaceholder: 'Bags'
+  },
+  'Seeds': {
+    weightLabel: 'Packet Weight',
+    unitLabel: 'Unit (e.g., Packets)',
+    weightPlaceholder: '1kg',
+    unitPlaceholder: 'Packets'
+  },
+  'Tools': {
+    weightLabel: 'Size / Dimensions',
+    unitLabel: 'Unit (e.g., Pieces)',
+    weightPlaceholder: 'e.g., 10 inch, Large',
+    unitPlaceholder: 'Pieces'
+  },
+  'Equipment': {
+    weightLabel: 'Size / Capacity',
+    unitLabel: 'Unit',
+    weightPlaceholder: 'e.g., 16L Tank',
+    unitPlaceholder: 'Units'
+  },
+  'Herbicides': {
+    weightLabel: 'Volume / Weight',
+    unitLabel: 'Unit (e.g., Bottles)',
+    weightPlaceholder: 'e.g., 1L, 500ml',
+    unitPlaceholder: 'Bottles'
+  },
+  'Insecticides': {
+    weightLabel: 'Volume / Weight',
+    unitLabel: 'Unit (e.g., Bottles)',
+    weightPlaceholder: 'e.g., 1L, 500ml',
+    unitPlaceholder: 'Bottles'
+  },
+  'Fungicides': {
+    weightLabel: 'Volume / Weight',
+    unitLabel: 'Unit (e.g., Packs)',
+    weightPlaceholder: 'e.g., 1kg, 500g',
+    unitPlaceholder: 'Packs'
+  },
+  'default': {
+    weightLabel: 'Weight / Size',
+    unitLabel: 'Unit',
+    weightPlaceholder: 'e.g., 1kg, 500g',
+    unitPlaceholder: 'Units'
+  }
+};
 
 export default function ProfessionalAdminDashboard({ token, onLogout }) {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -16,14 +70,14 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     pendingOrders: 0
   });
   const [loading, setLoading] = useState(true);
-  
+
   // Revenue analysis state
   const [showRevenueModal, setShowRevenueModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [monthlyRevenue, setMonthlyRevenue] = useState([]);
   const [revenueLoading, setRevenueLoading] = useState(false);
-  
+
   // Product form state
   const [productForm, setProductForm] = useState({
     name: '',
@@ -37,9 +91,10 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     weight: '',
     features: '',
     tags: '',
-    image: null
+    image: null,
+    lowStockThreshold: '10' // Default value
   });
-  
+
   // Category form state
   const [categoryForm, setCategoryForm] = useState({
     name: '',
@@ -49,7 +104,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
 
   // Notification state
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
-  
+
   // Edit modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -63,7 +118,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     phone: '',
     role: 'admin'
   });
-  
+
   // Sales Report state
   const [salesReport, setSalesReport] = useState({
     monthly: [],
@@ -124,17 +179,17 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
       // Calculate stats (include all orders in revenue and count)
       const totalRevenue = (ordersData || []).reduce((sum, order) => sum + (order.totalAmount || 0), 0);
       const lowStockProducts = (productsData.products || productsData || []).filter(p => p.stock < 10).length;
-      const pendingOrders = (ordersData || []).filter(order => 
+      const pendingOrders = (ordersData || []).filter(order =>
         order.status === 'pending' || order.status === 'ordered'
       ).length;
-      
+
       console.log('Dashboard stats calculated:', {
         totalOrders: (ordersData || []).length,
         totalRevenue,
         pendingOrders,
         ordersStatuses: (ordersData || []).map(o => o.status)
       });
-      
+
       setStats({
         totalOrders: (ordersData || []).length,
         totalProducts: (productsData.products || productsData || []).length,
@@ -171,7 +226,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
       const response = await fetch(`http://localhost:3001/api/admin/revenue/monthly?year=${year}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setMonthlyRevenue(data.monthlyRevenue || []);
@@ -223,6 +278,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
       formData.append('weight', productForm.weight);
       formData.append('features', productForm.features);
       formData.append('tags', productForm.tags);
+      formData.append('lowStockThreshold', productForm.lowStockThreshold);
       if (productForm.image) {
         formData.append('image', productForm.image);
       }
@@ -235,19 +291,20 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
 
       if (response.ok) {
         showNotification('Product added successfully!');
-        setProductForm({ 
-          name: '', 
-          description: '', 
-          price: '', 
+        setProductForm({
+          name: '',
+          description: '',
+          price: '',
           basePrice: '',
-          category: '', 
-          stock: '', 
+          category: '',
+          stock: '',
           unit: '',
           brand: '',
           weight: '',
           features: '',
           tags: '',
-          image: null 
+          image: null,
+          lowStockThreshold: '10'
         });
         fetchDashboardData(); // Refresh products
       } else {
@@ -343,7 +400,8 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
       weight: product.weight || '',
       features: (product.features || []).join(', '),
       tags: (product.tags || []).join(', '),
-      image: null // Don't pre-fill image as it's a file input
+      image: null, // Don't pre-fill image as it's a file input
+      lowStockThreshold: (product.lowStockThreshold || 10).toString()
     });
     setIsEditModalOpen(true);
   }
@@ -363,6 +421,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
       formData.append('weight', productForm.weight);
       formData.append('features', productForm.features);
       formData.append('tags', productForm.tags);
+      formData.append('lowStockThreshold', productForm.lowStockThreshold);
       if (productForm.image) {
         formData.append('image', productForm.image);
       }
@@ -377,19 +436,20 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         showNotification('Product updated successfully!');
         setIsEditModalOpen(false);
         setEditingProduct(null);
-        setProductForm({ 
-          name: '', 
-          description: '', 
-          price: '', 
+        setProductForm({
+          name: '',
+          description: '',
+          price: '',
           basePrice: '',
-          category: '', 
-          stock: '', 
+          category: '',
+          stock: '',
           unit: '',
           brand: '',
           weight: '',
           features: '',
           tags: '',
-          image: null 
+          image: null,
+          lowStockThreshold: '10'
         });
         fetchDashboardData(); // Refresh products
       } else {
@@ -405,9 +465,9 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
   async function handleUpdateOrderStatus(orderId, newStatus) {
     try {
       // Optimistically update the UI immediately
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order._id === orderId 
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order._id === orderId
             ? { ...order, status: newStatus }
             : order
         )
@@ -427,9 +487,9 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         // No need to refresh since we already updated optimistically
       } else {
         // If failed, revert the optimistic update
-        setOrders(prevOrders => 
-          prevOrders.map(order => 
-            order._id === orderId 
+        setOrders(prevOrders =>
+          prevOrders.map(order =>
+            order._id === orderId
               ? { ...order, status: order.originalStatus || order.status }
               : order
           )
@@ -447,17 +507,17 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
   // Enhanced chart data preparation
   const prepareChartData = () => {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+
     // Calculate monthly revenue for the current year
-    const monthlyData = Array.from({length: 12}, (_, index) => {
+    const monthlyData = Array.from({ length: 12 }, (_, index) => {
       const monthOrders = orders.filter(order => {
         const orderDate = new Date(order.orderDate || order.createdAt);
         return orderDate.getMonth() === index && orderDate.getFullYear() === new Date().getFullYear();
       });
-      
+
       const revenue = monthOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
       const orderCount = monthOrders.length;
-      
+
       return {
         month: monthNames[index],
         revenue,
@@ -472,7 +532,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
   const totalYearRevenue = chartData.reduce((sum, month) => sum + month.revenue, 0);
   const totalYearOrders = chartData.reduce((sum, month) => sum + month.orders, 0);
   const averageMonthlyRevenue = totalYearRevenue / 12;
-  const growthRate = chartData.length > 1 ? 
+  const growthRate = chartData.length > 1 ?
     ((chartData[chartData.length - 1].revenue - chartData[chartData.length - 2].revenue) / Math.max(chartData[chartData.length - 2].revenue, 1)) * 100 : 0;
 
   // Revenue trend line chart data
@@ -557,7 +617,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
               {Math.abs(growthRate).toFixed(1)}% from last month
             </div>
           </div>
-          
+
           <div className="analytics-card orders">
             <div className="analytics-card-header">
               <span className="analytics-card-title">Total Orders</span>
@@ -569,7 +629,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
               {totalYearOrders} this year
             </div>
           </div>
-          
+
           <div className="analytics-card growth">
             <div className="analytics-card-header">
               <span className="analytics-card-title">Avg Monthly</span>
@@ -581,7 +641,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
               Revenue average
             </div>
           </div>
-          
+
           <div className="analytics-card conversion">
             <div className="analytics-card-header">
               <span className="analytics-card-title">Products</span>
@@ -622,7 +682,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                 scales: {
                   y: {
                     ticks: {
-                      callback: function(value) {
+                      callback: function (value) {
                         return '₹' + (value / 1000).toFixed(0) + 'K';
                       }
                     }
@@ -720,7 +780,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                           <div className="products-list">
                             {order.items.slice(0, 2).map((item, index) => (
                               <div key={index} className="product-item">
-                                {item.product?.name || 'Unknown Product'} 
+                                {item.product?.name || 'Unknown Product'}
                                 {item.quantity > 1 && <span className="quantity"> (×{item.quantity})</span>}
                               </div>
                             ))}
@@ -765,8 +825,8 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                       </div>
                     </td>
                     <td>
-                      <select 
-                        value={order.status} 
+                      <select
+                        value={order.status}
                         onChange={(e) => handleUpdateOrderStatus(order._id, e.target.value)}
                         className="status-select"
                       >
@@ -790,20 +850,20 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
             <div className="revenue-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>Monthly Revenue Analysis</h2>
-                <button 
-                  className="close-btn" 
+                <button
+                  className="close-btn"
                   onClick={() => setShowRevenueModal(false)}
                 >
                   ✕
                 </button>
               </div>
-              
+
               <div className="modal-content">
                 <div className="revenue-controls">
                   <div className="year-selector">
                     <label>Year:</label>
-                    <select 
-                      value={selectedYear} 
+                    <select
+                      value={selectedYear}
                       onChange={(e) => handleYearChange(Number(e.target.value))}
                     >
                       {[2023, 2024, 2025, 2026].map(year => (
@@ -811,14 +871,14 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                       ))}
                     </select>
                   </div>
-                  
+
                   <div className="month-selector">
                     <label>Month:</label>
-                    <select 
-                      value={selectedMonth} 
+                    <select
+                      value={selectedMonth}
                       onChange={(e) => handleMonthChange(Number(e.target.value))}
                     >
-                      {Array.from({length: 12}, (_, i) => i + 1).map(month => (
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
                         <option key={month} value={month}>
                           {getMonthName(month)}
                         </option>
@@ -845,8 +905,8 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                       <h4>Year Overview</h4>
                       <div className="revenue-grid">
                         {monthlyRevenue.map((data, index) => (
-                          <div 
-                            key={index} 
+                          <div
+                            key={index}
                             className={`month-card ${data.month === selectedMonth ? 'selected' : ''}`}
                             onClick={() => handleMonthChange(data.month)}
                           >
@@ -879,90 +939,145 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
           <h2>Add New Product</h2>
           <form onSubmit={handleAddProduct} className="product-form">
             <div className="form-grid">
-              <input
-                type="text"
-                placeholder="Product Name"
-                value={productForm.name}
-                onChange={(e) => setProductForm({...productForm, name: e.target.value})}
+              <div className="form-group">
+                <label>Product Name *</label>
+                <input
+                  type="text"
+                  placeholder="Enter product name"
+                  value={productForm.name}
+                  onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Current Price (₹) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={productForm.price}
+                  onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Base Price per Unit (₹) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={productForm.basePrice}
+                  onChange={(e) => setProductForm({ ...productForm, basePrice: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Category *</label>
+                <select
+                  value={productForm.category}
+                  onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {categories.map(cat => (
+                    <option key={cat._id} value={cat.name}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              {(() => {
+                const config = CATEGORY_CONFIG[productForm.category] || CATEGORY_CONFIG['default'];
+                return (
+                  <>
+                    <div className="form-group">
+                      <label>Stock Quantity *</label>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={productForm.stock}
+                        onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Low Stock Alert Level</label>
+                      <input
+                        type="number"
+                        placeholder="Default: 10"
+                        value={productForm.lowStockThreshold}
+                        onChange={(e) => setProductForm({ ...productForm, lowStockThreshold: e.target.value })}
+                        title="Alert when stock falls below this number"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>{config.unitLabel}</label>
+                      <input
+                        type="text"
+                        placeholder={config.unitPlaceholder}
+                        value={productForm.unit}
+                        onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Brand</label>
+                      <input
+                        type="text"
+                        placeholder="Brand name"
+                        value={productForm.brand}
+                        onChange={(e) => setProductForm({ ...productForm, brand: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>{config.weightLabel}</label>
+                      <input
+                        type="text"
+                        placeholder={config.weightPlaceholder}
+                        value={productForm.weight}
+                        onChange={(e) => setProductForm({ ...productForm, weight: e.target.value })}
+                      />
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label>Description *</label>
+              <textarea
+                placeholder="Product Description"
+                value={productForm.description}
+                onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                 required
-              />
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Current Price (₹)"
-                value={productForm.price}
-                onChange={(e) => setProductForm({...productForm, price: e.target.value})}
-                required
-              />
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Base Price per Unit (₹)"
-                value={productForm.basePrice}
-                onChange={(e) => setProductForm({...productForm, basePrice: e.target.value})}
-                required
-              />
-              <select
-                value={productForm.category}
-                onChange={(e) => setProductForm({...productForm, category: e.target.value})}
-                required
-              >
-                <option value="">Select Category</option>
-                {categories.map(cat => (
-                  <option key={cat._id} value={cat.name}>{cat.name}</option>
-                ))}
-              </select>
-              <input
-                type="number"
-                placeholder="Stock Quantity"
-                value={productForm.stock}
-                onChange={(e) => setProductForm({...productForm, stock: e.target.value})}
-                required
-              />
-              <input
-                type="text"
-                placeholder="Unit (e.g., pieces, kg, liters)"
-                value={productForm.unit}
-                onChange={(e) => setProductForm({...productForm, unit: e.target.value})}
-              />
-              <input
-                type="text"
-                placeholder="Brand"
-                value={productForm.brand}
-                onChange={(e) => setProductForm({...productForm, brand: e.target.value})}
-              />
-              <input
-                type="text"
-                placeholder="Weight/Size (e.g., 500g, 1kg)"
-                value={productForm.weight}
-                onChange={(e) => setProductForm({...productForm, weight: e.target.value})}
+                rows="4"
               />
             </div>
-            <textarea
-              placeholder="Product Description"
-              value={productForm.description}
-              onChange={(e) => setProductForm({...productForm, description: e.target.value})}
-              required
-            />
-            <input
-              type="text"
-              placeholder="Features (comma-separated)"
-              value={productForm.features}
-              onChange={(e) => setProductForm({...productForm, features: e.target.value})}
-            />
-            <input
-              type="text"
-              placeholder="Tags (comma-separated)"
-              value={productForm.tags}
-              onChange={(e) => setProductForm({...productForm, tags: e.target.value})}
-            />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setProductForm({...productForm, image: e.target.files[0]})}
-              required
-            />
-            <button type="submit" className="submit-btn">Add Product</button>
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label>Features</label>
+              <input
+                type="text"
+                placeholder="Comma-separated features (e.g., Organic, Fast-acting)"
+                value={productForm.features}
+                onChange={(e) => setProductForm({ ...productForm, features: e.target.value })}
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label>Tags</label>
+              <input
+                type="text"
+                placeholder="Comma-separated tags (e.g., fertilizer, growth, new)"
+                value={productForm.tags}
+                onChange={(e) => setProductForm({ ...productForm, tags: e.target.value })}
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: '24px' }}>
+              <label>Product Image *</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setProductForm({ ...productForm, image: e.target.files[0] })}
+                required
+                style={{ padding: '8px' }}
+              />
+            </div>
+            <button type="submit" className="submit-btn" style={{ width: '100%' }}>Add Product</button>
           </form>
         </div>
 
@@ -986,8 +1101,8 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                 {products.map(product => (
                   <tr key={product._id}>
                     <td>
-                      <img 
-                        src={`http://localhost:3001/uploads/${product.image}`} 
+                      <img
+                        src={getImageUrl(product.image)}
                         alt={product.name}
                         className="product-thumbnail"
                         onError={(e) => {
@@ -1000,23 +1115,22 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     <td>₹{product.price}</td>
                     <td>₹{product.basePrice || product.price}</td>
                     <td>
-                      <span className={`stock-badge ${
-                        product.stock === 0 ? 'out' : 
-                        product.stock < 10 ? 'low' : 
-                        'normal'
-                      }`}>
+                      <span className={`stock-badge ${product.stock === 0 ? 'out' :
+                        product.stock < 10 ? 'low' :
+                          'normal'
+                        }`}>
                         {product.stock} {product.unit || 'units'}
                       </span>
                     </td>
                     <td>
                       <div className="action-buttons">
-                        <button 
+                        <button
                           onClick={() => handleEditProduct(product)}
                           className="edit-btn"
                         >
                           Edit
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDeleteProduct(product._id)}
                           className="delete-btn"
                         >
@@ -1050,21 +1164,21 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                 type="text"
                 placeholder="Category Name"
                 value={categoryForm.name}
-                onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})}
+                onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
                 required
               />
               <input
                 type="text"
                 placeholder="Icon (emoji)"
                 value={categoryForm.icon}
-                onChange={(e) => setCategoryForm({...categoryForm, icon: e.target.value})}
+                onChange={(e) => setCategoryForm({ ...categoryForm, icon: e.target.value })}
                 required
               />
             </div>
             <textarea
               placeholder="Category Description"
               value={categoryForm.description}
-              onChange={(e) => setCategoryForm({...categoryForm, description: e.target.value})}
+              onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
               required
             />
             <button type="submit" className="submit-btn">Add Category</button>
@@ -1081,7 +1195,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                 <h3>{category.name}</h3>
                 <p>{category.description}</p>
                 <div className="category-actions">
-                  <button 
+                  <button
                     onClick={() => handleDeleteCategory(category._id, category.name)}
                     className="delete-btn category-delete-btn"
                     title="Delete Category"
@@ -1135,7 +1249,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                         <div className="products-list">
                           {order.items.map((item, index) => (
                             <div key={index} className="product-item">
-                              {item.product?.name || 'Unknown Product'} 
+                              {item.product?.name || 'Unknown Product'}
                               {item.quantity > 1 && <span className="quantity"> (×{item.quantity})</span>}
                             </div>
                           ))}
@@ -1170,8 +1284,8 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     </div>
                   </td>
                   <td>
-                    <select 
-                      value={order.status} 
+                    <select
+                      value={order.status}
                       onChange={(e) => handleUpdateOrderStatus(order._id, e.target.value)}
                       className="status-select"
                     >
@@ -1304,7 +1418,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
 
       if (response.ok) {
         const data = await response.json();
-        setSalesReport({...salesReport, ...data});
+        setSalesReport({ ...salesReport, ...data });
         showNotification('Sales report generated successfully!', 'success');
       } else {
         showNotification('Failed to generate sales report', 'error');
@@ -1412,13 +1526,13 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
   async function handleDownloadProductReport(format) {
     try {
       setProductSalesFilter(prev => ({ ...prev, loading: true }));
-      
+
       const params = new URLSearchParams({
         startDate: productSalesFilter.startDate,
         endDate: productSalesFilter.endDate,
         format: format
       });
-      
+
       if (productSalesFilter.selectedProduct !== 'all') {
         params.append('productId', productSalesFilter.selectedProduct);
       }
@@ -1432,8 +1546,8 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const productName = productSalesFilter.selectedProduct === 'all' 
-          ? 'all-products' 
+        const productName = productSalesFilter.selectedProduct === 'all'
+          ? 'all-products'
           : products.find(p => p._id === productSalesFilter.selectedProduct)?.name.replace(/\s+/g, '-').toLowerCase() || 'product';
         a.download = `${productName}-sales-${productSalesFilter.startDate}-to-${productSalesFilter.endDate}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
         document.body.appendChild(a);
@@ -1444,7 +1558,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
       } else {
         showNotification('Failed to download report', 'error');
       }
-      
+
       setProductSalesFilter(prev => ({ ...prev, loading: false }));
     } catch (error) {
       showNotification('Error downloading report: ' + error.message, 'error');
@@ -1471,7 +1585,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   <input
                     type="text"
                     value={adminForm.name}
-                    onChange={(e) => setAdminForm({...adminForm, name: e.target.value})}
+                    onChange={(e) => setAdminForm({ ...adminForm, name: e.target.value })}
                     required
                     placeholder="Enter admin name"
                   />
@@ -1481,7 +1595,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   <input
                     type="email"
                     value={adminForm.email}
-                    onChange={(e) => setAdminForm({...adminForm, email: e.target.value})}
+                    onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
                     required
                     placeholder="Enter email address"
                   />
@@ -1491,7 +1605,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   <input
                     type="password"
                     value={adminForm.password}
-                    onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
+                    onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
                     required
                     placeholder="Enter password"
                     minLength={6}
@@ -1502,7 +1616,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   <input
                     type="tel"
                     value={adminForm.phone}
-                    onChange={(e) => setAdminForm({...adminForm, phone: e.target.value})}
+                    onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
                     placeholder="Enter phone number"
                   />
                 </div>
@@ -1544,13 +1658,13 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     </div>
                   </div>
                   <div className="admin-actions">
-                    <button 
+                    <button
                       className="btn-secondary"
                       onClick={() => handleToggleAdminStatus(admin._id)}
                     >
                       {admin.isActive ? 'Deactivate' : 'Activate'}
                     </button>
-                    <button 
+                    <button
                       className="btn-danger"
                       onClick={() => handleDeleteAdmin(admin._id)}
                     >
@@ -1567,8 +1681,8 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
   }
 
   function renderReviews() {
-    const filteredReviews = selectedProductFilter === 'all' 
-      ? reviews 
+    const filteredReviews = selectedProductFilter === 'all'
+      ? reviews
       : reviews.filter(review => review.productId._id === selectedProductFilter);
 
     // Group reviews by product
@@ -1595,8 +1709,8 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         <div className="reviews-filter">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
             <label>Filter by Product:</label>
-            <select 
-              value={selectedProductFilter} 
+            <select
+              value={selectedProductFilter}
               onChange={(e) => setSelectedProductFilter(e.target.value)}
             >
               <option value="all">All Products</option>
@@ -1607,10 +1721,10 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
               ))}
             </select>
           </div>
-          <button 
+          <button
             onClick={fetchReviews}
             className="btn-primary"
-            style={{ 
+            style={{
               padding: '10px 20px',
               display: 'flex',
               alignItems: 'center',
@@ -1632,13 +1746,9 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
             {Object.values(reviewsByProduct).map(({ product, reviews }) => (
               <div key={product._id} className="product-reviews-section">
                 <div className="product-header">
-                  <img 
+                  <img
                     src={
-                      product.image 
-                        ? (product.image.startsWith('http') 
-                            ? product.image 
-                            : `http://localhost:3001/uploads/${product.image}`)
-                        : '/placeholder-product.png'
+                      getImageUrl(product.image) || '/placeholder-product.png'
                     }
                     alt={product.name}
                     className="product-thumbnail"
@@ -1651,7 +1761,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     <div className="rating-summary">
                       <span className="stars">{'⭐'.repeat(Math.round(product.averageRating || 0))}</span>
                       <span className="rating-text">
-                        {product.averageRating ? product.averageRating.toFixed(1) : '0.0'} 
+                        {product.averageRating ? product.averageRating.toFixed(1) : '0.0'}
                         ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
                       </span>
                     </div>
@@ -1685,7 +1795,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                         {review.comment}
                       </div>
                       <div className="review-actions">
-                        <button 
+                        <button
                           className="btn-danger-small"
                           onClick={() => handleDeleteReview(review._id, product._id)}
                         >
@@ -1708,7 +1818,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
       try {
         const response = await fetch(`http://localhost:3001/api/reviews/${reviewId}`, {
           method: 'DELETE',
-          headers: { 
+          headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
@@ -1735,10 +1845,10 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         const orderDate = new Date(order.orderDate || order.createdAt);
         return orderDate.getMonth() === index && orderDate.getFullYear() === salesReport.selectedYear;
       });
-      
+
       const revenue = monthOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
       const orderCount = monthOrders.length;
-      
+
       return {
         month: new Date(2024, index).toLocaleString('default', { month: 'short' }).toUpperCase(),
         revenue,
@@ -1762,13 +1872,13 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         <div className="sales-report-container">
           {/* Download Buttons */}
           <div className="report-download-header">
-            <button 
+            <button
               className="download-btn monthly"
               onClick={() => handleDownloadMonthlyReport()}
             >
               � Download Monthly Report
             </button>
-            <button 
+            <button
               className="download-btn yearly"
               onClick={() => handleDownloadYearlyReport()}
             >
@@ -1781,8 +1891,8 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
             <h3>📊 Monthly Revenue Breakdown</h3>
             <div className="revenue-grid">
               {monthlyRevenue.map((month, index) => (
-                <div 
-                  key={month.month} 
+                <div
+                  key={month.month}
                   className={`revenue-month-card ${month.revenue > 0 ? 'has-revenue' : ''} ${index === 7 || index === 8 ? 'highlighted' : ''}`}
                 >
                   <div className="month-name">{month.month}</div>
@@ -1819,31 +1929,31 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   <span className="info-value trending">↗️ Positive</span>
                 </div>
               </div>
-              
+
               <div className="advanced-chart-wrapper">
                 <div className="chart-grid-background">
                   {[...Array(5)].map((_, i) => (
-                    <div key={i} className="grid-line" style={{bottom: `${i * 25}%`}}>
+                    <div key={i} className="grid-line" style={{ bottom: `${i * 25}%` }}>
                       <span className="grid-label">₹{Math.round((peakRevenue * i) / 4).toLocaleString('en-IN')}</span>
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="chart-data-area">
                   <svg className="trend-line" viewBox="0 0 400 200" preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style={{stopColor: '#3b82f6', stopOpacity: 0.3}} />
-                        <stop offset="100%" style={{stopColor: '#3b82f6', stopOpacity: 0.05}} />
+                        <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 0.3 }} />
+                        <stop offset="100%" style={{ stopColor: '#3b82f6', stopOpacity: 0.05 }} />
                       </linearGradient>
                     </defs>
                     <path
-                      d={monthlyRevenue && monthlyRevenue.length > 0 
+                      d={monthlyRevenue && monthlyRevenue.length > 0
                         ? `M 0 200 ${monthlyRevenue.map((month, index) => {
-                            const x = (index / Math.max(11, monthlyRevenue.length - 1)) * 400;
-                            const y = 200 - (peakRevenue > 0 ? ((month?.revenue || 0) / peakRevenue) * 180 : 0);
-                            return `L ${Math.round(x)} ${Math.round(y)}`;
-                          }).join(' ')} L 400 200 Z`
+                          const x = (index / Math.max(11, monthlyRevenue.length - 1)) * 400;
+                          const y = 200 - (peakRevenue > 0 ? ((month?.revenue || 0) / peakRevenue) * 180 : 0);
+                          return `L ${Math.round(x)} ${Math.round(y)}`;
+                        }).join(' ')} L 400 200 Z`
                         : 'M 0 200 L 400 200 Z'
                       }
                       fill="url(#areaGradient)"
@@ -1851,10 +1961,10 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     <path
                       d={monthlyRevenue && monthlyRevenue.length > 0
                         ? monthlyRevenue.map((month, index) => {
-                            const x = (index / Math.max(11, monthlyRevenue.length - 1)) * 400;
-                            const y = 200 - (peakRevenue > 0 ? ((month?.revenue || 0) / peakRevenue) * 180 : 0);
-                            return `${index === 0 ? 'M' : 'L'} ${Math.round(x)} ${Math.round(y)}`;
-                          }).join(' ')
+                          const x = (index / Math.max(11, monthlyRevenue.length - 1)) * 400;
+                          const y = 200 - (peakRevenue > 0 ? ((month?.revenue || 0) / peakRevenue) * 180 : 0);
+                          return `${index === 0 ? 'M' : 'L'} ${Math.round(x)} ${Math.round(y)}`;
+                        }).join(' ')
                         : 'M 0 200 L 400 200'
                       }
                       fill="none"
@@ -1880,7 +1990,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     })}
                   </svg>
                 </div>
-                
+
                 <div className="chart-bars-modern">
                   {monthlyRevenue.map((month, index) => {
                     const height = peakRevenue > 0 ? (month.revenue / peakRevenue) * 100 : 0;
@@ -1888,7 +1998,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     return (
                       <div key={month.month} className="modern-bar-container">
                         <div className="bar-tooltip" data-tooltip={`${month.month} 2025\n₹${month.revenue.toLocaleString('en-IN')}\n${month.orderCount} orders`}>
-                          <div 
+                          <div
                             className={`modern-chart-bar ${isActive ? 'active' : 'inactive'} ${index === 7 || index === 8 ? 'highlighted' : ''}`}
                             style={{ height: `${Math.max(height, 2)}%` }}
                           >
@@ -1902,7 +2012,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   })}
                 </div>
               </div>
-              
+
               <div className="chart-legend">
                 <div className="legend-item">
                   <div className="legend-color active"></div>
@@ -1943,7 +2053,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
           <div className="product-report-section" style={{ marginTop: '40px', padding: '30px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: '16px', color: 'white' }}>
             <h3 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: 'bold' }}>📦 Product-wise Sales Report</h3>
             <p style={{ marginBottom: '25px', opacity: 0.9 }}>Download detailed sales report for individual products within a custom date range</p>
-            
+
             <div style={{ background: 'rgba(255,255,255,0.95)', padding: '25px', borderRadius: '12px', color: '#1f2937' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '20px' }}>
                 <div>
@@ -1971,7 +2081,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151', fontSize: '14px' }}>
                     Start Date
@@ -1989,7 +2099,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     }}
                   />
                 </div>
-                
+
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151', fontSize: '14px' }}>
                     End Date
@@ -2008,7 +2118,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   />
                 </div>
               </div>
-              
+
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => handleDownloadProductReport('pdf')}
@@ -2030,7 +2140,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                 >
                   {productSalesFilter.loading ? '⏳' : '📄'} Download PDF
                 </button>
-                
+
                 <button
                   onClick={() => handleDownloadProductReport('excel')}
                   disabled={productSalesFilter.loading}
@@ -2052,7 +2162,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   {productSalesFilter.loading ? '⏳' : '📊'} Download Excel
                 </button>
               </div>
-              
+
               <div style={{ marginTop: '15px', padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #86efac' }}>
                 <p style={{ fontSize: '13px', color: '#166534', margin: 0 }}>
                   💡 <strong>Tip:</strong> Select "All Products" to download a comprehensive report, or choose a specific product for detailed analysis.
@@ -2089,43 +2199,43 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
           <h2>🌾 Admin Panel</h2>
         </div>
         <nav className="sidebar-nav">
-          <button 
+          <button
             className={currentView === 'dashboard' ? 'active' : ''}
             onClick={() => setCurrentView('dashboard')}
           >
             📊 Dashboard
           </button>
-          <button 
+          <button
             className={currentView === 'products' ? 'active' : ''}
             onClick={() => setCurrentView('products')}
           >
             📦 Products
           </button>
-          <button 
+          <button
             className={currentView === 'categories' ? 'active' : ''}
             onClick={() => setCurrentView('categories')}
           >
             🏷️ Categories
           </button>
-          <button 
+          <button
             className={currentView === 'orders' ? 'active' : ''}
             onClick={() => setCurrentView('orders')}
           >
             📋 Orders
           </button>
-          <button 
+          <button
             className={currentView === 'reviews' ? 'active' : ''}
             onClick={() => setCurrentView('reviews')}
           >
             ⭐ Reviews
           </button>
-          <button 
+          <button
             className={currentView === 'admin-management' ? 'active' : ''}
             onClick={() => setCurrentView('admin-management')}
           >
             👥 Admin Management
           </button>
-          <button 
+          <button
             className={currentView === 'sales-report' ? 'active' : ''}
             onClick={() => setCurrentView('sales-report')}
           >
@@ -2154,7 +2264,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Edit Product</h3>
-              <button 
+              <button
                 className="close-btn"
                 onClick={() => setIsEditModalOpen(false)}
               >
@@ -2168,7 +2278,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   <input
                     type="text"
                     value={productForm.name}
-                    onChange={(e) => setProductForm({...productForm, name: e.target.value})}
+                    onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
                     required
                   />
                 </div>
@@ -2176,7 +2286,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   <label>Category *</label>
                   <select
                     value={productForm.category}
-                    onChange={(e) => setProductForm({...productForm, category: e.target.value})}
+                    onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
                     required
                   >
                     <option value="">Select Category</option>
@@ -2191,7 +2301,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   </select>
                 </div>
               </div>
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <label>Current Price (₹) *</label>
@@ -2199,7 +2309,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     type="number"
                     step="0.01"
                     value={productForm.price}
-                    onChange={(e) => setProductForm({...productForm, price: e.target.value})}
+                    onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
                     required
                   />
                 </div>
@@ -2209,91 +2319,96 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     type="number"
                     step="0.01"
                     value={productForm.basePrice}
-                    onChange={(e) => setProductForm({...productForm, basePrice: e.target.value})}
+                    onChange={(e) => setProductForm({ ...productForm, basePrice: e.target.value })}
                     required
                   />
                 </div>
               </div>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Stock Quantity *</label>
-                  <input
-                    type="number"
-                    value={productForm.stock}
-                    onChange={(e) => setProductForm({...productForm, stock: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Unit</label>
-                  <input
-                    type="text"
-                    value={productForm.unit}
-                    onChange={(e) => setProductForm({...productForm, unit: e.target.value})}
-                    placeholder="e.g., pieces, kg, liters"
-                  />
-                </div>
-              </div>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Brand</label>
-                  <input
-                    type="text"
-                    value={productForm.brand}
-                    onChange={(e) => setProductForm({...productForm, brand: e.target.value})}
-                    placeholder="Brand name"
-                  />
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
-                  value={productForm.description}
-                  onChange={(e) => setProductForm({...productForm, description: e.target.value})}
-                  rows="3"
-                  placeholder="Product description"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Weight/Size</label>
-                <input
-                  type="text"
-                  value={productForm.weight}
-                  onChange={(e) => setProductForm({...productForm, weight: e.target.value})}
-                  placeholder="e.g., 500g, 1kg, 5L"
-                />
-              </div>
-              
+
+              {(() => {
+                const config = CATEGORY_CONFIG[productForm.category] || CATEGORY_CONFIG['default'];
+                return (
+                  <>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Stock Quantity *</label>
+                        <input
+                          type="number"
+                          value={productForm.stock}
+                          onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Low Stock Alert Level</label>
+                        <input
+                          type="number"
+                          value={productForm.lowStockThreshold}
+                          onChange={(e) => setProductForm({ ...productForm, lowStockThreshold: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>{config.unitLabel}</label>
+                        <input
+                          type="text"
+                          value={productForm.unit}
+                          onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
+                          placeholder={config.unitPlaceholder}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Brand</label>
+                        <input
+                          type="text"
+                          value={productForm.brand}
+                          onChange={(e) => setProductForm({ ...productForm, brand: e.target.value })}
+                          placeholder="Brand name"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label>{config.weightLabel}</label>
+                      <input
+                        type="text"
+                        value={productForm.weight}
+                        onChange={(e) => setProductForm({ ...productForm, weight: e.target.value })}
+                        placeholder={config.weightPlaceholder}
+                      />
+                    </div>
+                  </>
+                );
+              })()}
+
               <div className="form-group">
                 <label>Features (comma-separated)</label>
                 <input
                   type="text"
                   value={productForm.features}
-                  onChange={(e) => setProductForm({...productForm, features: e.target.value})}
+                  onChange={(e) => setProductForm({ ...productForm, features: e.target.value })}
                   placeholder="Feature 1, Feature 2, Feature 3"
                 />
               </div>
-              
+
               <div className="form-group">
                 <label>Tags (comma-separated)</label>
                 <input
                   type="text"
                   value={productForm.tags}
-                  onChange={(e) => setProductForm({...productForm, tags: e.target.value})}
+                  onChange={(e) => setProductForm({ ...productForm, tags: e.target.value })}
                   placeholder="tag1, tag2, tag3"
                 />
               </div>
-              
+
               <div className="form-group">
                 <label>Product Image</label>
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setProductForm({...productForm, image: e.target.files[0]})}
+                  onChange={(e) => setProductForm({ ...productForm, image: e.target.files[0] })}
                 />
                 {editingProduct?.image && (
                   <div className="current-image">
@@ -2301,7 +2416,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   </div>
                 )}
               </div>
-              
+
               <div className="form-actions">
                 <button type="button" onClick={() => setIsEditModalOpen(false)} className="cancel-btn">
                   Cancel

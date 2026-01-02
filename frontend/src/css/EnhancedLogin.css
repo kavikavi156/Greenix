@@ -4,9 +4,9 @@
   position: relative;
   overflow-x: hidden;
   background: linear-gradient(135deg, 
-    #667eea 0%, 
-    #764ba2 50%, 
-    #f093fb 100%);
+    #1e3c72 0%, 
+    #2a5298 50%, 
+    #4299e1 100%);
 }
 
 /* Animated Background */
@@ -120,7 +120,7 @@
 
 .login-logo:hover {
   transform: scale(1.05);
-  color: #667eea;
+  color: #1e3c72;
 }
 
 .logo-icon {
@@ -129,7 +129,7 @@
 }
 
 .logo-text {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -137,25 +137,25 @@
 
 .back-btn {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
   color: white;
   text-decoration: none;
   border-radius: 25px;
   font-weight: 500;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
 }
 
 .back-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-  background: linear-gradient(135deg, #764ba2, #667eea);
+  box-shadow: 0 8px 25px rgba(5, 150, 105, 0.4);
+  background: linear-gradient(135deg, #2a5298, #1e3c72);
 }
 
 /* Main Content */
 .login-main {
   min-height: calc(100vh - 80px);
-  padding: 2rem 0;
+  padding: 2rem 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -163,17 +163,19 @@
 
 .login-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 1rem;
 }
 
 .login-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4rem;
+  gap: 3rem;
   align-items: center;
   min-height: 600px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* Form Section */
@@ -185,12 +187,15 @@
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 20px;
-  padding: 3rem;
+  padding: 2.5rem;
   box-shadow: 
     0 20px 40px rgba(0, 0, 0, 0.1),
     0 0 0 1px rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .form-card:hover {
@@ -209,7 +214,7 @@
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -256,8 +261,8 @@
 
 .enhanced-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #1e3c72;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
   transform: translateY(-2px);
 }
 
@@ -277,7 +282,7 @@
 }
 
 .forgot-password-link .link-text {
-  color: #667eea;
+  color: #1e3c72;
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
@@ -285,13 +290,13 @@
 }
 
 .forgot-password-link .link-text:hover {
-  color: #764ba2;
+  color: #2a5298;
   text-decoration: underline;
 }
 
 .enhanced-submit-btn {
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
   color: white;
   border: none;
   border-radius: 15px;
@@ -410,7 +415,7 @@
 .switch-btn {
   background: none;
   border: none;
-  color: #667eea;
+  color: #1e3c72;
   font-weight: 600;
   cursor: pointer;
   text-decoration: underline;
@@ -418,7 +423,7 @@
 }
 
 .switch-btn:hover {
-  color: #764ba2;
+  color: #2a5298;
   transform: scale(1.05);
 }
 
@@ -588,11 +593,16 @@
 @media (max-width: 1024px) {
   .login-content {
     grid-template-columns: 1fr;
-    gap: 3rem;
+    gap: 2rem;
+    padding: 1rem;
   }
   
   .login-info-section {
     order: -1;
+  }
+  
+  .form-card {
+    max-width: 600px;
   }
   
   .info-title {
@@ -603,54 +613,46 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
   }
+  
+  .info-content {
+    max-width: 700px;
+    margin: 0 auto;
+  }
 }
 
 @media (max-width: 768px) {
+  .login-main {
+    padding: 1rem;
+  }
+  
+  .login-container {
+    padding: 0;
+  }
+  
+  .login-content {
+    gap: 1.5rem;
+    padding: 0;
+  }
+  
   .login-nav {
     padding: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
   
   .login-logo {
     font-size: 1.25rem;
   }
   
-  .form-card {
-    padding: 2rem;
-    margin: 1rem;
-  }
-  
-  .form-title {
-    font-size: 2rem;
-  }
-  
-  .info-content {
-    padding: 1rem;
-  }
-  
-  .info-title {
-    font-size: 2rem;
-  }
-  
-  .stats-section {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .benefit-item {
-    flex-direction: column;
-    text-align: center;
-    gap: 0.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .login-main {
-    padding: 1rem 0;
+  .back-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
   }
   
   .form-card {
-    padding: 1.5rem;
-    margin: 0.5rem;
+    padding: 2rem 1.5rem;
+    margin: 0;
+    max-width: 100%;
   }
   
   .form-title {
@@ -658,16 +660,146 @@
   }
   
   .form-subtitle {
-    font-size: 1rem;
+    font-size: 0.95rem;
+  }
+  
+  .info-content {
+    padding: 1.5rem;
+    max-width: 100%;
   }
   
   .info-title {
     font-size: 1.75rem;
   }
   
-  .benefit-icon {
+  .info-description {
+    font-size: 0.95rem;
+  }
+  
+  .stats-section {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .stat-item h3 {
     font-size: 1.5rem;
+  }
+  
+  .stat-item p {
+    font-size: 0.85rem;
+  }
+  
+  .benefit-item {
+    padding: 1rem;
+  }
+  
+  .benefit-item h4 {
+    font-size: 0.95rem;
+  }
+  
+  .benefit-item p {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-main {
     padding: 0.5rem;
+  }
+  
+  .login-nav {
+    padding: 0.75rem;
+  }
+  
+  .login-logo {
+    font-size: 1.1rem;
+  }
+  
+  .logo-icon {
+    font-size: 1.5rem;
+  }
+  
+  .back-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  
+  .form-card {
+    padding: 1.5rem 1rem;
+    margin: 0;
+    border-radius: 15px;
+  }
+  
+  .form-title {
+    font-size: 1.5rem;
+  }
+  
+  .form-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .enhanced-input {
+    padding: 0.875rem 1rem;
+    font-size: 0.95rem;
+  }
+  
+  .enhanced-submit-btn {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+  }
+  
+  .info-content {
+    padding: 1rem;
+  }
+  
+  .info-title {
+    font-size: 1.5rem;
+  }
+  
+  .info-description {
+    font-size: 0.9rem;
+  }
+  
+  .benefits-list {
+    gap: 0.75rem;
+  }
+  
+  .benefit-item {
+    padding: 0.75rem;
+    flex-direction: row;
+    text-align: left;
+  }
+  
+  .benefit-icon {
+    font-size: 1.25rem;
+    padding: 0.5rem;
+    min-width: 40px;
+    height: 40px;
+  }
+  
+  .benefit-item h4 {
+    font-size: 0.9rem;
+  }
+  
+  .benefit-item p {
+    font-size: 0.8rem;
+  }
+  
+  .stats-section {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .stat-item {
+    padding: 1rem;
+  }
+  
+  .stat-item h3 {
+    font-size: 1.5rem;
+  }
+  
+  .stat-item p {
+    font-size: 0.8rem;
   }
 }
 
@@ -695,15 +827,15 @@
 
 .enhanced-login-page .form-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #1e3c72;
   background: rgba(255, 255, 255, 1);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
 }
 
 .enhanced-login-page .submit-btn {
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
   color: white;
   border: none;
   border-radius: 12px;
@@ -711,13 +843,13 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
 }
 
 .enhanced-login-page .submit-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-  background: linear-gradient(135deg, #764ba2, #667eea);
+  box-shadow: 0 8px 25px rgba(5, 150, 105, 0.4);
+  background: linear-gradient(135deg, #2a5298, #1e3c72);
 }
 
 .enhanced-login-page .submit-btn:active {

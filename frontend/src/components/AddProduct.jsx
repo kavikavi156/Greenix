@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import '../css/EcommerceStyles.css';
+import { getImageUrl } from '../config/api';
 
 export default function AddProduct({ token, onAdd, product, onUpdate, onCancel }) {
   const [formData, setFormData] = useState({
@@ -933,7 +934,7 @@ export default function AddProduct({ token, onAdd, product, onUpdate, onCancel }
                   <label htmlFor="imageUpload" className="image-upload-label">
                     {formData.image ? (
                       <img 
-                        src={formData.image.startsWith('http') ? formData.image : `http://localhost:3001/uploads/${formData.image.replace(/^\/uploads\//, '')}`} 
+                        src={formData.image.startsWith('http') ? formData.image : getImageUrl(formData.image)} 
                         alt="Product preview" 
                         className="image-preview" 
                       />

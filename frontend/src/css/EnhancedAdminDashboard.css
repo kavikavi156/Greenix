@@ -9,7 +9,7 @@
 /* Sidebar Styles */
 .admin-sidebar {
   width: 280px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -121,7 +121,7 @@
 }
 
 .refresh-btn:hover {
-  background: #3182ce;
+  background: #1e3c72;
   transform: translateY(-1px);
 }
 
@@ -160,15 +160,15 @@
 }
 
 .stat-card.orders .stat-icon {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
 }
 
 .stat-card.products .stat-icon {
-  background: linear-gradient(135deg, #f093fb, #f5576c);
+  background: linear-gradient(135deg, #4299e1, #1e3c72);
 }
 
 .stat-card.revenue .stat-icon {
-  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  background: linear-gradient(135deg, #4299e1, #64b5f6);
 }
 
 .stat-card.low-stock .stat-icon {
@@ -261,12 +261,12 @@
 
 .order-status.shipped {
   background: #a7f3d0;
-  color: #059669;
+  color: #1e3c72;
 }
 
 .order-status.delivered {
   background: #bbf7d0;
-  color: #047857;
+  color: #2a5298;
 }
 
 /* Low Stock Products */

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getImageUrl } from '../config/api';
 
 export default function PrebookingPage({ token, user }) {
   const [products, setProducts] = useState([]);
@@ -193,7 +194,16 @@ export default function PrebookingPage({ token, user }) {
               <div className="product-image-container">
                 {product.images && product.images.length > 0 ? (
                   <img 
-                    src={`http://localhost:3001/uploads/product.images[0]`} 
+                    src={getImageUrl(product.images[0])} 
+                    alt={product.name}
+                    className="product-image"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/300x200/f0f0f0/666?text=No+Image';
+                    }}
+                  />
+                ) : product.image ? (
+                  <img 
+                    src={getImageUrl(product.image)} 
                     alt={product.name}
                     className="product-image"
                     onError={(e) => {
