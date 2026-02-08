@@ -1,0 +1,16 @@
+Connected to MongoDB
+
+--- DEALERS ---
+ID: 697b8996c3cf2419c46f37ed | Name: Prannav P | Email: prannavp.23bsr@kongu.edu
+
+--- LAST 5 DEALER ORDERS ---
+Order ID: 697c2bac925dabfec9946c25
+  Assigned Dealer: Prannav P (697b8996c3cf2419c46f37ed)
+  Status: REJECTED
+  Product: 6948bef954ab51bc40d3cb9e
+  Created: Fri Jan 30 2026 09:25:24 GMT+0530 (India Standard Time)
+Order ID: 697b8ca5c3cf2419c46f3856
+  Assigned Dealer: Prannav P (697b8996c3cf2419c46f37ed)
+  Status: COMPLETED
+  Product: 6948bef954ab51bc40d3cb9e
+  Created: Thu Jan 29 2026 22:06:53 GMT+0530 (India Standard Time)

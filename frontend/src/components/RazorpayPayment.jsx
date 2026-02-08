@@ -167,7 +167,7 @@ const RazorpayPayment = ({ orderData, onPaymentSuccess, onPaymentFailure, onClos
           <h4>🔒 Secure Payment</h4>
           <p>Your payment is secured by Razorpay with 256-bit SSL encryption</p>
         </div>
-        
+
         <div className="payment-methods">
           <h4>Accepted Payment Methods:</h4>
           <div className="method-icons">

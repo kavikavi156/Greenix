@@ -2,6 +2,8 @@ const express = require('express');
 const Product = require('../models/Product.js');
 const User = require('../models/User.js');
 const Order = require('../models/Order.js');
+const StockRequest = require('../models/StockRequest.js');
+const { checkStockAndReorder } = require('../services/stockService.js');
 const router = express.Router();
 
 // Customer: Prebook a product
@@ -9,7 +11,7 @@ router.post('/prebook/:productId', async (req, res) => {
   try {
     const { userId } = req.body;
     const { productId } = req.params;
-    
+
     // Get product details
     const product = await Product.findById(productId);
     if (!product) {
@@ -27,10 +29,10 @@ router.post('/prebook/:productId', async (req, res) => {
       totalAmount: product.price,
       status: 'prebooked',
     });
-    
+
     await order.save();
     await Product.findByIdAndUpdate(productId, { $inc: { prebooked: 1 } });
-    
+
     res.status(201).json(order);
   } catch (error) {
     console.error('Prebook error:', error);
@@ -43,20 +45,20 @@ router.post('/cart/:userId/:productId', async (req, res) => {
   try {
     const { quantity = 1 } = req.body;
     const { userId, productId } = req.params;
-    
+
     // Validate that the product exists
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     // Check if product already exists in cart
-    const existingCartItem = user.cart.find(item => 
+    const existingCartItem = user.cart.find(item =>
       item.product.toString() === productId
     );
 
@@ -86,17 +88,17 @@ router.get('/cart/:userId', async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     // Filter out cart items with null or invalid products
     const validCartItems = user.cart.filter(item => item.product && item.product._id);
-    
+
     // If we found invalid items, clean them from the database
     if (validCartItems.length !== user.cart.length) {
       console.log(`Cleaning ${user.cart.length - validCartItems.length} invalid cart items for user ${req.params.userId}`);
       user.cart = validCartItems;
       await user.save();
     }
-    
+
     res.status(200).json({ items: validCartItems || [] });
   } catch (error) {
     console.error('Get cart error:', error);
@@ -109,13 +111,13 @@ router.put('/cart/:userId/:productId', async (req, res) => {
   try {
     const { quantity } = req.body;
     const { userId, productId } = req.params;
-    
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const cartItem = user.cart.find(item => 
+    const cartItem = user.cart.find(item =>
       item.product.toString() === productId
     );
 
@@ -124,7 +126,7 @@ router.put('/cart/:userId/:productId', async (req, res) => {
         cartItem.quantity = parseInt(quantity);
       } else {
         // Remove item if quantity is 0
-        user.cart = user.cart.filter(item => 
+        user.cart = user.cart.filter(item =>
           item.product.toString() !== productId
         );
       }
@@ -147,10 +149,10 @@ router.delete('/cart/:userId/:productId', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    user.cart = user.cart.filter(item => 
+    user.cart = user.cart.filter(item =>
       item.product.toString() !== req.params.productId
     );
-    
+
     await user.save();
     res.status(200).json({ message: 'Product removed from cart' });
   } catch (error) {
@@ -169,17 +171,17 @@ router.post('/cart/:userId/cleanup', async (req, res) => {
 
     const originalLength = user.cart.length;
     user.cart = user.cart.filter(item => item.product && item.product._id);
-    
+
     if (user.cart.length !== originalLength) {
       await user.save();
       const removed = originalLength - user.cart.length;
-      res.status(200).json({ 
+      res.status(200).json({
         message: `Cleaned up ${removed} invalid cart items`,
         removedCount: removed,
         currentCount: user.cart.length
       });
     } else {
-      res.status(200).json({ 
+      res.status(200).json({
         message: 'No invalid items found',
         removedCount: 0,
         currentCount: user.cart.length
@@ -201,8 +203,8 @@ router.post('/cart/:userId/clear', async (req, res) => {
 
     user.cart = [];
     await user.save();
-    
-    res.status(200).json({ 
+
+    res.status(200).json({
       message: 'Cart cleared successfully',
       currentCount: 0
     });
@@ -217,7 +219,7 @@ router.post('/order/:userId', async (req, res) => {
   try {
     console.log('Order request received for userId:', req.params.userId);
     console.log('Order payload:', req.body);
-    
+
     const user = await User.findById(req.params.userId).populate('cart.product');
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -225,27 +227,27 @@ router.post('/order/:userId', async (req, res) => {
 
     // Get delivery address and payment method from request body
     const { paymentMethod = 'cod', deliveryAddress, status = 'ordered', cartItems } = req.body;
-    
+
     console.log('User cart from DB:', user.cart);
     console.log('Cart items from request:', cartItems);
 
     // Use cart items from request if provided, otherwise use user's cart from DB
     let orderItems = [];
     let totalAmount = 0;
-    
+
     if (cartItems && cartItems.length > 0) {
       // Frontend passed cart items directly
       console.log('Using cart items from frontend');
-      
+
       for (const cartItem of cartItems) {
         if (!cartItem.product || !cartItem.product._id) {
           console.error('Invalid cart item:', cartItem);
           continue;
         }
-        
+
         const itemTotal = (cartItem.product.price || 0) * (cartItem.quantity || 0);
         totalAmount += itemTotal;
-        
+
         orderItems.push({
           product: cartItem.product._id,
           quantity: cartItem.quantity || 1,
@@ -255,7 +257,7 @@ router.post('/order/:userId', async (req, res) => {
     } else if (user.cart && user.cart.length > 0) {
       // Use cart from database
       console.log('Using cart from database');
-      
+
       orderItems = user.cart.map(cartItem => {
         const itemTotal = cartItem.product.price * cartItem.quantity;
         totalAmount += itemTotal;
@@ -296,18 +298,24 @@ router.post('/order/:userId', async (req, res) => {
 
     await order.save();
     console.log('Order saved successfully:', order._id);
-    
-    // Update product stock counts for each item in the order
+
+    // Update product stock counts for each item in the order and check for low stock
     for (const orderItem of orderItems) {
-      await Product.findByIdAndUpdate(
+      const product = await Product.findByIdAndUpdate(
         orderItem.product,
-        { 
-          $inc: { 
+        {
+          $inc: {
             stock: -orderItem.quantity,
-            sold: orderItem.quantity 
+            sold: orderItem.quantity
           }
-        }
+        },
+        { new: true } // Return the updated document
       );
+
+      // Automatic Stock Monitoring using centralized service
+      if (product) {
+        await checkStockAndReorder(product._id);
+      }
     }
     console.log('Product stocks updated');
     // Update user's saved cart: remove or decrement ordered products so ordered items are no longer present.
@@ -349,7 +357,7 @@ router.post('/order/:userId', async (req, res) => {
         console.log('No matching ordered products found in user cart; preserved as-is. isBuyNow:', isBuyNow, 'clearSavedCart:', clearSavedCart);
       }
     }
-    
+
     res.status(201).json(order);
   } catch (error) {
     console.error('Place order error:', error);
@@ -361,14 +369,14 @@ router.post('/order/:userId', async (req, res) => {
 router.post('/wishlist/:userId/:productId', async (req, res) => {
   try {
     const { userId, productId } = req.params;
-    
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     // Check if product already in wishlist
-    const existingWishlistItem = user.wishlist.find(item => 
+    const existingWishlistItem = user.wishlist.find(item =>
       item.product.toString() === productId
     );
 
@@ -393,16 +401,16 @@ router.post('/wishlist/:userId/:productId', async (req, res) => {
 router.delete('/wishlist/:userId/:productId', async (req, res) => {
   try {
     const { userId, productId } = req.params;
-    
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    user.wishlist = user.wishlist.filter(item => 
+    user.wishlist = user.wishlist.filter(item =>
       item.product.toString() !== productId
     );
-    
+
     await user.save();
     res.status(200).json({ message: 'Product removed from wishlist', wishlist: user.wishlist });
   } catch (error) {
@@ -417,11 +425,11 @@ router.get('/orders/:userId', async (req, res) => {
     const orders = await Order.find({ user: req.params.userId })
       .populate('items.product', 'name price image images category brand description')
       .sort({ createdAt: -1 });
-    
+
     if (!orders) {
       return res.status(404).json({ error: 'No orders found' });
     }
-    
+
     res.json({ orders });
   } catch (error) {
     console.error('Get orders error:', error);
@@ -434,7 +442,7 @@ router.post('/preorder/:productId', async (req, res) => {
   try {
     const { userId } = req.body;
     const { productId } = req.params;
-    
+
     // Get product details
     const product = await Product.findById(productId);
     if (!product) {
@@ -467,16 +475,98 @@ router.post('/preorder/:productId', async (req, res) => {
         pincode: 'To be updated'
       }
     });
-    
+
     await preorder.save();
-    
-    res.status(201).json({ 
+
+    res.status(201).json({
       message: 'Preorder placed successfully. You will be notified when the product is back in stock.',
-      preorder 
+      preorder
     });
   } catch (error) {
     console.error('Preorder error:', error);
     res.status(500).json({ error: 'Failed to place preorder' });
+  }
+});
+
+// Cancel entire order
+router.post('/orders/:orderId/cancel', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId).populate('items.product');
+
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    if (['shipped', 'delivered', 'cancelled', 'out of delivery'].includes(order.status)) {
+      return res.status(400).json({ error: 'Order cannot be cancelled at this stage' });
+    }
+
+    // Restore stock for all non-cancelled items
+    for (const item of order.items) {
+      if (item.status !== 'cancelled') {
+        item.status = 'cancelled';
+        if (item.product) {
+          // If populate worked, item.product is an object, otherwise it's an ID
+          const productId = item.product._id || item.product;
+          await Product.findByIdAndUpdate(productId, {
+            $inc: { stock: item.quantity, sold: -item.quantity }
+          });
+        }
+      }
+    }
+
+    order.status = 'cancelled';
+    await order.save();
+
+    res.json({ message: 'Order cancelled successfully', order });
+  } catch (error) {
+    console.error('Cancel order error:', error);
+    res.status(500).json({ error: 'Failed to cancel order' });
+  }
+});
+
+// Cancel single item
+router.post('/orders/:orderId/items/:itemId/cancel', async (req, res) => {
+  try {
+    const { orderId, itemId } = req.params;
+    const order = await Order.findById(orderId);
+
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    if (['shipped', 'delivered', 'cancelled', 'out of delivery'].includes(order.status)) {
+      return res.status(400).json({ error: 'Order cannot be edited at this stage' });
+    }
+
+    const item = order.items.id(itemId);
+    if (!item) return res.status(404).json({ error: 'Item not found' });
+
+    if (item.status === 'cancelled') {
+      return res.status(400).json({ error: 'Item already cancelled' });
+    }
+
+    // Restore stock
+    item.status = 'cancelled';
+    if (item.product) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stock: item.quantity, sold: -item.quantity }
+      });
+    }
+
+    // Recalculate total amount for active items
+    const activeItems = order.items.filter(i => i.status !== 'cancelled');
+
+    if (activeItems.length === 0) {
+      order.status = 'cancelled';
+      order.totalAmount = 0;
+    } else {
+      // Recalculate total
+      order.totalAmount = activeItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+    }
+
+    await order.save();
+    res.json({ message: 'Item cancelled successfully', order });
+  } catch (error) {
+    console.error('Cancel item error:', error);
+    res.status(500).json({ error: 'Failed to cancel item' });
   }
 });
 
@@ -498,7 +588,7 @@ router.get('/wishlist/:userId', async (req, res) => {
 router.get('/debug/users', async (req, res) => {
   try {
     const users = await User.find({}, 'name email username role');
-    return res.json({ 
+    return res.json({
       count: users.length,
       users: users.map(user => ({
         id: user._id,
@@ -510,8 +600,8 @@ router.get('/debug/users', async (req, res) => {
     });
   } catch (error) {
     console.error('Debug users list error:', error);
-    return res.status(500).json({ 
-      error: 'Error listing users', 
+    return res.status(500).json({
+      error: 'Error listing users',
       message: error.message
     });
   }
@@ -522,18 +612,18 @@ router.get('/debug/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     console.log('Debug: Checking user ID:', userId);
-    
+
     const user = await User.findById(userId);
     if (!user) {
-      return res.json({ 
-        exists: false, 
+      return res.json({
+        exists: false,
         message: 'User not found in database',
         searchedId: userId
       });
     }
-    
-    return res.json({ 
-      exists: true, 
+
+    return res.json({
+      exists: true,
       user: {
         id: user._id,
         name: user.name,
@@ -544,8 +634,8 @@ router.get('/debug/user/:userId', async (req, res) => {
     });
   } catch (error) {
     console.error('Debug user check error:', error);
-    return res.status(500).json({ 
-      error: 'Error checking user', 
+    return res.status(500).json({
+      error: 'Error checking user',
       message: error.message,
       searchedId: req.params.userId
     });

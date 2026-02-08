@@ -25,7 +25,7 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, etc.)
     if (!origin) return callback(null, true);
-    
+
     if (ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
     } else {
@@ -135,7 +135,19 @@ try {
 
   // Admin routes
   app.use('/api/admin', require('./routes/admin'));
+  app.use('/api/admin-auth', require('./routes/adminAuth')); // Admin Authentication
   console.log('👑 Admin routes loaded');
+
+  // Dealer Authentication
+  app.use('/api/dealer-auth', require('./routes/dealerAuth'));
+
+  // Admin Stock & Dealer routes
+  app.use('/api/admin-stock', require('./routes/adminStock'));
+  console.log('📦 Admin Stock routes loaded');
+
+  // Dealer Order routes
+  app.use('/api/dealer-orders', require('./routes/dealerOrders'));
+  console.log('🚚 Dealer Order routes loaded');
 
   // Upload routes
   app.use('/api/upload', require('./routes/upload'));
@@ -180,7 +192,7 @@ app.get('/api/categories', async (req, res) => {
     }
 
     const categories = await Category.find({ isActive: true }).sort({ name: 1 });
-    
+
     // If no categories exist, create default ones
     if (categories.length === 0) {
       const defaultCategories = [
@@ -190,12 +202,12 @@ app.get('/api/categories', async (req, res) => {
         { name: 'Tools', description: 'Farming tools and equipment', icon: '🔧' },
         { name: 'Irrigation', description: 'Water management systems', icon: '💧' }
       ];
-      
+
       await Category.insertMany(defaultCategories);
       const newCategories = await Category.find({ isActive: true }).sort({ name: 1 });
       return res.json(newCategories);
     }
-    
+
     res.json(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -205,7 +217,7 @@ app.get('/api/categories', async (req, res) => {
 
 // 404 handler for API routes
 app.use('/api/*', (req, res) => {
-  res.status(404).json({ 
+  res.status(404).json({
     error: 'API endpoint not found',
     path: req.path,
     method: req.method,
@@ -217,7 +229,7 @@ app.use('/api/*', (req, res) => {
 if (NODE_ENV === 'production') {
   const buildPath = path.join(__dirname, '../dist');
   app.use(express.static(buildPath));
-  
+
   app.get('*', (req, res) => {
     res.sendFile(path.join(buildPath, 'index.html'));
   });
@@ -226,12 +238,12 @@ if (NODE_ENV === 'production') {
 // Global error handling middleware
 app.use((err, req, res, next) => {
   console.error('🔥 Server error:', err);
-  
+
   // Don't leak error details in production
   if (NODE_ENV === 'production') {
     res.status(500).json({ error: 'Internal server error' });
   } else {
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       message: err.message,
       stack: err.stack

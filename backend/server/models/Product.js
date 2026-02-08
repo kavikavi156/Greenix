@@ -39,6 +39,11 @@ const productSchema = new mongoose.Schema({
   lowStockThreshold: { type: Number, default: 10 }, // Configurable low stock alert level
   weight: { type: String }, // e.g., "1.5 kg", "500 g"
 
+  // Dealer & Stock Reorder
+  dealer: { type: mongoose.Schema.Types.ObjectId, ref: 'Dealer' }, // Linked Dealer
+  reorderQuantity: { type: Number, default: 50 }, // Quantity to reorder
+  minimumStockThreshold: { type: Number, default: 10 }, // Alias/Override for lowStockThreshold if needed, or we can use this one.
+
   // Media
   image: { type: String, required: true }, // Primary product image
   images: [{ type: String }], // Multiple images array
