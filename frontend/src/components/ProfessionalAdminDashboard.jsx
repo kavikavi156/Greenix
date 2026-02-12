@@ -101,7 +101,9 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [monthlyRevenue, setMonthlyRevenue] = useState([]);
+  const [yearlyRevenue, setYearlyRevenue] = useState([]); // Store yearly data
   const [revenueLoading, setRevenueLoading] = useState(false);
+  const [revenueTimeRange, setRevenueTimeRange] = useState('monthly'); // 'monthly', 'quarterly', 'yearly'
   const [availableBrands, setAvailableBrands] = useState([]); // Dynamic brands from backend
 
   // Product form state
@@ -417,9 +419,29 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     }
   }
 
+  async function fetchYearlyRevenue() {
+    try {
+      const response = await fetch('http://localhost:3001/api/admin/revenue/yearly', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setYearlyRevenue(data.yearlyRevenue || []);
+      }
+    } catch (error) {
+      console.error('Error fetching yearly revenue:', error);
+    }
+  }
+
+  useEffect(() => {
+    fetchYearlyRevenue();
+  }, []);
+
   function handleRevenueCardClick() {
     setShowRevenueModal(true);
     fetchMonthlyRevenue();
+    fetchYearlyRevenue();
   }
 
   function handleLowStockClick() {
@@ -742,42 +764,83 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     return monthlyData;
   };
 
-  // Use server-side monthlyRevenue for charts if available, otherwise fallback to empty
-  const rawChartData = monthlyRevenue.length > 0 ? monthlyRevenue : prepareChartData();
-
   // Helper to map month number to short name if needed
   const getShortMonthName = (m) => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    // If m is number 1-12
     if (typeof m === 'number') return months[m - 1];
-    // If m is "January" (full string) or already "Jan"
     return m.toString().substring(0, 3);
   };
 
-  const chartData = rawChartData.map(d => ({
+  // 1. Base Monthly Data (Source of Truth for Monthly/Quarterly)
+  const baseMonthlyData = monthlyRevenue.length > 0 ? monthlyRevenue.map(d => ({
     ...d,
-    month: getShortMonthName(d.month)
-  }));
+    label: getShortMonthName(d.month)
+  })) : prepareChartData().map(d => ({ ...d, label: d.month, month: d.month })); // Standardization
 
-  const totalYearRevenue = chartData.reduce((sum, month) => sum + month.revenue, 0);
-  const totalYearOrders = chartData.reduce((sum, month) => sum + month.orders, 0);
+  const chartData = baseMonthlyData; // Backward compatibility for other charts
+
+  // 2. Prepare Data for Each View
+  let activeChartData = [];
+
+  if (revenueTimeRange === 'monthly') {
+    activeChartData = baseMonthlyData;
+  } else if (revenueTimeRange === 'quarterly') {
+    // Aggregate into Quarters
+    const quarters = ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dec)'];
+    activeChartData = quarters.map((qLabel, index) => {
+      const startMonth = index * 3 + 1; // 1, 4, 7, 10
+      const endMonth = startMonth + 2;
+
+      // Filter months in this quarter (handle both 1-indexed number month and named month logic)
+      const quarterMonths = baseMonthlyData.slice(index * 3, index * 3 + 3);
+
+      return {
+        label: qLabel,
+        revenue: quarterMonths.reduce((sum, m) => sum + (m.revenue || 0), 0),
+        orders: quarterMonths.reduce((sum, m) => sum + (m.orders || 0), 0)
+      };
+    });
+  } else if (revenueTimeRange === 'yearly') {
+    // Use Yearly Data fetched from backend
+    activeChartData = yearlyRevenue.map(d => ({
+      label: d.year,
+      revenue: d.revenue,
+      orders: d.orders
+    }));
+
+    // Fallback if no yearly data
+    if (activeChartData.length === 0) {
+      activeChartData = [{
+        label: new Date().getFullYear().toString(),
+        revenue: baseMonthlyData.reduce((sum, m) => sum + m.revenue, 0),
+        orders: baseMonthlyData.reduce((sum, m) => sum + m.orders, 0)
+      }];
+    }
+  }
+
+  // Calculate generic stats for subtitle
+  const totalDisplayRevenue = activeChartData.reduce((sum, item) => sum + item.revenue, 0);
+  const averageDisplayRevenue = totalDisplayRevenue / (activeChartData.length || 1);
+
+  const totalYearRevenue = baseMonthlyData.reduce((sum, month) => sum + (month.revenue || 0), 0);
+  const totalYearOrders = baseMonthlyData.reduce((sum, month) => sum + (month.orders || 0), 0);
   const averageMonthlyRevenue = totalYearRevenue / 12;
 
   // Calculate growth rate based on last two months (current month vs previous month)
   const currentMonthIndex = new Date().getMonth();
-  const currentMonthRevenue = chartData[currentMonthIndex]?.revenue || 0;
-  const previousMonthRevenue = chartData[currentMonthIndex - 1]?.revenue || 0;
+  const currentMonthRevenue = baseMonthlyData[currentMonthIndex]?.revenue || 0;
+  const previousMonthRevenue = baseMonthlyData[currentMonthIndex - 1]?.revenue || 0;
 
   const growthRate = previousMonthRevenue > 0 ?
     ((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100 : 0;
 
   // Revenue trend line chart data
   const revenueLineData = {
-    labels: chartData.map(item => item.month),
+    labels: activeChartData.map(item => item.label),
     datasets: [
       {
-        label: 'Monthly Revenue',
-        data: chartData.map(item => item.revenue),
+        label: `${revenueTimeRange.charAt(0).toUpperCase() + revenueTimeRange.slice(1)} Revenue`,
+        data: activeChartData.map(item => item.revenue),
         borderColor: '#3b82f6',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         fill: true,
@@ -976,9 +1039,24 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                 📈 Revenue Trend Analysis
               </div>
               <div className="chart-controls-enhanced">
-                <button className="chart-control-btn active">Monthly</button>
-                <button className="chart-control-btn">Quarterly</button>
-                <button className="chart-control-btn">Yearly</button>
+                <button
+                  className={`chart-control-btn ${revenueTimeRange === 'monthly' ? 'active' : ''}`}
+                  onClick={() => setRevenueTimeRange('monthly')}
+                >
+                  Monthly
+                </button>
+                <button
+                  className={`chart-control-btn ${revenueTimeRange === 'quarterly' ? 'active' : ''}`}
+                  onClick={() => setRevenueTimeRange('quarterly')}
+                >
+                  Quarterly
+                </button>
+                <button
+                  className={`chart-control-btn ${revenueTimeRange === 'yearly' ? 'active' : ''}`}
+                  onClick={() => setRevenueTimeRange('yearly')}
+                >
+                  Yearly
+                </button>
               </div>
             </div>
             <ProfessionalChart
@@ -1014,6 +1092,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
             <ProfessionalChart
               type="doughnut"
               data={categoryDoughnutData}
+              height="250px"
               title="Products by Category"
               subtitle={`${stats.totalProducts} total products across ${categories.length} categories`}
               options={{

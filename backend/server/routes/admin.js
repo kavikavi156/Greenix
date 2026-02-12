@@ -534,6 +534,53 @@ router.get('/revenue/monthly', async (req, res) => {
   }
 });
 
+// Get yearly revenue data (last 5 years)
+router.get('/revenue/yearly', async (req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const startYear = currentYear - 4; // Last 5 years including current
+
+    // Create date range
+    const startDate = new Date(startYear, 0, 1);
+    const endDate = new Date(currentYear + 1, 0, 1);
+
+    console.log(`Fetching yearly revenue from ${startYear} to ${currentYear}`);
+
+    const yearlyData = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lt: endDate },
+          status: { $nin: ['cancelled'] }
+        }
+      },
+      {
+        $group: {
+          _id: { $year: '$createdAt' },
+          revenue: { $sum: '$totalAmount' },
+          orders: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id': 1 } }
+    ]);
+
+    // Fill in missing years
+    const yearlyRevenue = [];
+    for (let year = startYear; year <= currentYear; year++) {
+      const data = yearlyData.find(d => d._id === year);
+      yearlyRevenue.push({
+        year: year.toString(),
+        revenue: data ? data.revenue : 0,
+        orders: data ? data.orders : 0
+      });
+    }
+
+    res.json({ yearlyRevenue });
+  } catch (error) {
+    console.error('Error fetching yearly revenue:', error);
+    res.status(500).json({ error: 'Failed to fetch yearly revenue data' });
+  }
+});
+
 // Category Management Endpoints
 
 // Get all categories

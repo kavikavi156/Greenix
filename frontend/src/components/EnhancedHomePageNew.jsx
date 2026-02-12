@@ -144,11 +144,11 @@ export default function EnhancedHomePage() {
 
   async function fetchBrands() {
     try {
-      let url = 'http://localhost:3001/api/products/filters/options';
+      let endpoint = '/api/products/filters/options';
       if (selectedCategory !== 'all') {
-        url += `?category=${encodeURIComponent(selectedCategory)}`;
+        endpoint += `?category=${encodeURIComponent(selectedCategory)}`;
       }
-      const response = await fetch(getApiUrl ? getApiUrl(url.replace('http://localhost:3001', '')) : url);
+      const response = await fetch(getApiUrl(endpoint));
       if (response.ok) {
         const data = await response.json();
         setAvailableBrands(data.brands || []);
@@ -437,10 +437,7 @@ export default function EnhancedHomePage() {
               <Link to="/products-carousel" className="nav-item">
                 Premium Showcase
               </Link>
-              <Link to="/admin" className="admin-dashboard-btn">
-                <span className="admin-icon">⚙️</span>
-                Admin Dashboard
-              </Link>
+
             </nav>
           </div>
         </div>

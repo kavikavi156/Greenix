@@ -27,7 +27,7 @@ ChartJS.register(
   Filler
 );
 
-const ProfessionalChart = ({ type, data, options, title, subtitle }) => {
+const ProfessionalChart = ({ type, data, options, title, height = '300px', subtitle }) => {
   const defaultOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -90,7 +90,7 @@ const ProfessionalChart = ({ type, data, options, title, subtitle }) => {
             size: 11,
             family: "'Inter', sans-serif"
           },
-          callback: function(value) {
+          callback: function (value) {
             return '₹' + value.toLocaleString('en-IN');
           }
         }
@@ -135,7 +135,7 @@ const ProfessionalChart = ({ type, data, options, title, subtitle }) => {
           {subtitle}
         </div>
       )}
-      <div className="chart-container" style={{ height: '400px', position: 'relative' }}>
+      <div className="chart-container" style={{ height: height, position: 'relative' }}>
         {renderChart()}
       </div>
     </div>
