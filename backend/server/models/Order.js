@@ -1,4 +1,4 @@
- const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -6,13 +6,14 @@ const orderSchema = new mongoose.Schema({
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     quantity: { type: Number, required: true, default: 1 },
     price: { type: Number, required: true }, // price at time of order
+    status: { type: String, enum: ['ordered', 'cancelled', 'returned'], default: 'ordered' }
   }],
   // Keep products field for backward compatibility
   products: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
-  status: { 
-    type: String, 
-    enum: ['prebooked', 'ordered', 'confirmed', 'shipped', 'delivered', 'cancelled'], 
-    default: 'prebooked' 
+  status: {
+    type: String,
+    enum: ['prebooked', 'ordered', 'confirmed', 'shipped', 'delivered', 'cancelled'],
+    default: 'prebooked'
   },
   totalAmount: { type: Number, default: 0 },
   paymentMethod: { type: String, enum: ['cod', 'gpay', 'upi', 'razorpay', 'netbanking', 'cards'], default: 'cod' },

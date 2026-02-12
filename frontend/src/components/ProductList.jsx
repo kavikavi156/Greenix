@@ -11,10 +11,13 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
   const [error, setError] = useState('');
   const [wishlist, setWishlist] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState(null);
+  const [availableBrands, setAvailableBrands] = useState([]);
+  const [loadingFilters, setLoadingFilters] = useState(false);
 
   // Filter states
   const [filters, setFilters] = useState({
     category: 'all',
+    brand: 'all',
     sort: 'name',
     search: '',
     minPrice: '',
@@ -46,8 +49,31 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
   }, [userId]);
 
   useEffect(() => {
+    fetchFilterOptions();
+  }, [filters.category]);
+
+  useEffect(() => {
     applyFilters();
   }, [products, filters]);
+
+  async function fetchFilterOptions() {
+    setLoadingFilters(true);
+    try {
+      let url = 'http://localhost:3001/api/products/filters/options';
+      if (filters.category !== 'all') {
+        url += `?category=${encodeURIComponent(filters.category)}`;
+      }
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableBrands(data.brands || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch filter options:', err);
+    } finally {
+      setLoadingFilters(false);
+    }
+  }
 
   async function fetchProducts() {
     console.log('Fetching products from backend...');
@@ -100,9 +126,13 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
   function applyFilters() {
     let filtered = [...products];
 
-    // Category filter
     if (filters.category !== 'all') {
       filtered = filtered.filter(product => product.category === filters.category);
+    }
+
+    // Brand filter
+    if (filters.brand && filters.brand !== 'all') {
+      filtered = filtered.filter(product => product.brand === filters.brand);
     }
 
     // Search filter
@@ -304,6 +334,21 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
           </div>
 
           <div className="filter-group">
+            <label>Brand</label>
+            <select
+              className="filter-select"
+              value={filters.brand || 'all'}
+              onChange={(e) => handleFilterChange('brand', e.target.value)}
+              disabled={loadingFilters}
+            >
+              <option value="all">All Brands</option>
+              {availableBrands.map((brand, index) => (
+                <option key={index} value={brand}>{brand}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
             <label>Sort By</label>
             <select
               className="filter-select"
@@ -339,21 +384,23 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
             </div>
           </div>
         </div>
-      </div>
+      </div >
 
       {/* Products Header */}
-      <div className="products-header">
+      < div className="products-header" >
         <div className="results-count">
           Showing {currentProducts.length} of {filteredProducts.length} products
         </div>
-      </div>
+      </div >
 
       {/* Error Message */}
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
+      {
+        error && (
+          <div className="error-message">
+            {error}
+          </div>
+        )
+      }
 
       {/* Products Grid */}
       <div className="products-grid">
@@ -503,62 +550,66 @@ export default function ProductList({ token, isAdmin, onPrebook, onAddToCart, on
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            className="pagination-btn"
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            ← Previous
-          </button>
+      {
+        totalPages > 1 && (
+          <div className="pagination">
+            <button
+              className="pagination-btn"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              ← Previous
+            </button>
 
-          {[...Array(totalPages)].map((_, index) => {
-            const page = index + 1;
-            if (
-              page === 1 ||
-              page === totalPages ||
-              (page >= currentPage - 1 && page <= currentPage + 1)
-            ) {
-              return (
-                <button
-                  key={page}
-                  className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
-                  onClick={() => setCurrentPage(page)}
-                >
-                  {page}
-                </button>
-              );
-            } else if (page === currentPage - 2 || page === currentPage + 2) {
-              return <span key={page}>...</span>;
-            }
-            return null;
-          })}
+            {[...Array(totalPages)].map((_, index) => {
+              const page = index + 1;
+              if (
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              ) {
+                return (
+                  <button
+                    key={page}
+                    className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                );
+              } else if (page === currentPage - 2 || page === currentPage + 2) {
+                return <span key={page}>...</span>;
+              }
+              return null;
+            })}
 
-          <button
-            className="pagination-btn"
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            Next →
-          </button>
-        </div>
-      )}
+            <button
+              className="pagination-btn"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Next →
+            </button>
+          </div>
+        )
+      }
 
       {/* Product Details Modal */}
-      {selectedProductId && (
-        <ProductDetails
-          productId={selectedProductId}
-          token={token}
-          onClose={() => setSelectedProductId(null)}
-          onAddToCart={(productId, quantity) => {
-            if (onAddToCart) {
-              onAddToCart(productId, quantity);
-            }
-            setSelectedProductId(null);
-          }}
-        />
-      )}
-    </div>
+      {
+        selectedProductId && (
+          <ProductDetails
+            productId={selectedProductId}
+            token={token}
+            onClose={() => setSelectedProductId(null)}
+            onAddToCart={(productId, quantity) => {
+              if (onAddToCart) {
+                onAddToCart(productId, quantity);
+              }
+              setSelectedProductId(null);
+            }}
+          />
+        )
+      }
+    </div >
   );
 }

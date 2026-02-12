@@ -43,7 +43,7 @@ export default function EnhancedAdminPage() {
     localStorage.removeItem('adminToken');
     setIsLoggedIn(false);
     setToken(null);
-    navigate('/');
+    navigate('/admin');
   }
 
   if (loading) {

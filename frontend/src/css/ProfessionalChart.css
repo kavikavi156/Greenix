@@ -192,6 +192,11 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.analytics-card-change:hover {
+  transform: scale(1.05);
 }
 
 .analytics-card-change.positive {
@@ -200,6 +205,12 @@
 
 .analytics-card-change.negative {
   color: #ef4444;
+}
+
+.analytics-card-change.negative:hover {
+  background: rgba(239, 68, 68, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
 }
 
 .analytics-card-change.neutral {

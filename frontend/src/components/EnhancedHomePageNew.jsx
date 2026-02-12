@@ -7,6 +7,8 @@ import ProductDetails from './ProductDetails.jsx';
 import ChatBot from './ChatBot.jsx';
 import '../css/ProfessionalEcommerce.css';
 import '../css/Overlays.css';
+import '../css/MobileResponsive.css';
+import '../css/CustomerFeatures.css';
 import ProfessionalToast from './ProfessionalToast.jsx';
 import { getApiUrl, getImageUrl } from '../config/api';
 
@@ -14,6 +16,8 @@ export default function EnhancedHomePage() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedBrand, setSelectedBrand] = useState('all');
+  const [availableBrands, setAvailableBrands] = useState([]);
   const [sortBy, setSortBy] = useState('name');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -43,14 +47,31 @@ export default function EnhancedHomePage() {
   useEffect(() => {
     checkAuthStatus();
     fetchProducts();
-    if (isLoggedIn) {
+    if (localStorage.getItem('customerToken')) {
       fetchCartCounts();
     }
   }, []);
 
   useEffect(() => {
+    fetchBrands();
+    setSelectedBrand('all'); // Reset brand filter when category changes
+  }, [selectedCategory]);
+
+  const [topSellingProducts, setTopSellingProducts] = useState([]);
+  const [topRatedProducts, setTopRatedProducts] = useState([]);
+
+  useEffect(() => {
     filterAndSortProducts();
-  }, [products, selectedCategory, sortBy, searchTerm]);
+    if (products.length > 0) {
+      // Simulate Top Selling (Random selection for now)
+      const shuffled = [...products].sort(() => 0.5 - Math.random());
+      setTopSellingProducts(shuffled.slice(0, 4));
+
+      // Simulate Top Rated (Another random selection)
+      const shuffled2 = [...products].sort(() => 0.5 - Math.random());
+      setTopRatedProducts(shuffled2.slice(0, 4));
+    }
+  }, [products, selectedCategory, selectedBrand, sortBy, searchTerm]);
 
   function checkAuthStatus() {
     const token = localStorage.getItem('customerToken');
@@ -81,9 +102,20 @@ export default function EnhancedHomePage() {
       const response = await fetch(getApiUrl('/api/products'));
       const data = await response.json();
       console.log('Fetched products:', data);
-      setProducts(data.products || data || []);
+
+      // Handle both success and error responses
+      if (data.error) {
+        console.error('API returned error:', data);
+        setProducts([]);
+        return;
+      }
+
+      // Ensure we always set an array
+      const productsArray = Array.isArray(data) ? data : (Array.isArray(data.products) ? data.products : []);
+      setProducts(productsArray);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setProducts([]);
     }
   }
 
@@ -110,11 +142,35 @@ export default function EnhancedHomePage() {
     }
   }
 
+  async function fetchBrands() {
+    try {
+      let endpoint = '/api/products/filters/options';
+      if (selectedCategory !== 'all') {
+        endpoint += `?category=${encodeURIComponent(selectedCategory)}`;
+      }
+      const response = await fetch(getApiUrl(endpoint));
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableBrands(data.brands || []);
+      }
+    } catch (error) {
+      console.error('Error fetching brands:', error);
+    }
+  }
+
   function filterAndSortProducts() {
+    // Safety check: ensure products is an array
+    if (!Array.isArray(products)) {
+      console.error('Products is not an array:', products);
+      setFilteredProducts([]);
+      return;
+    }
+
     let filtered = products;
     console.log('Filtering products:', {
       totalProducts: products.length,
       selectedCategory,
+      selectedBrand,
       searchTerm,
       availableCategories: [...new Set(products.map(p => p.category))]
     });
@@ -131,6 +187,11 @@ export default function EnhancedHomePage() {
         return matches;
       });
       console.log('After category filter:', filtered.length);
+    }
+
+    // Filter by Brand
+    if (selectedBrand !== 'all') {
+      filtered = filtered.filter(product => product.brand === selectedBrand);
     }
 
     // Filter by search term
@@ -240,9 +301,7 @@ export default function EnhancedHomePage() {
               <svg className="leaf-icon" width="40" height="40" viewBox="0 0 40 40" fill="none">
                 <path d="M20 5C20 5 8 10 8 22C8 28 12 32 18 34C18 34 15 28 18 24C21 20 20 15 20 15C20 15 19 20 22 24C25 28 22 34 22 34C28 32 32 28 32 22C32 10 20 5 20 5Z" fill="currentColor" />
               </svg>
-              <div className="logo-text">
-                <span className="brand-name">Greenixx</span>
-              </div>
+              <span style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.5rem' }}>Greenixx</span>
             </Link>
 
             {/* Search Bar */}
@@ -263,19 +322,6 @@ export default function EnhancedHomePage() {
 
             {/* User Actions */}
             <div className="header-actions">
-              <button 
-                onClick={() => setShowMyOrders(true)} 
-                className="icon-action" 
-                title="My Orders"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <line x1="12" y1="22.08" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>My Orders</span>
-              </button>
-
               <button
                 onClick={() => setShowCart(true)}
                 className="icon-action cart-action"
@@ -287,6 +333,19 @@ export default function EnhancedHomePage() {
                 {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
               </button>
 
+              {isLoggedIn && (
+                <button
+                  onClick={() => setShowMyOrders(true)}
+                  className="icon-action orders-action"
+                  title="My Orders"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 17h6M9 13h6M9 9h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span>Orders</span>
+                </button>
+              )}
+
               <div className="user-profile">
                 {isLoggedIn ? (
                   <div className="profile-menu">
@@ -296,7 +355,6 @@ export default function EnhancedHomePage() {
                       </svg>
                       <div className="profile-info">
                         <span className="profile-name">{user?.name || 'User'}</span>
-                        <span className="profile-email">{user?.email?.substring(0, 20) || ''}</span>
                       </div>
                     </button>
                     <div className="profile-dropdown">
@@ -376,10 +434,10 @@ export default function EnhancedHomePage() {
               >
                 Organic Products
               </button>
-              <Link to="/admin" className="admin-dashboard-btn">
-                <span className="admin-icon">⚙️</span>
-                Admin Dashboard
+              <Link to="/products-carousel" className="nav-item">
+                Premium Showcase
               </Link>
+
             </nav>
           </div>
         </div>
@@ -401,7 +459,12 @@ export default function EnhancedHomePage() {
               <p className="hero-description">
                 Quality fertilizers, seeds, and agricultural products for maximum crop yield. Trusted by thousands of farmers for over 25 years.
               </p>
-              <button className="shop-now-btn">
+              <button className="shop-now-btn" onClick={() => {
+                const productsSection = document.querySelector('.products-section');
+                if (productsSection) {
+                  productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}>
                 Shop Now
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -448,11 +511,183 @@ export default function EnhancedHomePage() {
         </div>
       </section>
 
+      {/* Features Section */}
+      <section className="features-section">
+        <div className="section-header">
+          <span className="section-badge" style={{ background: '#16a34a' }}>Why Choose Us</span>
+          <h2>Empowering Your Agriculture</h2>
+          <p>We provide the best tools and resources for modern farming</p>
+        </div>
+        <div className="features-grid">
+          <div className="feature-card">
+            <div className="feature-icon">🚀</div>
+            <div className="feature-title">Fast Delivery</div>
+            <div className="feature-desc">Get your farming supplies delivered directly to your farm within 24-48 hours.</div>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">✅</div>
+            <div className="feature-title">Quality Assurance</div>
+            <div className="feature-desc">100% certified organic seeds and fertilizers tested for maximum yield.</div>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">💬</div>
+            <div className="feature-title">Expert Support</div>
+            <div className="feature-desc">24/7 access to agricultural experts for advice on crops and equipment.</div>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">💰</div>
+            <div className="feature-title">Best Prices</div>
+            <div className="feature-desc">Direct-from-manufacturer pricing to ensure you get the best value.</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Top Selling Products */}
+      {topSellingProducts.length > 0 && (
+        <section className="top-selling-section">
+          <div className="section-header">
+            <span className="section-badge">Trending Now</span>
+            <h2>Top Selling Products</h2>
+            <p>Most popular choices among farmers this week</p>
+          </div>
+          <div className="products-grid">
+            {topSellingProducts.map(product => (
+              <div key={product._id} className="product-card">
+                <div
+                  className="product-image-container"
+                  onClick={() => handleProductClick(product._id)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <img
+                    src={product.image?.startsWith('http') ? product.image : getImageUrl(product.image)}
+                    alt={product.name}
+                    className="product-image"
+                  />
+                  <div className="product-badge">Hot 🔥</div>
+                </div>
+                <div className="product-info" onClick={() => handleProductClick(product._id)} style={{ cursor: 'pointer' }}>
+                  <div className="product-category">{product.category}</div>
+                  <h3 className="product-name">{product.name}</h3>
+                  <div className="product-price">₹{product.price}</div>
+                  <div className="product-actions" style={{ marginTop: '10px' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToCart(product._id);
+                      }}
+                      className="add-to-cart-btn"
+                      style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Top Rated Products */}
+      {topRatedProducts.length > 0 && (
+        <section className="top-rated-section">
+          <div className="section-header">
+            <span className="section-badge" style={{ background: '#d97706' }}>Customer Favorites</span>
+            <h2>Top Rated Products</h2>
+            <p>Highly recommended by other farmers</p>
+          </div>
+          <div className="products-grid">
+            {topRatedProducts.map(product => (
+              <div key={product._id} className="product-card">
+                <div
+                  className="product-image-container"
+                  onClick={() => handleProductClick(product._id)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <img
+                    src={product.image?.startsWith('http') ? product.image : getImageUrl(product.image)}
+                    alt={product.name}
+                    className="product-image"
+                  />
+                  <div className="product-badge" style={{ background: '#fef3c7', color: '#d97706' }}>Top Rated ⭐</div>
+                </div>
+                <div className="product-info" onClick={() => handleProductClick(product._id)} style={{ cursor: 'pointer' }}>
+                  <div className="product-category">{product.category}</div>
+                  <h3 className="product-name">{product.name}</h3>
+                  <div className="product-price">₹{product.price}</div>
+                  <div className="product-actions" style={{ marginTop: '10px' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToCart(product._id);
+                      }}
+                      className="add-to-cart-btn"
+                      style={{ padding: '8px 16px', fontSize: '0.9rem', background: '#d97706' }}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Products Section */}
-      <div className="products-section">
+      <div id="products-section" className="products-section">
         <div className="section-title">
           <h2>Our Products</h2>
           <p>Premium quality agricultural products for your farming needs</p>
+
+          {/* Filters Bar */}
+          <div className="filters-bar" style={{
+            marginTop: '20px',
+            display: 'flex',
+            gap: '15px',
+            justifyContent: 'center',
+            flexWrap: 'wrap'
+          }}>
+            <div className="filter-item">
+              <select
+                value={selectedBrand}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className="filter-select"
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '20px',
+                  border: '1px solid #ddd',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">All Brands</option>
+                {availableBrands.map((brand, idx) => (
+                  <option key={idx} value={brand}>{brand}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-item">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-select"
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '20px',
+                  border: '1px solid #ddd',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="name">Sort by Name</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="stock">Stock Level</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div className="products-grid">

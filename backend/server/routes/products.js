@@ -7,31 +7,31 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     console.log('Products API called with query:', req.query);
-    
-    const { 
-      sort = 'name', 
-      order = 'asc', 
-      category, 
-      minPrice, 
-      maxPrice, 
+
+    const {
+      sort = 'name',
+      order = 'asc',
+      category,
+      minPrice,
+      maxPrice,
       search,
       limit = 50,
-      page = 1 
+      page = 1
     } = req.query;
 
     // Build filter object
     let filter = {};
-    
+
     if (category && category !== 'all') {
       filter.category = category;
     }
-    
+
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = Number(minPrice);
       if (maxPrice) filter.price.$lte = Number(maxPrice);
     }
-    
+
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -63,16 +63,16 @@ router.get('/', async (req, res) => {
     }
 
     const skip = (page - 1) * limit;
-    
+
     const products = await Product.find(filter)
       .sort(sortObj)
       .limit(Number(limit))
       .skip(skip);
-    
+
     const total = await Product.countDocuments(filter);
-    
+
     console.log(`Found ${products.length} products out of ${total} total`);
-    
+
     res.json({
       products,
       pagination: {
@@ -86,12 +86,12 @@ router.get('/', async (req, res) => {
     console.error('Products fetch error:', error);
     console.error('Error stack:', error.stack);
     console.error('MongoDB connection state:', require('mongoose').connection.readyState);
-    
+
     // Provide helpful error message based on connection state
     const mongoState = require('mongoose').connection.readyState;
     let errorMessage = 'Failed to fetch products';
     let hint = '';
-    
+
     if (mongoState === 0) {
       errorMessage = 'Database not connected';
       hint = 'MongoDB connection is not established. Please check MongoDB Atlas IP whitelist or connection string.';
@@ -99,8 +99,8 @@ router.get('/', async (req, res) => {
       errorMessage = 'Database is connecting';
       hint = 'MongoDB is still connecting. Please wait a moment and try again.';
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: errorMessage,
       hint: hint,
       details: error.message,
@@ -114,16 +114,16 @@ router.get('/', async (req, res) => {
 router.get('/filters/options', async (req, res) => {
   try {
     const { category } = req.query;
-    
+
     let filter = {};
     if (category && category !== 'all') {
-      filter.category = category;
+      filter.category = { $regex: category, $options: 'i' };
     }
-    
+
     // Get unique product types and brands
     const productTypes = await Product.distinct('productType', filter);
     const brands = await Product.distinct('brand', filter);
-    
+
     res.json({
       productTypes: productTypes.filter(Boolean), // Remove null/undefined
       brands: brands.filter(Boolean)
@@ -138,20 +138,20 @@ router.get('/filters/options', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     console.log('Fetching product with ID:', req.params.id);
-    
+
     // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       console.log('Invalid ObjectId format:', req.params.id);
       return res.status(400).json({ error: 'Invalid product ID format' });
     }
-    
+
     const product = await Product.findById(req.params.id);
     console.log('Product found:', product ? 'Yes' : 'No');
-    
+
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
+
     res.json(product);
   } catch (error) {
     console.error('Error fetching product:', error);
@@ -201,19 +201,19 @@ router.get('/:id/price/:quantity', async (req, res) => {
   try {
     const { id, quantity } = req.params;
     const product = await Product.findById(id);
-    
+
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
+
     const qty = parseInt(quantity);
     if (qty <= 0) {
       return res.status(400).json({ error: 'Quantity must be greater than 0' });
     }
-    
+
     const pricePerUnit = product.calculatePrice(qty);
     const totalPrice = product.calculateTotalPrice(qty);
-    
+
     res.json({
       productId: id,
       quantity: qty,

@@ -90,6 +90,44 @@ export default function MyOrders({ token, onClose }) {
       }
     }
 
+    async function cancelOrder(orderId) {
+      if (!window.confirm("Are you sure you want to cancel this entire order?")) return;
+      try {
+        const res = await fetch(`http://localhost:3001/api/customer/orders/${orderId}/cancel`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          alert('Order cancelled successfully.');
+          fetchMyOrders();
+        } else {
+          const data = await res.json();
+          alert(data.error || "Failed to cancel order");
+        }
+      } catch (e) {
+        alert('Error cancelling order');
+      }
+    }
+
+    async function cancelItem(orderId, itemId) {
+      if (!window.confirm("Are you sure you want to cancel this item?")) return;
+      try {
+        const res = await fetch(`http://localhost:3001/api/customer/orders/${orderId}/items/${itemId}/cancel`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          alert('Item cancelled successfully.');
+          fetchMyOrders();
+        } else {
+          const data = await res.json();
+          alert(data.error || "Failed to cancel item");
+        }
+      } catch (e) {
+        alert('Error cancelling item');
+      }
+    }
+
     function getStatusColor(status) {
       switch (status?.toLowerCase()) {
         case 'pending':
@@ -195,11 +233,29 @@ export default function MyOrders({ token, onClose }) {
                         <h3>Order #{order._id.slice(-8)}</h3>
                         <p className="order-date">{formatDate(order.createdAt)}</p>
                       </div>
-                      <div
-                        className="order-status"
-                        style={{ backgroundColor: getStatusColor(order.status) }}
-                      >
-                        {order.status?.toUpperCase() || 'PENDING'}
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        {['ordered', 'confirmed'].includes(order.status?.toLowerCase()) && (
+                          <button
+                            onClick={() => cancelOrder(order._id)}
+                            style={{
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Cancel Order
+                          </button>
+                        )}
+                        <div
+                          className="order-status"
+                          style={{ backgroundColor: getStatusColor(order.status) }}
+                        >
+                          {order.status?.toUpperCase() || 'PENDING'}
+                        </div>
                       </div>
                     </div>
 
@@ -226,6 +282,25 @@ export default function MyOrders({ token, onClose }) {
                             <h4>{item.name || item.product?.name}</h4>
                             <p>Quantity: {item.quantity}</p>
                             <p>Price: ₹{item.price}</p>
+                            {item.status === 'cancelled' ? (
+                              <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 'bold' }}>CANCELLED</span>
+                            ) : ['ordered', 'confirmed'].includes(order.status?.toLowerCase()) ? (
+                              <button
+                                onClick={() => cancelItem(order._id, item._id)}
+                                style={{
+                                  marginTop: '4px',
+                                  background: 'transparent',
+                                  color: '#ef4444',
+                                  border: '1px solid #ef4444',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  fontSize: '10px'
+                                }}
+                              >
+                                Cancel Item
+                              </button>
+                            ) : null}
 
                             {/* Review Button for delivered orders */}
                             {(order.status?.toLowerCase() === 'delivered' ||
