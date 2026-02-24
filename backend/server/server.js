@@ -75,10 +75,13 @@ const mongoOptions = {
   useUnifiedTopology: true,
   serverSelectionTimeoutMS: 10000,
   socketTimeoutMS: 45000,
-  bufferCommands: false, // Disable buffering to fail fast
-  tls: true,
-  tlsAllowInvalidCertificates: true, // For development only
-  tlsAllowInvalidHostnames: true, // For development only
+  bufferCommands: false,
+  // TLS bypass flags — development only. Never skip cert validation in production!
+  ...(NODE_ENV !== 'production' && {
+    tls: true,
+    tlsAllowInvalidCertificates: true,
+    tlsAllowInvalidHostnames: true,
+  })
 };
 
 mongoose.connect(MONGODB_URI, mongoOptions).catch(err => {

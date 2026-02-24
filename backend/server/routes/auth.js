@@ -57,10 +57,16 @@ router.post('/login', async (req, res) => {
     // Validate input
     if (!username || !password) {
       console.log('Missing username or password');
-      return res.status(400).json({ error: 'Username and password are required' });
+      return res.status(400).json({ error: 'Username/email and password are required' });
     }
 
-    const user = await User.findOne({ username });
+    // Find user by username OR email
+    const user = await User.findOne({
+      $or: [
+        { username: username.trim() },
+        { email: username.trim() }
+      ]
+    });
     if (!user) {
       console.log('User not found:', username);
       return res.status(401).json({ error: 'Invalid credentials' });

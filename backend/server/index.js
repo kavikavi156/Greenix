@@ -172,17 +172,15 @@ try {
   app.use('/api/customer', require('./routes/customer'));
   app.use('/api/admin', require('./routes/admin'));
   app.use('/api/upload', require('./routes/upload'));
-  app.use('/api/razorpay', require('./routes/razorpay')); // Add Razorpay routes
-  app.use('/api/reviews', require('./routes/reviews')); // Add Reviews routes
-  app.use('/api/razorpay', require('./routes/razorpay')); // Add Razorpay routes
-  app.use('/api/reviews', require('./routes/reviews')); // Add Reviews routes
-  app.use('/razorpay', require('./routes/razorpay')); // Also mount at /razorpay for frontend compatibility
+  app.use('/api/razorpay', require('./routes/razorpay'));
+  app.use('/api/reviews', require('./routes/reviews'));
 
-  // NEW: Dealer & Admin Stock Routes
+  // Dealer & Admin Stock Routes
   app.use('/api/admin-auth', require('./routes/adminAuth'));
   app.use('/api/dealer-auth', require('./routes/dealerAuth'));
   app.use('/api/admin-stock', require('./routes/adminStock'));
   app.use('/api/dealer-orders', require('./routes/dealerOrders'));
+  app.use('/api/rentals', require('./routes/rentals')); // Equipment Rental Routes
 
   // Categories route (accessible to both admin and customer)
   app.get('/api/categories', async (req, res) => {

@@ -1,9 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import '../css/ProfessionalAdminDashboard.css'; // Reuse basic layout styles
 import { getImageUrl, API_BASE_URL } from '../config/api';
 import DealerInvoice from './DealerInvoice';
 import CustomerInvoice from './CustomerInvoice';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 // Create a separate CSS file for Dealer specific overrides if needed, 
 // for now we use inline styles mixed with reuse to ensure "good look" immediately.
@@ -150,62 +151,134 @@ export default function DealerDashboard({ token, onLogout }) {
     }
 
     // --- Report Download ---
-    function downloadReport() {
+    function downloadReport(format = 'excel') {
         const date = new Date().toLocaleDateString();
         const time = new Date().toLocaleTimeString();
-        let csvContent = "data:text/csv;charset=utf-8,";
 
-        // 1. Header
-        csvContent += `DEALER BUSINESS REPORT\n`;
-        csvContent += `Generated On:,${date} ${time}\n`;
-        csvContent += `Dealer:,${profile?.name || 'N/A'}\n\n`;
+        if (format === 'excel') {
+            let csvContent = "data:text/csv;charset=utf-8,";
 
-        // 2. Stats
-        csvContent += `SUMMARY STATS\n`;
-        csvContent += `Active Orders,${stats.activeOrders}\n`;
-        csvContent += `Completed Supply,${stats.completedOrders}\n`;
-        csvContent += `Total Items Supplied,${stats.totalItemsSupplied}\n`;
-        csvContent += `Customer Sales (Count),${stats.customerSales}\n\n`;
+            // 1. Header
+            csvContent += `DEALER BUSINESS REPORT\n`;
+            csvContent += `Generated On:,${date} ${time}\n`;
+            csvContent += `Dealer:,${profile?.name || 'N/A'}\n\n`;
 
-        // 3. Supply Orders
-        csvContent += `SUPPLY ORDERS (From Admin)\n`;
-        csvContent += `Order ID,Product,Quantity,Status,Date,Payment Status\n`;
-        orders.forEach(o => {
-            const row = [
-                o._id.slice(-6).toUpperCase(),
-                o.product?.name || 'Unknown',
-                o.quantity,
-                o.status,
-                new Date(o.createdAt).toLocaleDateString(),
-                o.paymentStatus || 'PENDING'
-            ];
-            csvContent += row.join(",") + "\n";
-        });
-        csvContent += `\n`;
+            // 2. Stats
+            csvContent += `SUMMARY STATS\n`;
+            csvContent += `Active Orders,${stats.activeOrders}\n`;
+            csvContent += `Completed Supply,${stats.completedOrders}\n`;
+            csvContent += `Total Items Supplied,${stats.totalItemsSupplied}\n`;
+            csvContent += `Customer Sales (Count),${stats.customerSales}\n\n`;
 
-        // 4. Customer Sales
-        csvContent += `CUSTOMER SALES (End Users)\n`;
-        csvContent += `Order ID,Customer,Items Count,Total Amount,Status,Date\n`;
-        customerOrders.forEach(o => {
-            const row = [
-                o._id.slice(-6).toUpperCase(),
-                o.user?.name || 'Guest',
-                o.items.length,
-                o.totalAmount.toFixed(2),
-                o.status,
-                new Date(o.createdAt).toLocaleDateString()
-            ];
-            csvContent += row.join(",") + "\n";
-        });
+            // 3. Supply Orders
+            csvContent += `SUPPLY ORDERS (From Admin)\n`;
+            csvContent += `Order ID,Product,Quantity,Status,Date,Payment Status\n`;
+            orders.forEach(o => {
+                const row = [
+                    o._id.slice(-6).toUpperCase(),
+                    o.product?.name || 'Unknown',
+                    o.quantity,
+                    o.status,
+                    new Date(o.createdAt).toLocaleDateString(),
+                    o.paymentStatus || 'PENDING'
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+            csvContent += `\n`;
 
-        // Trigger Download
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Dealer_Report_${new Date().toISOString().slice(0, 10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            // 4. Customer Sales
+            csvContent += `CUSTOMER SALES (End Users)\n`;
+            csvContent += `Order ID,Customer,Items Count,Total Amount,Status,Date\n`;
+            customerOrders.forEach(o => {
+                const row = [
+                    o._id.slice(-6).toUpperCase(),
+                    o.user?.name || 'Guest',
+                    o.items.length,
+                    o.totalAmount.toFixed(2),
+                    o.status,
+                    new Date(o.createdAt).toLocaleDateString()
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+
+            // Trigger Download
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Dealer_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else if (format === 'pdf') {
+            const doc = new jsPDF();
+
+            // Header
+            doc.setFontSize(20);
+            doc.text('Dealer Business Report', 14, 22);
+            doc.setFontSize(11);
+            doc.text(`Generated On: ${date} ${time}`, 14, 30);
+            doc.text(`Dealer: ${profile?.name || 'N/A'}`, 14, 36);
+
+            // Stats
+            doc.setFontSize(14);
+            doc.text('Summary Stats', 14, 46);
+            doc.autoTable({
+                startY: 50,
+                head: [['Metric', 'Value']],
+                body: [
+                    ['Active Orders', stats.activeOrders],
+                    ['Completed Supply', stats.completedOrders],
+                    ['Total Items Supplied', stats.totalItemsSupplied],
+                    ['Customer Sales (Count)', stats.customerSales]
+                ],
+                theme: 'striped',
+                headStyles: { fillColor: [59, 130, 246] },
+                margin: { bottom: 10 }
+            });
+
+            let currentY = doc.lastAutoTable.finalY + 10;
+
+            // Supply Orders
+            doc.setFontSize(14);
+            doc.text('Supply Orders (From Admin)', 14, currentY);
+            doc.autoTable({
+                startY: currentY + 4,
+                head: [['Order ID', 'Product', 'Quantity', 'Status', 'Date', 'Payment Status']],
+                body: orders.map(o => [
+                    o._id.slice(-6).toUpperCase(),
+                    o.product?.name || 'Unknown',
+                    o.quantity,
+                    o.status,
+                    new Date(o.createdAt).toLocaleDateString(),
+                    o.paymentStatus || 'PENDING'
+                ]),
+                theme: 'striped',
+                headStyles: { fillColor: [16, 185, 129] },
+                margin: { bottom: 10 }
+            });
+
+            currentY = doc.lastAutoTable.finalY + 10;
+
+            // Customer Sales
+            doc.setFontSize(14);
+            doc.text('Customer Sales (End Users)', 14, currentY);
+            doc.autoTable({
+                startY: currentY + 4,
+                head: [['Order ID', 'Customer', 'Items Count', 'Total Amount', 'Status', 'Date']],
+                body: customerOrders.map(o => [
+                    o._id.slice(-6).toUpperCase(),
+                    o.user?.name || 'Guest',
+                    o.items.length,
+                    `Rs. ${o.totalAmount.toFixed(2)}`,
+                    o.status,
+                    new Date(o.createdAt).toLocaleDateString()
+                ]),
+                theme: 'striped',
+                headStyles: { fillColor: [59, 130, 246] }
+            });
+
+            doc.save(`Dealer_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+        }
     }
 
     // --- Actions ---
@@ -420,9 +493,14 @@ export default function DealerDashboard({ token, onLogout }) {
                         <button onClick={() => setShowRequestModal(true)} className="action-btn" style={{ background: '#10b981', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span>+</span> New Supply/Stock Request
                         </button>
-                        <button onClick={downloadReport} className="action-btn" style={{ background: '#3b82f6', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>📊</span> Download Report
-                        </button>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={() => downloadReport('pdf')} className="action-btn" style={{ background: '#ef4444', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span>📄</span> Download PDF
+                            </button>
+                            <button onClick={() => downloadReport('excel')} className="action-btn" style={{ background: '#10b981', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span>📊</span> Download Excel
+                            </button>
+                        </div>
                         <button onClick={() => fetchData()} className="refresh-btn">
                             🔄 Sync
                         </button>

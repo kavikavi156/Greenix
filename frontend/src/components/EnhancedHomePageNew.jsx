@@ -5,6 +5,7 @@ import EnhancedCart from './EnhancedCart.jsx';
 import MyOrders from './MyOrders.jsx';
 import ProductDetails from './ProductDetails.jsx';
 import ChatBot from './ChatBot.jsx';
+import CropCalendarModal from './CropCalendarModal.jsx';
 import '../css/ProfessionalEcommerce.css';
 import '../css/Overlays.css';
 import '../css/MobileResponsive.css';
@@ -29,6 +30,7 @@ export default function EnhancedHomePage() {
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [toast, setToast] = useState({ visible: false, title: '', message: '', type: 'info' });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showCropCalendar, setShowCropCalendar] = useState(false);
   const navigate = useNavigate();
 
   // Helper function to get product icon based on category
@@ -61,17 +63,37 @@ export default function EnhancedHomePage() {
   const [topRatedProducts, setTopRatedProducts] = useState([]);
 
   useEffect(() => {
-    filterAndSortProducts();
-    if (products.length > 0) {
-      // Simulate Top Selling (Random selection for now)
-      const shuffled = [...products].sort(() => 0.5 - Math.random());
-      setTopSellingProducts(shuffled.slice(0, 4));
+    fetchTopSelling();
+    fetchTopRated();
+  }, []);
 
-      // Simulate Top Rated (Another random selection)
-      const shuffled2 = [...products].sort(() => 0.5 - Math.random());
-      setTopRatedProducts(shuffled2.slice(0, 4));
-    }
+  useEffect(() => {
+    filterAndSortProducts();
   }, [products, selectedCategory, selectedBrand, sortBy, searchTerm]);
+
+  async function fetchTopSelling() {
+    try {
+      const response = await fetch(getApiUrl('/api/products?sort=popularity&limit=4'));
+      const data = await response.json();
+      if (data.products) {
+        setTopSellingProducts(data.products);
+      }
+    } catch (error) {
+      console.error('Error fetching top selling products:', error);
+    }
+  }
+
+  async function fetchTopRated() {
+    try {
+      const response = await fetch(getApiUrl('/api/products?sort=rating&limit=4'));
+      const data = await response.json();
+      if (data.products) {
+        setTopRatedProducts(data.products);
+      }
+    } catch (error) {
+      console.error('Error fetching top rated products:', error);
+    }
+  }
 
   function checkAuthStatus() {
     const token = localStorage.getItem('customerToken');
@@ -434,8 +456,11 @@ export default function EnhancedHomePage() {
               >
                 Organic Products
               </button>
-              <Link to="/products-carousel" className="nav-item">
-                Premium Showcase
+              <button className="nav-item" onClick={() => setShowCropCalendar(true)}>
+                Smart Crop Calendar
+              </button>
+              <Link to="/rentals" className="nav-item">
+                Equipment Rentals
               </Link>
 
             </nav>
@@ -783,6 +808,11 @@ export default function EnhancedHomePage() {
           token={localStorage.getItem('customerToken')}
           onClose={() => setShowMyOrders(false)}
         />
+      )}
+
+      {/* Crop Calendar Modal */}
+      {showCropCalendar && (
+        <CropCalendarModal onClose={() => setShowCropCalendar(false)} />
       )}
 
       {/* Product Details Modal */}

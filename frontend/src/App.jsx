@@ -12,6 +12,8 @@ import { useState } from 'react';
 
 import DealerLoginPage from './components/DealerLoginPage.jsx';
 import ProductCarouselPage from './components/ProductCarouselPage.jsx';
+import RentalMarketplace from './components/RentalMarketplace.jsx';
+import MyRentalsPage from './components/MyRentals.jsx';
 
 function AdminLogin() {
   return <EnhancedAdminPageNew />;
@@ -61,6 +63,8 @@ function App() {
         <Route path="/customer" element={<Navigate to="/" replace />} />
         <Route path="/showcase" element={<ProductShowcase />} />
         <Route path="/products-carousel" element={<ProductCarouselPage />} />
+        <Route path="/rentals" element={<RentalMarketplace />} />
+        <Route path="/my-rentals" element={<MyRentalsPage />} />
         <Route path="*" element={<EnhancedHomePageNew />} />
       </Routes>
     </>

@@ -164,6 +164,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     loading: false
   });
 
+  // Product Monthly Sales state (individual product sales in products page)
+  const [productMonthlySales, setProductMonthlySales] = useState([]);
+  const [productSalesMonth, setProductSalesMonth] = useState(new Date().getMonth() + 1);
+  const [productSalesYear, setProductSalesYear] = useState(new Date().getFullYear());
+  const [productSalesLoading, setProductSalesLoading] = useState(false);
+
   // Reviews state
   const [reviews, setReviews] = useState([]);
   const [selectedProductFilter, setSelectedProductFilter] = useState('all');
@@ -212,7 +218,189 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
       fetchStockRequests();
       fetchDealers();
     }
+    if (currentView === 'rental-management') {
+      fetchRentalBookings();
+      fetchEquipmentList();
+    }
+    if (currentView === 'products') {
+      fetchProductMonthlySales(productSalesMonth, productSalesYear);
+    }
   }, [currentView]);
+
+  useEffect(() => {
+    if (currentView === 'products') {
+      fetchProductMonthlySales(productSalesMonth, productSalesYear);
+    }
+  }, [productSalesMonth, productSalesYear]);
+
+  // Rental Management State
+  const [rentalBookings, setRentalBookings] = useState([]);
+
+  async function fetchRentalBookings() {
+    try {
+      const response = await fetch('http://localhost:3001/api/rentals/admin/all-bookings', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.bookings) {
+        setRentalBookings(data.bookings);
+      }
+    } catch (error) {
+      console.error('Error fetching rentals:', error);
+      showNotification('Error fetching rentals', 'error');
+    }
+  }
+
+  async function handleUpdateRentalStatus(bookingId, newStatus) {
+    try {
+      const response = await fetch(`http://localhost:3001/api/rentals/admin/update-status/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        showNotification('Rental status updated', 'success');
+        fetchRentalBookings();
+      } else {
+        showNotification('Failed to update status', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating rental status:', error);
+    }
+  }
+
+  // --- Rental Equipment Inventory State & Functions ---
+  const [activeRentalTab, setActiveRentalTab] = useState('bookings'); // 'bookings' | 'inventory'
+  const [equipmentList, setEquipmentList] = useState([]);
+  const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
+  const [editingEquipment, setEditingEquipment] = useState(null);
+  const [equipmentForm, setEquipmentForm] = useState({
+    name: '',
+    category: 'Tractor',
+    pricePerDay: '',
+    stock: '',
+    image: '',
+    description: '',
+    features: '', // comma separated string
+    status: 'active',
+    pricingUnit: 'day'
+  });
+
+  async function fetchEquipmentList() {
+    try {
+      const response = await fetch('http://localhost:3001/api/rentals/admin/equipment', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setEquipmentList(data.equipment);
+      }
+    } catch (error) {
+      console.error('Error fetching equipment:', error);
+      showNotification('Error fetching equipment', 'error');
+    }
+  }
+
+  async function handleEquipmentImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      showNotification('Uploading image...', 'info');
+      const response = await fetch('http://localhost:3001/api/upload/single', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (data.imageUrl) {
+        // Assuming backend serves uploads from /uploads
+        const fullUrl = `http://localhost:3001${data.imageUrl}`;
+        setEquipmentForm(prev => ({ ...prev, image: fullUrl }));
+        showNotification('Image uploaded successfully', 'success');
+      }
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      showNotification('Image upload failed', 'error');
+    }
+  }
+
+  async function handleSaveEquipment(e) {
+    e.preventDefault();
+    try {
+      const url = editingEquipment
+        ? `http://localhost:3001/api/rentals/admin/equipment/${editingEquipment._id}`
+        : 'http://localhost:3001/api/rentals/admin/equipment';
+
+      const method = editingEquipment ? 'PUT' : 'POST';
+
+      // Parse features from string to array
+      const featuresArray = typeof equipmentForm.features === 'string'
+        ? equipmentForm.features.split(',').map(f => f.trim()).filter(Boolean)
+        : equipmentForm.features;
+
+      const payload = {
+        ...equipmentForm,
+        features: featuresArray
+      };
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        showNotification(editingEquipment ? 'Equipment updated' : 'Equipment added', 'success');
+        setIsEquipmentModalOpen(false);
+        setEditingEquipment(null);
+        setEquipmentForm({
+          name: '',
+          category: 'Tractor',
+          pricePerDay: '',
+          stock: '',
+          image: '',
+          description: '',
+          features: '',
+          status: 'active'
+        });
+        fetchEquipmentList();
+      } else {
+        showNotification(data.error || 'Operation failed', 'error');
+      }
+    } catch (error) {
+      console.error('Save equipment error:', error);
+      showNotification('Failed to save equipment', 'error');
+    }
+  }
+
+  async function handleDeleteEquipment(id) {
+    if (!window.confirm('Are you sure you want to delete this equipment?')) return;
+    try {
+      const response = await fetch(`http://localhost:3001/api/rentals/admin/equipment/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        showNotification('Equipment deleted', 'success');
+        fetchEquipmentList();
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      showNotification('Failed to delete equipment', 'error');
+    }
+  }
+
 
   useEffect(() => {
     if (productForm.category) {
@@ -396,6 +584,26 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
   function showNotification(message, type = 'success') {
     setNotification({ show: true, message, type });
     setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
+  }
+
+  async function fetchProductMonthlySales(month = productSalesMonth, year = productSalesYear) {
+    setProductSalesLoading(true);
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/admin/product-monthly-sales?month=${month}&year=${year}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setProductMonthlySales(data.salesData || []);
+      } else {
+        console.error('Failed to fetch product monthly sales');
+      }
+    } catch (error) {
+      console.error('Error fetching product monthly sales:', error);
+    } finally {
+      setProductSalesLoading(false);
+    }
   }
 
   async function fetchMonthlyRevenue(year = selectedYear) {
@@ -1685,6 +1893,205 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
             </table>
           </div>
         </div>
+
+        {/* =================== PRODUCT MONTHLY SALES SECTION =================== */}
+        <div style={{
+          marginTop: '40px',
+          background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+          borderRadius: '18px',
+          padding: '30px',
+          color: 'white',
+          boxShadow: '0 8px 32px rgba(30,60,114,0.3)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '700', letterSpacing: '0.5px' }}>
+                📊 Individual Product Sales
+              </h2>
+              <p style={{ margin: '6px 0 0', opacity: 0.8, fontSize: '14px' }}>
+                View how each product performed in the selected month
+              </p>
+            </div>
+
+            {/* Month & Year Selectors */}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', opacity: 0.8, fontWeight: '600', letterSpacing: '0.5px' }}>MONTH</label>
+                <select
+                  value={productSalesMonth}
+                  onChange={(e) => setProductSalesMonth(Number(e.target.value))}
+                  style={{
+                    padding: '10px 14px', borderRadius: '10px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    background: 'rgba(255,255,255,0.15)', color: 'white',
+                    fontSize: '14px', fontWeight: '600', cursor: 'pointer', minWidth: '130px'
+                  }}
+                >
+                  {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+                    .map((name, i) => (
+                      <option key={i + 1} value={i + 1} style={{ background: '#1e3c72', color: 'white' }}>{name}</option>
+                    ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', opacity: 0.8, fontWeight: '600', letterSpacing: '0.5px' }}>YEAR</label>
+                <select
+                  value={productSalesYear}
+                  onChange={(e) => setProductSalesYear(Number(e.target.value))}
+                  style={{
+                    padding: '10px 14px', borderRadius: '10px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    background: 'rgba(255,255,255,0.15)', color: 'white',
+                    fontSize: '14px', fontWeight: '600', cursor: 'pointer', minWidth: '100px'
+                  }}
+                >
+                  {[2023, 2024, 2025, 2026].map(y => (
+                    <option key={y} value={y} style={{ background: '#1e3c72', color: 'white' }}>{y}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={() => fetchProductMonthlySales(productSalesMonth, productSalesYear)}
+                style={{
+                  padding: '10px 18px', borderRadius: '10px',
+                  border: '2px solid rgba(255,255,255,0.4)',
+                  background: 'rgba(255,255,255,0.2)', color: 'white',
+                  fontSize: '14px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Summary Pills */}
+          {!productSalesLoading && productMonthlySales.length > 0 && (
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              {[
+                { label: 'Products Sold', value: productMonthlySales.length, icon: '📦' },
+                { label: 'Total Units', value: productMonthlySales.reduce((s, p) => s + p.totalQuantity, 0), icon: '🔢' },
+                { label: 'Total Revenue', value: `₹${productMonthlySales.reduce((s, p) => s + p.totalRevenue, 0).toLocaleString('en-IN')}`, icon: '💰' },
+              ].map((stat, i) => (
+                <div key={i} style={{
+                  background: 'rgba(255,255,255,0.15)', borderRadius: '12px',
+                  padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '10px',
+                  border: '1px solid rgba(255,255,255,0.2)'
+                }}>
+                  <span style={{ fontSize: '22px' }}>{stat.icon}</span>
+                  <div>
+                    <div style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
+                    <div style={{ fontSize: '11px', opacity: 0.8 }}>{stat.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Sales Table */}
+          <div style={{
+            background: 'rgba(255,255,255,0.97)', borderRadius: '14px',
+            overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+          }}>
+            {productSalesLoading ? (
+              <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
+                <div style={{ fontSize: '40px', marginBottom: '12px' }}>⏳</div>
+                <div style={{ fontWeight: '600', fontSize: '16px' }}>Loading sales data...</div>
+              </div>
+            ) : productMonthlySales.length === 0 ? (
+              <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
+                <div style={{ fontSize: '50px', marginBottom: '12px' }}>📭</div>
+                <div style={{ fontWeight: '700', fontSize: '18px', color: '#374151' }}>
+                  No sales recorded for {['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][productSalesMonth]} {productSalesYear}
+                </div>
+                <div style={{ fontSize: '14px', marginTop: '6px', color: '#9ca3af' }}>
+                  Try selecting a different month or year
+                </div>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'linear-gradient(135deg, #1e3c72, #2a5298)', color: 'white' }}>
+                    <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: '600', fontSize: '13px' }}>#</th>
+                    <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: '600', fontSize: '13px' }}>PRODUCT</th>
+                    <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: '600', fontSize: '13px' }}>CATEGORY</th>
+                    <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: '600', fontSize: '13px' }}>UNITS SOLD</th>
+                    <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: '600', fontSize: '13px' }}>ORDERS</th>
+                    <th style={{ padding: '14px 18px', textAlign: 'right', fontWeight: '600', fontSize: '13px' }}>REVENUE</th>
+                    <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: '600', fontSize: '13px' }}>SHARE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const totalRev = productMonthlySales.reduce((s, p) => s + p.totalRevenue, 0);
+                    return productMonthlySales.map((item, index) => {
+                      const share = totalRev > 0 ? ((item.totalRevenue / totalRev) * 100).toFixed(1) : 0;
+                      const isTop = index === 0;
+                      return (
+                        <tr key={item._id}
+                          style={{ background: index % 2 === 0 ? '#f8fafc' : 'white', borderBottom: '1px solid #e2e8f0' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
+                          onMouseLeave={e => e.currentTarget.style.background = index % 2 === 0 ? '#f8fafc' : 'white'}
+                        >
+                          <td style={{ padding: '14px 18px', fontWeight: '700', color: '#94a3b8' }}>
+                            {isTop
+                              ? <span style={{ background: '#fbbf24', color: 'white', borderRadius: '50%', width: '26px', height: '26px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>🥇</span>
+                              : <span style={{ paddingLeft: '4px' }}>{index + 1}</span>
+                            }
+                          </td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <img
+                                src={getImageUrl(item.productImage)}
+                                alt={item.productName}
+                                style={{ width: '38px', height: '38px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #e2e8f0' }}
+                                onError={(e) => { e.target.style.visibility = 'hidden'; }}
+                              />
+                              <span style={{ fontWeight: '600', color: '#1e293b', fontSize: '14px' }}>{item.productName}</span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' }}>
+                              {item.productCategory || 'N/A'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 18px', textAlign: 'center' }}>
+                            <span style={{ background: '#d1fae5', color: '#065f46', padding: '5px 14px', borderRadius: '20px', fontWeight: '700', fontSize: '14px' }}>
+                              {item.totalQuantity}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 18px', textAlign: 'center', color: '#64748b', fontWeight: '600' }}>
+                            {item.orderCount}
+                          </td>
+                          <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                            <span style={{ fontWeight: '800', color: '#059669', fontSize: '15px' }}>
+                              ₹{item.totalRevenue.toLocaleString('en-IN')}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                              <div style={{ flex: 1, maxWidth: '80px', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{
+                                  height: '100%', width: `${share}%`,
+                                  background: isTop ? 'linear-gradient(90deg,#f59e0b,#ef4444)' : 'linear-gradient(90deg,#3b82f6,#06b6d4)',
+                                  borderRadius: '4px', transition: 'width 0.5s ease'
+                                }} />
+                              </div>
+                              <span style={{ fontSize: '12px', fontWeight: '700', color: '#475569', whiteSpace: 'nowrap' }}>
+                                {share}%
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -2729,12 +3136,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     );
   }
 
-  async function handleDownloadMonthlyReport() {
+  async function handleDownloadMonthlyReport(format = 'pdf') {
     try {
       const params = new URLSearchParams({
         period: 'monthly',
         year: salesReport.selectedYear,
-        format: 'pdf'
+        format: format
       });
 
       const response = await fetch(`http://localhost:3001/api/admin/download-report?${params}`, {
@@ -2746,12 +3153,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `monthly-sales-report-${salesReport.selectedYear}.pdf`;
+        a.download = `monthly-sales-report-${salesReport.selectedYear}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        showNotification('Monthly report downloaded successfully!', 'success');
+        showNotification(`Monthly report downloaded successfully as ${format.toUpperCase()}!`, 'success');
       } else {
         showNotification('Failed to download monthly report', 'error');
       }
@@ -2760,12 +3167,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     }
   }
 
-  async function handleDownloadYearlyReport() {
+  async function handleDownloadYearlyReport(format = 'pdf') {
     try {
       const params = new URLSearchParams({
         period: 'yearly',
         year: salesReport.selectedYear,
-        format: 'pdf'
+        format: format
       });
 
       const response = await fetch(`http://localhost:3001/api/admin/download-report?${params}`, {
@@ -2777,12 +3184,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `yearly-sales-report-${salesReport.selectedYear}.pdf`;
+        a.download = `yearly-sales-report-${salesReport.selectedYear}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        showNotification('Yearly report downloaded successfully!', 'success');
+        showNotification(`Yearly report downloaded successfully as ${format.toUpperCase()}!`, 'success');
       } else {
         showNotification('Failed to download yearly report', 'error');
       }
@@ -3140,19 +3547,42 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
 
         <div className="sales-report-container">
           {/* Download Buttons */}
-          <div className="report-download-header">
-            <button
-              className="download-btn monthly"
-              onClick={() => handleDownloadMonthlyReport()}
-            >
-              � Download Monthly Report
-            </button>
-            <button
-              className="download-btn yearly"
-              onClick={() => handleDownloadYearlyReport()}
-            >
-              � Download Yearly Report
-            </button>
+          <div className="report-download-header" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span style={{ fontWeight: 500 }}>Monthly:</span>
+              <button
+                className="btn-download pdf-btn"
+                style={{ background: '#ef4444', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => handleDownloadMonthlyReport('pdf')}
+              >
+                📄 PDF
+              </button>
+              <button
+                className="btn-download excel-btn"
+                style={{ background: '#10b981', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => handleDownloadMonthlyReport('excel')}
+              >
+                📊 Excel
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: '20px' }}>
+              <span style={{ fontWeight: 500 }}>Yearly:</span>
+              <button
+                className="btn-download pdf-btn"
+                style={{ background: '#ef4444', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => handleDownloadYearlyReport('pdf')}
+              >
+                📄 PDF
+              </button>
+              <button
+                className="btn-download excel-btn"
+                style={{ background: '#10b981', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => handleDownloadYearlyReport('excel')}
+              >
+                📊 Excel
+              </button>
+            </div>
           </div>
 
           {/* Monthly Revenue Breakdown */}
@@ -3453,6 +3883,384 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     );
   }
 
+  function renderRentalManagement() {
+    return (
+      <div className="admin-content-card">
+        <div className="section-header" style={{ marginBottom: '24px' }}>
+          <h1>🚜 Rental Management</h1>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button className="refresh-btn" onClick={() => { fetchRentalBookings(); fetchEquipmentList(); }}>
+              🔄 Refresh
+            </button>
+            {activeRentalTab === 'inventory' && (
+              <button
+                className="submit-btn"
+                onClick={() => {
+                  setEditingEquipment(null);
+                  setEquipmentForm({
+                    name: '', category: 'Tractor', pricePerDay: '', stock: '',
+                    image: '', description: '', features: '', status: 'active', pricingUnit: 'day'
+                  });
+                  setIsEquipmentModalOpen(true);
+                }}
+                style={{ padding: '10px 20px' }}
+              >
+                + Add Equipment
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="rental-tabs">
+          <button
+            className={`rental-tab-btn ${activeRentalTab === 'bookings' ? 'active' : ''}`}
+            onClick={() => setActiveRentalTab('bookings')}
+          >
+            Bookings
+          </button>
+          <button
+            className={`rental-tab-btn ${activeRentalTab === 'inventory' ? 'active' : ''}`}
+            onClick={() => setActiveRentalTab('inventory')}
+          >
+            Inventory Management
+          </button>
+        </div>
+
+        {activeRentalTab === 'bookings' ? (
+          <div className="rental-table-container">
+            <table className="rental-table">
+              <thead>
+                <tr>
+                  <th>Booking ID</th>
+                  <th>Customer</th>
+                  <th>Equipment</th>
+                  <th>Duration</th>
+                  <th>Total Cost</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rentalBookings.length > 0 ? (
+                  rentalBookings.map((booking) => (
+                    <tr key={booking._id}>
+                      <td><span style={{ fontWeight: '600', color: '#64748b' }}>#{booking._id.slice(-6)}</span></td>
+                      <td>
+                        <div style={{ fontWeight: '500', color: '#1e293b' }}>{booking.user?.name || 'Unknown'}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{booking.user?.mobile}</div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <img
+                            src={booking.image || 'https://via.placeholder.com/40'}
+                            alt=""
+                            className="rental-equipment-thumb"
+                            style={{ width: '40px', height: '40px' }}
+                          />
+                          <span style={{ fontWeight: '500' }}>{booking.equipmentName}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: '500' }}>{new Date(booking.startDate).toLocaleDateString()}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>to {new Date(booking.endDate).toLocaleDateString()}</div>
+                      </td>
+                      <td>
+                        <span style={{ fontWeight: '700', color: '#0f172a' }}>₹{booking.totalCost?.toLocaleString()}</span>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${booking.status?.toLowerCase() || 'pending'}`}>
+                          {booking.status || 'Pending'}
+                        </span>
+                      </td>
+                      <td>
+                        <select
+                          className="status-select"
+                          value={booking.status}
+                          onChange={(e) => handleUpdateRentalStatus(booking._id, e.target.value)}
+                          style={{ minWidth: '130px' }}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="confirmed">Confirmed</option>
+                          <option value="active">Active</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                      No rental bookings found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rental-table-container">
+            <table className="rental-table">
+              <thead>
+                <tr>
+                  <th>Image</th>
+                  <th>Equipment Details</th>
+                  <th>Category</th>
+                  <th>Pricing</th>
+                  <th>Stock</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {equipmentList.length > 0 ? (
+                  equipmentList.map((item) => (
+                    <tr key={item._id || item.id}>
+                      <td>
+                        <img
+                          src={item.image || 'https://via.placeholder.com/60'}
+                          alt={item.name}
+                          className="rental-equipment-thumb"
+                        />
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '0.95rem' }}>{item.name}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px' }}>
+                          {Array.isArray(item.features) ? item.features.slice(0, 2).join(', ') : item.features}
+                        </div>
+                      </td>
+                      <td>
+                        <span style={{
+                          background: '#f1f5f9',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          fontSize: '0.8rem',
+                          fontWeight: '500',
+                          color: '#475569'
+                        }}>
+                          {item.category}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ fontWeight: '600', color: '#16a34a' }}>₹{item.pricePerDay}</span>
+                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}> /{item.pricingUnit || 'day'}</span>
+                      </td>
+                      <td>
+                        <span className={`stock-badge ${item.stock < 3 ? 'low' : 'normal'}`}>
+                          {item.stock} units
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => {
+                              setEditingEquipment(item);
+                              setEquipmentForm({
+                                name: item.name,
+                                category: item.category,
+                                pricePerDay: item.pricePerDay,
+                                stock: item.stock,
+                                image: item.image,
+                                description: item.description,
+                                features: Array.isArray(item.features) ? item.features.join(', ') : item.features,
+                                status: item.status || 'active',
+                                pricingUnit: item.pricingUnit || 'day'
+                              });
+                              setIsEquipmentModalOpen(true);
+                            }}
+                            className="edit-btn"
+                            style={{ padding: '8px 12px' }}
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEquipment(item._id || item.id)}
+                            className="delete-btn"
+                            style={{ padding: '8px 12px' }}
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                      No rental equipment found in inventory.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Equipment Modal */}
+        {/* Premium Equipment Modal */}
+        {isEquipmentModalOpen && (
+          <div className="rental-modal-overlay-premium" onClick={() => setIsEquipmentModalOpen(false)}>
+            <div className="rental-modal-card-premium" onClick={(e) => e.stopPropagation()}>
+              <div className="rental-modal-header">
+                <h3>
+                  {editingEquipment ? '✏️ Edit Equipment' : '🚜 Add New Equipment'}
+                </h3>
+                <button className="close-btn" onClick={() => setIsEquipmentModalOpen(false)}>×</button>
+              </div>
+
+              <div className="rental-modal-body">
+                <form onSubmit={handleSaveEquipment} id="equipment-form">
+                  <div className="rental-form-grid">
+                    <div className="rental-form-group">
+                      <label>Equipment Name *</label>
+                      <input
+                        type="text"
+                        className="rental-form-input"
+                        value={equipmentForm.name}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, name: e.target.value })}
+                        required
+                        placeholder="e.g. Mahindra 575 DI Tractor"
+                      />
+                    </div>
+
+                    <div className="rental-form-group">
+                      <label>Category *</label>
+                      <select
+                        className="rental-form-select"
+                        value={equipmentForm.category}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, category: e.target.value })}
+                        required
+                      >
+                        <option value="Tractor">Tractor</option>
+                        <option value="Harvester">Harvester</option>
+                        <option value="Drone">Drone</option>
+                        <option value="Implements">Implements</option>
+                        <option value="Irrigation">Irrigation</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div className="rental-form-group">
+                      <label>Pricing Unit *</label>
+                      <select
+                        className="rental-form-select"
+                        value={equipmentForm.pricingUnit}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, pricingUnit: e.target.value })}
+                        required
+                      >
+                        <option value="hour">Per Hour</option>
+                        <option value="day">Per Day</option>
+                        <option value="week">Per Week</option>
+                        <option value="month">Per Month</option>
+                      </select>
+                    </div>
+
+                    <div className="rental-form-group">
+                      <label>Price (₹) *</label>
+                      <input
+                        type="number"
+                        className="rental-form-input"
+                        value={equipmentForm.pricePerDay}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, pricePerDay: e.target.value })}
+                        required
+                        placeholder="0.00"
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="rental-form-group">
+                      <label>Stock Quantity *</label>
+                      <input
+                        type="number"
+                        className="rental-form-input"
+                        value={equipmentForm.stock}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, stock: e.target.value })}
+                        required
+                        placeholder="0"
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="rental-form-group full-width">
+                      <label>Description *</label>
+                      <textarea
+                        className="rental-form-textarea"
+                        value={equipmentForm.description}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, description: e.target.value })}
+                        required
+                        rows="3"
+                        placeholder="Describe the equipment, its usage, and benefits..."
+                      />
+                    </div>
+
+                    <div className="rental-form-group full-width">
+                      <label>Features</label>
+                      <input
+                        type="text"
+                        className="rental-form-input"
+                        value={equipmentForm.features}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, features: e.target.value })}
+                        placeholder="e.g. 50HP, AC Cabin, GPS Enabled (comma separated)"
+                      />
+                    </div>
+
+                    <div className="rental-form-group full-width">
+                      <label>Equipment Image *</label>
+                      <div className="rental-image-upload-area">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEquipmentImageUpload}
+                          style={{ display: 'none' }}
+                          id="rental-image-input"
+                        />
+                        <label htmlFor="rental-image-input" style={{ cursor: 'pointer', color: '#4b5563', textAlign: 'center' }}>
+                          <span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}>📸</span>
+                          <span style={{ fontWeight: '600', color: '#4F46E5' }}>Click to Upload Image</span>
+                          <span style={{ display: 'block', fontSize: '0.8rem', marginTop: '4px', color: '#9ca3af' }}>SVG, PNG, JPG or GIF</span>
+                        </label>
+
+                        <div style={{ width: '100%', height: '1px', background: '#e5e7eb', margin: '16px 0' }}></div>
+
+                        <div style={{ display: 'flex', width: '100%', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.8rem', color: '#6b7280', whiteSpace: 'nowrap' }}>OR URL:</span>
+                          <input
+                            type="text"
+                            className="rental-form-input"
+                            value={equipmentForm.image}
+                            onChange={(e) => setEquipmentForm({ ...equipmentForm, image: e.target.value })}
+                            placeholder="https://example.com/image.jpg"
+                            style={{ padding: '8px' }}
+                          />
+                        </div>
+
+                        {equipmentForm.image && (
+                          <div className="current-image-preview">
+                            <img src={equipmentForm.image} alt="Preview" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              <div className="rental-modal-footer">
+                <button type="button" onClick={() => setIsEquipmentModalOpen(false)} className="btn-cancel">
+                  Cancel
+                </button>
+                <button type="submit" form="equipment-form" className="btn-save">
+                  {editingEquipment ? 'Save Changes' : 'Add Equipment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="professional-admin">
       {/* Notification */}
@@ -3525,6 +4333,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
           >
             🚚 Dealers
           </button>
+          <button
+            className={currentView === 'rental-management' ? 'active' : ''}
+            onClick={() => setCurrentView('rental-management')}
+          >
+            🚜 Rentals
+          </button>
           <button onClick={onLogout} className="logout-btn">
             🚪 Logout
           </button>
@@ -3542,7 +4356,9 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         {currentView === 'sales-report' && renderSalesReport()}
         {currentView === 'stock-requests' && renderStockRequests()}
         {currentView === 'dealers' && renderDealerManagement()}
+        {currentView === 'rental-management' && renderRentalManagement()}
       </div>
+
 
       {/* Edit Product Modal */}
       {isEditModalOpen && (
@@ -3558,6 +4374,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
               </button>
             </div>
             <form onSubmit={handleUpdateProduct} className="product-form">
+              {/* Product Edit Form Fields */}
               <div className="form-row">
                 <div className="form-group">
                   <label>Product Name *</label>

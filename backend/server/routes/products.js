@@ -50,7 +50,7 @@ router.get('/', async (req, res) => {
         sortObj.price = -1;
         break;
       case 'rating':
-        sortObj.rating = -1;
+        sortObj.averageRating = -1;
         break;
       case 'popularity':
         sortObj.sold = -1;

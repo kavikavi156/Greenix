@@ -1552,5 +1552,127 @@ router.patch('/toggle-admin-status/:adminId', async (req, res) => {
   }
 });
 
+// Product Monthly Sales Report - Sales per product for a given month/year
+router.get('/product-monthly-sales', async (req, res) => {
+  try {
+    const { month, year } = req.query;
+    const targetYear = parseInt(year) || new Date().getFullYear();
+    const targetMonth = parseInt(month) || (new Date().getMonth() + 1); // 1-based
+
+    const startDate = new Date(targetYear, targetMonth - 1, 1);
+    const endDate = new Date(targetYear, targetMonth, 1); // exclusive
+
+    console.log(`[product-monthly-sales] year=${targetYear} month=${targetMonth} range: ${startDate} -> ${endDate}`);
+
+    // Aggregate via items array (new format)
+    const itemsAgg = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lt: endDate },
+          status: { $nin: ['cancelled'] }
+        }
+      },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.product',
+          totalQuantity: { $sum: '$items.quantity' },
+          totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+          orderCount: { $sum: 1 }
+        }
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          totalQuantity: 1,
+          totalRevenue: 1,
+          orderCount: 1,
+          productName: { $arrayElemAt: ['$productInfo.name', 0] },
+          productCategory: { $arrayElemAt: ['$productInfo.category', 0] },
+          productImage: { $arrayElemAt: ['$productInfo.image', 0] },
+          productPrice: { $arrayElemAt: ['$productInfo.price', 0] }
+        }
+      },
+      { $sort: { totalRevenue: -1 } }
+    ]);
+
+    // Aggregate via products array (old format) for orders that don't have items
+    const productsAgg = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lt: endDate },
+          status: { $nin: ['cancelled'] },
+          $or: [{ items: { $exists: false } }, { items: { $size: 0 } }]
+        }
+      },
+      { $unwind: '$products' },
+      {
+        $group: {
+          _id: '$products',
+          totalQuantity: { $sum: 1 },
+          orderCount: { $sum: 1 }
+        }
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          totalQuantity: 1,
+          orderCount: 1,
+          productName: { $arrayElemAt: ['$productInfo.name', 0] },
+          productCategory: { $arrayElemAt: ['$productInfo.category', 0] },
+          productImage: { $arrayElemAt: ['$productInfo.image', 0] },
+          productPrice: { $arrayElemAt: ['$productInfo.price', 0] },
+          totalRevenue: { $multiply: [{ $arrayElemAt: ['$productInfo.price', 0] }, 1] }
+        }
+      },
+      { $sort: { totalRevenue: -1 } }
+    ]);
+
+    // Merge both aggregations
+    const mergedMap = {};
+    [...itemsAgg, ...productsAgg].forEach(entry => {
+      const key = entry._id ? entry._id.toString() : 'unknown';
+      if (mergedMap[key]) {
+        mergedMap[key].totalQuantity += entry.totalQuantity || 0;
+        mergedMap[key].totalRevenue += entry.totalRevenue || 0;
+        mergedMap[key].orderCount += entry.orderCount || 0;
+      } else {
+        mergedMap[key] = { ...entry };
+      }
+    });
+
+    const salesData = Object.values(mergedMap)
+      .filter(e => e.productName) // filter out deleted products
+      .sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+    res.json({
+      success: true,
+      month: targetMonth,
+      year: targetYear,
+      salesData
+    });
+  } catch (error) {
+    console.error('Error fetching product monthly sales:', error);
+    res.status(500).json({ error: 'Failed to fetch product monthly sales', details: error.message });
+  }
+});
+
 module.exports = router;
+
 
