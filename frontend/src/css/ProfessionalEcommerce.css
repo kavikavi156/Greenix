@@ -1101,7 +1101,7 @@ img {
   .product-details-overlay-container {
     padding: 10px;
   }
-  
+
   .product-details-modal-content {
     min-height: auto;
     height: auto;
@@ -1126,19 +1126,6 @@ img {
   }
 }
 
-flex-direction: column;
-align-items: center;
-}
-
-.offer-content {
-  flex-direction: column;
-  text-align: center;
-}
-
-.offer-badge {
-  margin: 1rem 0 0 0;
-}
-}
 
 @media (max-width: 480px) {
   .shop-title {
@@ -2020,4 +2007,292 @@ align-items: center;
     margin: 1rem;
     padding: 1rem;
   }
+}
+
+/* =========================================
+   CUSTOM HOMEPAGE FIXES (AGROSMART STYLE)
+   ========================================= */
+
+.custom-agri-header {
+  background: rgba(2, 44, 34, 0.95) !important;
+  /* Dark teal, highly professional */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(12px) !important;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.custom-agri-header .header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+}
+
+.custom-agri-header .fresh-logo span {
+  color: #fff !important;
+  letter-spacing: 0.5px;
+}
+
+.custom-agri-nav {
+  display: flex !important;
+  gap: 2.5rem !important;
+  align-items: center;
+  background: transparent !important;
+  border: none !important;
+  flex-direction: row !important;
+  height: auto !important;
+}
+
+.custom-agri-nav .nav-item {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500 !important;
+  font-size: 1.05rem !important;
+  padding: 0.5rem 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.custom-agri-nav .nav-item:hover,
+.custom-agri-nav .nav-item.active {
+  color: #fff !important;
+}
+
+.custom-agri-nav .nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #34d399;
+  /* Premium Emerald Accent instead of yellow */
+  transition: width 0.3s ease;
+}
+
+.custom-agri-nav .nav-item:hover::after,
+.custom-agri-nav .nav-item.active::after {
+  width: 100%;
+}
+
+.custom-agri-actions .icon-text,
+.custom-agri-actions .login-link {
+  color: #fff !important;
+  text-decoration: none;
+  font-weight: 500;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transition: opacity 0.2s;
+}
+
+.custom-agri-actions .icon-text:hover,
+.custom-agri-actions .login-link:hover {
+  opacity: 0.8;
+}
+
+.custom-agri-hero {
+  position: relative;
+  min-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: url('https://images.unsplash.com/photo-1592982537447-6f29631add2c?auto=format&fit=crop&q=80') center/cover no-repeat !important;
+}
+
+.custom-agri-hero .hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1;
+}
+
+.hero-content-centered {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 900px;
+  padding: 0 2rem;
+}
+
+.hero-main-title {
+  font-size: 4.5rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+  margin-bottom: 2rem;
+  font-family: inherit;
+}
+
+.hero-main-title .text-light-green {
+  color: #4ade80;
+  /* lighter green like "Digitally" */
+}
+
+.hero-description-centered {
+  font-size: 1.2rem;
+  color: #f8fafc;
+  line-height: 1.6;
+  margin-bottom: 3rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero-buttons-row {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.primary-action-btn {
+  background: #86efac;
+  color: #064e3b;
+  font-weight: 700;
+  padding: 1rem 2rem;
+  border-radius: 99px;
+  border: none;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.primary-action-btn:hover {
+  background: #4ade80;
+  transform: translateY(-2px);
+}
+
+.secondary-action-btn {
+  background: transparent;
+  color: #fff;
+  font-weight: 700;
+  padding: 1rem 2rem;
+  border-radius: 99px;
+  border: 2px solid #fff;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondary-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .custom-agri-nav {
+    display: none !important;
+  }
+
+  .custom-agri-nav.mobile-open {
+    display: flex !important;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    flex-direction: column !important;
+    background: #257a2c !important;
+    padding: 1rem;
+    gap: 1rem !important;
+    z-index: 1000;
+  }
+}
+
+/* Premium Filter Container (Homepage Enhancements) */
+.premium-filter-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+  width: 100%;
+}
+
+.compact-search-bar {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 99px;
+  padding: 0.75rem 1.5rem;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+}
+
+.compact-search-bar:focus-within {
+  background: #ffffff;
+  border-color: #34d399;
+  box-shadow: 0 10px 15px -3px rgba(52, 211, 153, 0.15), inset 0 0 0 2px rgba(52, 211, 153, 0.1);
+  transform: translateY(-2px);
+}
+
+.compact-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding-left: 1rem;
+  font-size: 1rem;
+  color: #334155;
+  outline: none;
+}
+
+.compact-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.category-pills-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding-bottom: 1rem;
+}
+
+.category-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 99px;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.category-pill:hover {
+  border-color: #34d399;
+  color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(5, 150, 105, 0.08);
+}
+
+.category-pill.active {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 8px 15px rgba(16, 185, 129, 0.25);
+}
+
+.pill-icon {
+  font-size: 1.1rem;
 }
