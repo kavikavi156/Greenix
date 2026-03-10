@@ -101,7 +101,9 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [monthlyRevenue, setMonthlyRevenue] = useState([]);
+  const [yearlyRevenue, setYearlyRevenue] = useState([]); // Store yearly data
   const [revenueLoading, setRevenueLoading] = useState(false);
+  const [revenueTimeRange, setRevenueTimeRange] = useState('monthly'); // 'monthly', 'quarterly', 'yearly'
   const [availableBrands, setAvailableBrands] = useState([]); // Dynamic brands from backend
 
   // Product form state
@@ -162,6 +164,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     loading: false
   });
 
+  // Product Monthly Sales state (individual product sales in products page)
+  const [productMonthlySales, setProductMonthlySales] = useState([]);
+  const [productSalesMonth, setProductSalesMonth] = useState(new Date().getMonth() + 1);
+  const [productSalesYear, setProductSalesYear] = useState(new Date().getFullYear());
+  const [productSalesLoading, setProductSalesLoading] = useState(false);
+
   // Reviews state
   const [reviews, setReviews] = useState([]);
   const [selectedProductFilter, setSelectedProductFilter] = useState('all');
@@ -210,7 +218,52 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
       fetchStockRequests();
       fetchDealers();
     }
+    if (currentView === 'products') {
+      fetchProductMonthlySales(productSalesMonth, productSalesYear);
+    }
   }, [currentView]);
+
+  useEffect(() => {
+    if (currentView === 'products') {
+      fetchProductMonthlySales(productSalesMonth, productSalesYear);
+    }
+  }, [productSalesMonth, productSalesYear]);
+
+  // Global Refresh Function
+  const handleGlobalRefresh = () => {
+    switch (currentView) {
+      case 'dashboard':
+      case 'orders':
+        fetchDashboardData();
+        fetchMonthlyRevenue(new Date().getFullYear());
+        break;
+      case 'admin-management':
+        fetchAdminList();
+        break;
+      case 'reviews':
+        fetchReviews();
+        break;
+      case 'stock-requests':
+      case 'dealers':
+        fetchStockRequests();
+      case 'products':
+        fetchDashboardData();
+        fetchCategories();
+        fetchProductMonthlySales(productSalesMonth, productSalesYear);
+        break;
+      case 'categories':
+        fetchCategories();
+        break;
+      default:
+        fetchDashboardData();
+    }
+    // Always keep stock requests updated for the low-stock alerts
+    fetchStockRequests();
+    showNotification('Data refreshed successfully', 'success');
+  };
+
+
+
 
   useEffect(() => {
     if (productForm.category) {
@@ -243,12 +296,6 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         headers: { Authorization: `Bearer ${token}` }
       });
       const ordersData = await ordersRes.json();
-      console.log('Orders received from backend:', ordersData);
-      if (ordersData.length > 0) {
-        console.log('Sample order:', ordersData[0]);
-        console.log('Sample order items:', ordersData[0].items);
-        console.log('Sample order products:', ordersData[0].products);
-      }
       setOrders(ordersData || []);
 
       // Fetch products
@@ -268,13 +315,6 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
       const pendingOrders = (ordersData || []).filter(order =>
         order && (order.status === 'pending' || order.status === 'ordered')
       ).length;
-
-      console.log('Dashboard stats calculated:', {
-        totalOrders: (ordersData || []).length,
-        totalRevenue,
-        pendingOrders,
-        ordersStatuses: (ordersData || []).map(o => o.status)
-      });
 
       setStats({
         totalOrders: (ordersData || []).length,
@@ -334,14 +374,15 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     // or use the product's default dealer if not selected.
 
     try {
-      const payload = {
-        quantity: approvalModal.quantity || request.requestedQuantity
-      };
-
-      // Only add dealerId if it exists in the modal state
-      if (approvalModal.dealerId) {
-        payload.dealerId = approvalModal.dealerId;
+      if (!approvalModal.dealerId) {
+        showNotification('Please select a dealer to assign the order to from the dropdown.', 'error');
+        return;
       }
+
+      const payload = {
+        quantity: approvalModal.quantity || request.requestedQuantity,
+        dealerId: approvalModal.dealerId
+      };
 
       const response = await fetch(`http://localhost:3001/api/admin-stock/approve-request/${request._id}`, {
         method: 'POST',
@@ -396,6 +437,26 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
   }
 
+  async function fetchProductMonthlySales(month = productSalesMonth, year = productSalesYear) {
+    setProductSalesLoading(true);
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/admin/product-monthly-sales?month=${month}&year=${year}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setProductMonthlySales(data.salesData || []);
+      } else {
+        console.error('Failed to fetch product monthly sales');
+      }
+    } catch (error) {
+      console.error('Error fetching product monthly sales:', error);
+    } finally {
+      setProductSalesLoading(false);
+    }
+  }
+
   async function fetchMonthlyRevenue(year = selectedYear) {
     setRevenueLoading(true);
     try {
@@ -417,9 +478,29 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     }
   }
 
+  async function fetchYearlyRevenue() {
+    try {
+      const response = await fetch('http://localhost:3001/api/admin/revenue/yearly', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setYearlyRevenue(data.yearlyRevenue || []);
+      }
+    } catch (error) {
+      console.error('Error fetching yearly revenue:', error);
+    }
+  }
+
+  useEffect(() => {
+    fetchYearlyRevenue();
+  }, []);
+
   function handleRevenueCardClick() {
     setShowRevenueModal(true);
     fetchMonthlyRevenue();
+    fetchYearlyRevenue();
   }
 
   function handleLowStockClick() {
@@ -742,47 +823,88 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     return monthlyData;
   };
 
-  // Use server-side monthlyRevenue for charts if available, otherwise fallback to empty
-  const rawChartData = monthlyRevenue.length > 0 ? monthlyRevenue : prepareChartData();
-
   // Helper to map month number to short name if needed
   const getShortMonthName = (m) => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    // If m is number 1-12
     if (typeof m === 'number') return months[m - 1];
-    // If m is "January" (full string) or already "Jan"
     return m.toString().substring(0, 3);
   };
 
-  const chartData = rawChartData.map(d => ({
+  // 1. Base Monthly Data (Source of Truth for Monthly/Quarterly)
+  const baseMonthlyData = monthlyRevenue.length > 0 ? monthlyRevenue.map(d => ({
     ...d,
-    month: getShortMonthName(d.month)
-  }));
+    label: getShortMonthName(d.month)
+  })) : prepareChartData().map(d => ({ ...d, label: d.month, month: d.month })); // Standardization
 
-  const totalYearRevenue = chartData.reduce((sum, month) => sum + month.revenue, 0);
-  const totalYearOrders = chartData.reduce((sum, month) => sum + month.orders, 0);
+  const chartData = baseMonthlyData; // Backward compatibility for other charts
+
+  // 2. Prepare Data for Each View
+  let activeChartData = [];
+
+  if (revenueTimeRange === 'monthly') {
+    activeChartData = baseMonthlyData;
+  } else if (revenueTimeRange === 'quarterly') {
+    // Aggregate into Quarters
+    const quarters = ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dec)'];
+    activeChartData = quarters.map((qLabel, index) => {
+      const startMonth = index * 3 + 1; // 1, 4, 7, 10
+      const endMonth = startMonth + 2;
+
+      // Filter months in this quarter (handle both 1-indexed number month and named month logic)
+      const quarterMonths = baseMonthlyData.slice(index * 3, index * 3 + 3);
+
+      return {
+        label: qLabel,
+        revenue: quarterMonths.reduce((sum, m) => sum + (m.revenue || 0), 0),
+        orders: quarterMonths.reduce((sum, m) => sum + (m.orders || 0), 0)
+      };
+    });
+  } else if (revenueTimeRange === 'yearly') {
+    // Use Yearly Data fetched from backend
+    activeChartData = yearlyRevenue.map(d => ({
+      label: d.year,
+      revenue: d.revenue,
+      orders: d.orders
+    }));
+
+    // Fallback if no yearly data
+    if (activeChartData.length === 0) {
+      activeChartData = [{
+        label: new Date().getFullYear().toString(),
+        revenue: baseMonthlyData.reduce((sum, m) => sum + m.revenue, 0),
+        orders: baseMonthlyData.reduce((sum, m) => sum + m.orders, 0)
+      }];
+    }
+  }
+
+  // Calculate generic stats for subtitle
+  const totalDisplayRevenue = activeChartData.reduce((sum, item) => sum + item.revenue, 0);
+  const averageDisplayRevenue = totalDisplayRevenue / (activeChartData.length || 1);
+
+  const totalYearRevenue = baseMonthlyData.reduce((sum, month) => sum + (month.revenue || 0), 0);
+  const totalYearOrders = baseMonthlyData.reduce((sum, month) => sum + (month.orders || 0), 0);
   const averageMonthlyRevenue = totalYearRevenue / 12;
 
   // Calculate growth rate based on last two months (current month vs previous month)
   const currentMonthIndex = new Date().getMonth();
-  const currentMonthRevenue = chartData[currentMonthIndex]?.revenue || 0;
-  const previousMonthRevenue = chartData[currentMonthIndex - 1]?.revenue || 0;
+  const currentMonthRevenue = baseMonthlyData[currentMonthIndex]?.revenue || 0;
+  const previousMonthRevenue = baseMonthlyData[currentMonthIndex - 1]?.revenue || 0;
 
   const growthRate = previousMonthRevenue > 0 ?
     ((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100 : 0;
 
   // Revenue trend line chart data
   const revenueLineData = {
-    labels: chartData.map(item => item.month),
+    labels: activeChartData.map(item => item.label),
     datasets: [
       {
-        label: 'Monthly Revenue',
-        data: chartData.map(item => item.revenue),
-        borderColor: '#3b82f6',
+        label: `${revenueTimeRange.charAt(0).toUpperCase() + revenueTimeRange.slice(1)} Revenue`,
+        data: activeChartData.map(item => item.revenue),
+        borderColor: '#10b981',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: '#3b82f6',
+        pointBackgroundColor: '#10b981',
         pointBorderColor: '#ffffff',
         pointBorderWidth: 2,
         pointRadius: 6,
@@ -820,7 +942,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
       {
         data: Object.values(categoryData),
         backgroundColor: [
-          '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+          '#10b981', '#10b981', '#f59e0b', '#ef4444',
           '#8b5cf6', '#06d6a0', '#ff6b6b', '#4ecdc4'
         ],
         borderColor: '#ffffff',
@@ -836,7 +958,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         <div className="dashboard-header">
           <h1>Dashboard Overview</h1>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={() => fetchMonthlyRevenue(new Date().getFullYear())} className="refresh-btn" style={{ background: '#3b82f6' }}>
+            <button onClick={() => fetchMonthlyRevenue(new Date().getFullYear())} className="refresh-btn" style={{ background: '#10b981' }}>
               📊 Refresh Charts
             </button>
             <button onClick={fetchDashboardData} className="refresh-btn">
@@ -976,9 +1098,24 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                 📈 Revenue Trend Analysis
               </div>
               <div className="chart-controls-enhanced">
-                <button className="chart-control-btn active">Monthly</button>
-                <button className="chart-control-btn">Quarterly</button>
-                <button className="chart-control-btn">Yearly</button>
+                <button
+                  className={`chart-control-btn ${revenueTimeRange === 'monthly' ? 'active' : ''}`}
+                  onClick={() => setRevenueTimeRange('monthly')}
+                >
+                  Monthly
+                </button>
+                <button
+                  className={`chart-control-btn ${revenueTimeRange === 'quarterly' ? 'active' : ''}`}
+                  onClick={() => setRevenueTimeRange('quarterly')}
+                >
+                  Quarterly
+                </button>
+                <button
+                  className={`chart-control-btn ${revenueTimeRange === 'yearly' ? 'active' : ''}`}
+                  onClick={() => setRevenueTimeRange('yearly')}
+                >
+                  Yearly
+                </button>
               </div>
             </div>
             <ProfessionalChart
@@ -1014,6 +1151,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
             <ProfessionalChart
               type="doughnut"
               data={categoryDoughnutData}
+              height="250px"
               title="Products by Category"
               subtitle={`${stats.totalProducts} total products across ${categories.length} categories`}
               options={{
@@ -1498,7 +1636,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                 className={!showLowStockOnly ? 'filter-btn-active' : 'filter-btn-inactive'}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: !showLowStockOnly ? '#1e3c72' : '#fff',
+                  backgroundColor: !showLowStockOnly ? '#064e3b' : '#fff',
                   color: !showLowStockOnly ? '#fff' : '#666',
                   border: !showLowStockOnly ? 'none' : '2px solid #e0e0e0',
                   borderRadius: '8px',
@@ -1604,6 +1742,205 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* =================== PRODUCT MONTHLY SALES SECTION =================== */}
+        <div style={{
+          marginTop: '40px',
+          background: 'linear-gradient(135deg, #064e3b 0%, #022c22 100%)',
+          borderRadius: '18px',
+          padding: '30px',
+          color: 'white',
+          boxShadow: '0 8px 32px rgba(30,60,114,0.3)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '700', letterSpacing: '0.5px' }}>
+                📊 Individual Product Sales
+              </h2>
+              <p style={{ margin: '6px 0 0', opacity: 0.8, fontSize: '14px' }}>
+                View how each product performed in the selected month
+              </p>
+            </div>
+
+            {/* Month & Year Selectors */}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', opacity: 0.8, fontWeight: '600', letterSpacing: '0.5px' }}>MONTH</label>
+                <select
+                  value={productSalesMonth}
+                  onChange={(e) => setProductSalesMonth(Number(e.target.value))}
+                  style={{
+                    padding: '10px 14px', borderRadius: '10px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    background: 'rgba(255,255,255,0.15)', color: 'white',
+                    fontSize: '14px', fontWeight: '600', cursor: 'pointer', minWidth: '130px'
+                  }}
+                >
+                  {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+                    .map((name, i) => (
+                      <option key={i + 1} value={i + 1} style={{ background: '#064e3b', color: 'white' }}>{name}</option>
+                    ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', opacity: 0.8, fontWeight: '600', letterSpacing: '0.5px' }}>YEAR</label>
+                <select
+                  value={productSalesYear}
+                  onChange={(e) => setProductSalesYear(Number(e.target.value))}
+                  style={{
+                    padding: '10px 14px', borderRadius: '10px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    background: 'rgba(255,255,255,0.15)', color: 'white',
+                    fontSize: '14px', fontWeight: '600', cursor: 'pointer', minWidth: '100px'
+                  }}
+                >
+                  {[2023, 2024, 2025, 2026].map(y => (
+                    <option key={y} value={y} style={{ background: '#064e3b', color: 'white' }}>{y}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={() => fetchProductMonthlySales(productSalesMonth, productSalesYear)}
+                style={{
+                  padding: '10px 18px', borderRadius: '10px',
+                  border: '2px solid rgba(255,255,255,0.4)',
+                  background: 'rgba(255,255,255,0.2)', color: 'white',
+                  fontSize: '14px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Summary Pills */}
+          {!productSalesLoading && productMonthlySales.length > 0 && (
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              {[
+                { label: 'Products Sold', value: productMonthlySales.length, icon: '📦' },
+                { label: 'Total Units', value: productMonthlySales.reduce((s, p) => s + p.totalQuantity, 0), icon: '🔢' },
+                { label: 'Total Revenue', value: `₹${productMonthlySales.reduce((s, p) => s + p.totalRevenue, 0).toLocaleString('en-IN')}`, icon: '💰' },
+              ].map((stat, i) => (
+                <div key={i} style={{
+                  background: 'rgba(255,255,255,0.15)', borderRadius: '12px',
+                  padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '10px',
+                  border: '1px solid rgba(255,255,255,0.2)'
+                }}>
+                  <span style={{ fontSize: '22px' }}>{stat.icon}</span>
+                  <div>
+                    <div style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
+                    <div style={{ fontSize: '11px', opacity: 0.8 }}>{stat.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Sales Table */}
+          <div style={{
+            background: 'rgba(255,255,255,0.97)', borderRadius: '14px',
+            overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+          }}>
+            {productSalesLoading ? (
+              <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
+                <div style={{ fontSize: '40px', marginBottom: '12px' }}>⏳</div>
+                <div style={{ fontWeight: '600', fontSize: '16px' }}>Loading sales data...</div>
+              </div>
+            ) : productMonthlySales.length === 0 ? (
+              <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
+                <div style={{ fontSize: '50px', marginBottom: '12px' }}>📭</div>
+                <div style={{ fontWeight: '700', fontSize: '18px', color: '#374151' }}>
+                  No sales recorded for {['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][productSalesMonth]} {productSalesYear}
+                </div>
+                <div style={{ fontSize: '14px', marginTop: '6px', color: '#9ca3af' }}>
+                  Try selecting a different month or year
+                </div>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'linear-gradient(135deg, #064e3b, #022c22)', color: 'white' }}>
+                    <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: '600', fontSize: '13px' }}>#</th>
+                    <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: '600', fontSize: '13px' }}>PRODUCT</th>
+                    <th style={{ padding: '14px 18px', textAlign: 'left', fontWeight: '600', fontSize: '13px' }}>CATEGORY</th>
+                    <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: '600', fontSize: '13px' }}>UNITS SOLD</th>
+                    <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: '600', fontSize: '13px' }}>ORDERS</th>
+                    <th style={{ padding: '14px 18px', textAlign: 'right', fontWeight: '600', fontSize: '13px' }}>REVENUE</th>
+                    <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: '600', fontSize: '13px' }}>SHARE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const totalRev = productMonthlySales.reduce((s, p) => s + p.totalRevenue, 0);
+                    return productMonthlySales.map((item, index) => {
+                      const share = totalRev > 0 ? ((item.totalRevenue / totalRev) * 100).toFixed(1) : 0;
+                      const isTop = index === 0;
+                      return (
+                        <tr key={item._id}
+                          style={{ background: index % 2 === 0 ? '#f8fafc' : 'white', borderBottom: '1px solid #e2e8f0' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
+                          onMouseLeave={e => e.currentTarget.style.background = index % 2 === 0 ? '#f8fafc' : 'white'}
+                        >
+                          <td style={{ padding: '14px 18px', fontWeight: '700', color: '#94a3b8' }}>
+                            {isTop
+                              ? <span style={{ background: '#fbbf24', color: 'white', borderRadius: '50%', width: '26px', height: '26px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>🥇</span>
+                              : <span style={{ paddingLeft: '4px' }}>{index + 1}</span>
+                            }
+                          </td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <img
+                                src={getImageUrl(item.productImage)}
+                                alt={item.productName}
+                                style={{ width: '38px', height: '38px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #e2e8f0' }}
+                                onError={(e) => { e.target.style.visibility = 'hidden'; }}
+                              />
+                              <span style={{ fontWeight: '600', color: '#1e293b', fontSize: '14px' }}>{item.productName}</span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <span style={{ background: '#dbeafe', color: '#047857', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' }}>
+                              {item.productCategory || 'N/A'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 18px', textAlign: 'center' }}>
+                            <span style={{ background: '#d1fae5', color: '#065f46', padding: '5px 14px', borderRadius: '20px', fontWeight: '700', fontSize: '14px' }}>
+                              {item.totalQuantity}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 18px', textAlign: 'center', color: '#64748b', fontWeight: '600' }}>
+                            {item.orderCount}
+                          </td>
+                          <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                            <span style={{ fontWeight: '800', color: '#059669', fontSize: '15px' }}>
+                              ₹{item.totalRevenue.toLocaleString('en-IN')}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                              <div style={{ flex: 1, maxWidth: '80px', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{
+                                  height: '100%', width: `${share}%`,
+                                  background: isTop ? 'linear-gradient(90deg,#f59e0b,#ef4444)' : 'linear-gradient(90deg,#10b981,#06b6d4)',
+                                  borderRadius: '4px', transition: 'width 0.5s ease'
+                                }} />
+                              </div>
+                              <span style={{ fontSize: '12px', fontWeight: '700', color: '#475569', whiteSpace: 'nowrap' }}>
+                                {share}%
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>
@@ -2257,7 +2594,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   padding: '8px 16px',
                   borderRadius: '6px',
                   border: 'none',
-                  background: requestsFilter === 'all' ? '#3b82f6' : 'transparent',
+                  background: requestsFilter === 'all' ? '#10b981' : 'transparent',
                   color: requestsFilter === 'all' ? 'white' : '#64748b',
                   fontWeight: '500',
                   cursor: 'pointer',
@@ -2349,7 +2686,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                       <div className="order-status-info">
                         {req.dealerOrder ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: '500' }}>
+                            <span style={{ fontSize: '12px', color: '#10b981', fontWeight: '500' }}>
                               → Order Sent to {req.dealerOrder.dealer?.name || 'Dealer'}
                             </span>
                             <span style={{ fontSize: '11px', color: '#666' }}>
@@ -2358,7 +2695,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                             {req.dealerOrder.status !== 'COMPLETED' && (
                               <button
                                 onClick={() => handleConfirmReceipt(req._id)}
-                                style={{ marginTop: '5px', background: '#ffffff', color: '#3b82f6', border: '1px solid #3b82f6', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                                style={{ marginTop: '5px', background: '#ffffff', color: '#10b981', border: '1px solid #10b981', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
                               >
                                 📦 Confirm Receipt
                               </button>
@@ -2370,8 +2707,8 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                                   onClick={() => setSelectedInvoiceOrder(req.dealerOrder)}
                                   style={{
                                     background: 'white',
-                                    color: '#3b82f6',
-                                    border: '1px solid #3b82f6',
+                                    color: '#10b981',
+                                    border: '1px solid #10b981',
                                     padding: '4px 8px',
                                     borderRadius: '4px',
                                     cursor: 'pointer',
@@ -2402,7 +2739,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                                   <button
                                     onClick={() => handlePayDealer(req.dealerOrder._id)}
                                     style={{
-                                      background: '#3b82f6',
+                                      background: '#10b981',
                                       color: 'white',
                                       border: 'none',
                                       padding: '4px 8px',
@@ -2650,12 +2987,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     );
   }
 
-  async function handleDownloadMonthlyReport() {
+  async function handleDownloadMonthlyReport(format = 'pdf') {
     try {
       const params = new URLSearchParams({
         period: 'monthly',
         year: salesReport.selectedYear,
-        format: 'pdf'
+        format: format
       });
 
       const response = await fetch(`http://localhost:3001/api/admin/download-report?${params}`, {
@@ -2667,12 +3004,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `monthly-sales-report-${salesReport.selectedYear}.pdf`;
+        a.download = `monthly-sales-report-${salesReport.selectedYear}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        showNotification('Monthly report downloaded successfully!', 'success');
+        showNotification(`Monthly report downloaded successfully as ${format.toUpperCase()}!`, 'success');
       } else {
         showNotification('Failed to download monthly report', 'error');
       }
@@ -2681,12 +3018,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     }
   }
 
-  async function handleDownloadYearlyReport() {
+  async function handleDownloadYearlyReport(format = 'pdf') {
     try {
       const params = new URLSearchParams({
         period: 'yearly',
         year: salesReport.selectedYear,
-        format: 'pdf'
+        format: format
       });
 
       const response = await fetch(`http://localhost:3001/api/admin/download-report?${params}`, {
@@ -2698,12 +3035,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `yearly-sales-report-${salesReport.selectedYear}.pdf`;
+        a.download = `yearly-sales-report-${salesReport.selectedYear}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        showNotification('Yearly report downloaded successfully!', 'success');
+        showNotification(`Yearly report downloaded successfully as ${format.toUpperCase()}!`, 'success');
       } else {
         showNotification('Failed to download yearly report', 'error');
       }
@@ -3061,19 +3398,42 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
 
         <div className="sales-report-container">
           {/* Download Buttons */}
-          <div className="report-download-header">
-            <button
-              className="download-btn monthly"
-              onClick={() => handleDownloadMonthlyReport()}
-            >
-              � Download Monthly Report
-            </button>
-            <button
-              className="download-btn yearly"
-              onClick={() => handleDownloadYearlyReport()}
-            >
-              � Download Yearly Report
-            </button>
+          <div className="report-download-header" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span style={{ fontWeight: 500 }}>Monthly:</span>
+              <button
+                className="btn-download pdf-btn"
+                style={{ background: '#ef4444', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => handleDownloadMonthlyReport('pdf')}
+              >
+                📄 PDF
+              </button>
+              <button
+                className="btn-download excel-btn"
+                style={{ background: '#10b981', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => handleDownloadMonthlyReport('excel')}
+              >
+                📊 Excel
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: '20px' }}>
+              <span style={{ fontWeight: 500 }}>Yearly:</span>
+              <button
+                className="btn-download pdf-btn"
+                style={{ background: '#ef4444', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => handleDownloadYearlyReport('pdf')}
+              >
+                📄 PDF
+              </button>
+              <button
+                className="btn-download excel-btn"
+                style={{ background: '#10b981', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => handleDownloadYearlyReport('excel')}
+              >
+                📊 Excel
+              </button>
+            </div>
           </div>
 
           {/* Monthly Revenue Breakdown */}
@@ -3133,8 +3493,8 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   <svg className="trend-line" viewBox="0 0 400 200" preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 0.3 }} />
-                        <stop offset="100%" style={{ stopColor: '#3b82f6', stopOpacity: 0.05 }} />
+                        <stop offset="0%" style={{ stopColor: '#10b981', stopOpacity: 0.3 }} />
+                        <stop offset="100%" style={{ stopColor: '#10b981', stopOpacity: 0.05 }} />
                       </linearGradient>
                     </defs>
                     <path
@@ -3158,7 +3518,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                         : 'M 0 200 L 400 200'
                       }
                       fill="none"
-                      stroke="#3b82f6"
+                      stroke="#10b981"
                       strokeWidth="3"
                       strokeLinecap="round"
                     />
@@ -3171,7 +3531,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                           cx={x}
                           cy={y}
                           r={month.revenue > 0 ? "6" : "3"}
-                          fill={month.revenue > 0 ? "#3b82f6" : "#e5e7eb"}
+                          fill={month.revenue > 0 ? "#10b981" : "#e5e7eb"}
                           stroke="white"
                           strokeWidth="2"
                           className="data-point"
@@ -3280,6 +3640,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     type="date"
                     value={productSalesFilter.startDate}
                     onChange={(e) => setProductSalesFilter(prev => ({ ...prev, startDate: e.target.value }))}
+                    max={productSalesFilter.endDate || new Date().toISOString().split('T')[0]}
                     style={{
                       width: '100%',
                       padding: '12px',
@@ -3298,6 +3659,8 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                     type="date"
                     value={productSalesFilter.endDate}
                     onChange={(e) => setProductSalesFilter(prev => ({ ...prev, endDate: e.target.value }))}
+                    min={productSalesFilter.startDate}
+                    max={new Date().toISOString().split('T')[0]}
                     style={{
                       width: '100%',
                       padding: '12px',
@@ -3374,6 +3737,384 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
     );
   }
 
+  function renderRentalManagement() {
+    return (
+      <div className="admin-content-card">
+        <div className="section-header" style={{ marginBottom: '24px' }}>
+          <h1>🚜 Rental Management</h1>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button className="refresh-btn" onClick={() => { fetchRentalBookings(); fetchEquipmentList(); }}>
+              🔄 Refresh
+            </button>
+            {activeRentalTab === 'inventory' && (
+              <button
+                className="submit-btn"
+                onClick={() => {
+                  setEditingEquipment(null);
+                  setEquipmentForm({
+                    name: '', category: 'Tractor', pricePerDay: '', stock: '',
+                    image: '', description: '', features: '', status: 'active', pricingUnit: 'day'
+                  });
+                  setIsEquipmentModalOpen(true);
+                }}
+                style={{ padding: '10px 20px' }}
+              >
+                + Add Equipment
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="rental-tabs">
+          <button
+            className={`rental-tab-btn ${activeRentalTab === 'bookings' ? 'active' : ''}`}
+            onClick={() => setActiveRentalTab('bookings')}
+          >
+            Bookings
+          </button>
+          <button
+            className={`rental-tab-btn ${activeRentalTab === 'inventory' ? 'active' : ''}`}
+            onClick={() => setActiveRentalTab('inventory')}
+          >
+            Inventory Management
+          </button>
+        </div>
+
+        {activeRentalTab === 'bookings' ? (
+          <div className="rental-table-container">
+            <table className="rental-table">
+              <thead>
+                <tr>
+                  <th>Booking ID</th>
+                  <th>Customer</th>
+                  <th>Equipment</th>
+                  <th>Duration</th>
+                  <th>Total Cost</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rentalBookings.length > 0 ? (
+                  rentalBookings.map((booking) => (
+                    <tr key={booking._id}>
+                      <td><span style={{ fontWeight: '600', color: '#64748b' }}>#{booking._id.slice(-6)}</span></td>
+                      <td>
+                        <div style={{ fontWeight: '500', color: '#1e293b' }}>{booking.user?.name || 'Unknown'}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{booking.user?.mobile}</div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <img
+                            src={booking.image || 'https://via.placeholder.com/40'}
+                            alt=""
+                            className="rental-equipment-thumb"
+                            style={{ width: '40px', height: '40px' }}
+                          />
+                          <span style={{ fontWeight: '500' }}>{booking.equipmentName}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: '500' }}>{new Date(booking.startDate).toLocaleDateString()}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>to {new Date(booking.endDate).toLocaleDateString()}</div>
+                      </td>
+                      <td>
+                        <span style={{ fontWeight: '700', color: '#0f172a' }}>₹{booking.totalCost?.toLocaleString()}</span>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${booking.status?.toLowerCase() || 'pending'}`}>
+                          {booking.status || 'Pending'}
+                        </span>
+                      </td>
+                      <td>
+                        <select
+                          className="status-select"
+                          value={booking.status}
+                          onChange={(e) => handleUpdateRentalStatus(booking._id, e.target.value)}
+                          style={{ minWidth: '130px' }}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="confirmed">Confirmed</option>
+                          <option value="active">Active</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                      No rental bookings found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rental-table-container">
+            <table className="rental-table">
+              <thead>
+                <tr>
+                  <th>Image</th>
+                  <th>Equipment Details</th>
+                  <th>Category</th>
+                  <th>Pricing</th>
+                  <th>Stock</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {equipmentList.length > 0 ? (
+                  equipmentList.map((item) => (
+                    <tr key={item._id || item.id}>
+                      <td>
+                        <img
+                          src={item.image || 'https://via.placeholder.com/60'}
+                          alt={item.name}
+                          className="rental-equipment-thumb"
+                        />
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '0.95rem' }}>{item.name}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px' }}>
+                          {Array.isArray(item.features) ? item.features.slice(0, 2).join(', ') : item.features}
+                        </div>
+                      </td>
+                      <td>
+                        <span style={{
+                          background: '#f1f5f9',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          fontSize: '0.8rem',
+                          fontWeight: '500',
+                          color: '#475569'
+                        }}>
+                          {item.category}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ fontWeight: '600', color: '#16a34a' }}>₹{item.pricePerDay}</span>
+                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}> /{item.pricingUnit || 'day'}</span>
+                      </td>
+                      <td>
+                        <span className={`stock-badge ${item.stock < 3 ? 'low' : 'normal'}`}>
+                          {item.stock} units
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => {
+                              setEditingEquipment(item);
+                              setEquipmentForm({
+                                name: item.name,
+                                category: item.category,
+                                pricePerDay: item.pricePerDay,
+                                stock: item.stock,
+                                image: item.image,
+                                description: item.description,
+                                features: Array.isArray(item.features) ? item.features.join(', ') : item.features,
+                                status: item.status || 'active',
+                                pricingUnit: item.pricingUnit || 'day'
+                              });
+                              setIsEquipmentModalOpen(true);
+                            }}
+                            className="edit-btn"
+                            style={{ padding: '8px 12px' }}
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEquipment(item._id || item.id)}
+                            className="delete-btn"
+                            style={{ padding: '8px 12px' }}
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                      No rental equipment found in inventory.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Equipment Modal */}
+        {/* Premium Equipment Modal */}
+        {isEquipmentModalOpen && (
+          <div className="rental-modal-overlay-premium" onClick={() => setIsEquipmentModalOpen(false)}>
+            <div className="rental-modal-card-premium" onClick={(e) => e.stopPropagation()}>
+              <div className="rental-modal-header">
+                <h3>
+                  {editingEquipment ? '✏️ Edit Equipment' : '🚜 Add New Equipment'}
+                </h3>
+                <button className="close-btn" onClick={() => setIsEquipmentModalOpen(false)}>×</button>
+              </div>
+
+              <div className="rental-modal-body">
+                <form onSubmit={handleSaveEquipment} id="equipment-form">
+                  <div className="rental-form-grid">
+                    <div className="rental-form-group">
+                      <label>Equipment Name *</label>
+                      <input
+                        type="text"
+                        className="rental-form-input"
+                        value={equipmentForm.name}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, name: e.target.value })}
+                        required
+                        placeholder="e.g. Mahindra 575 DI Tractor"
+                      />
+                    </div>
+
+                    <div className="rental-form-group">
+                      <label>Category *</label>
+                      <select
+                        className="rental-form-select"
+                        value={equipmentForm.category}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, category: e.target.value })}
+                        required
+                      >
+                        <option value="Tractor">Tractor</option>
+                        <option value="Harvester">Harvester</option>
+                        <option value="Drone">Drone</option>
+                        <option value="Implements">Implements</option>
+                        <option value="Irrigation">Irrigation</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div className="rental-form-group">
+                      <label>Pricing Unit *</label>
+                      <select
+                        className="rental-form-select"
+                        value={equipmentForm.pricingUnit}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, pricingUnit: e.target.value })}
+                        required
+                      >
+                        <option value="hour">Per Hour</option>
+                        <option value="day">Per Day</option>
+                        <option value="week">Per Week</option>
+                        <option value="month">Per Month</option>
+                      </select>
+                    </div>
+
+                    <div className="rental-form-group">
+                      <label>Price (₹) *</label>
+                      <input
+                        type="number"
+                        className="rental-form-input"
+                        value={equipmentForm.pricePerDay}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, pricePerDay: e.target.value })}
+                        required
+                        placeholder="0.00"
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="rental-form-group">
+                      <label>Stock Quantity *</label>
+                      <input
+                        type="number"
+                        className="rental-form-input"
+                        value={equipmentForm.stock}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, stock: e.target.value })}
+                        required
+                        placeholder="0"
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="rental-form-group full-width">
+                      <label>Description *</label>
+                      <textarea
+                        className="rental-form-textarea"
+                        value={equipmentForm.description}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, description: e.target.value })}
+                        required
+                        rows="3"
+                        placeholder="Describe the equipment, its usage, and benefits..."
+                      />
+                    </div>
+
+                    <div className="rental-form-group full-width">
+                      <label>Features</label>
+                      <input
+                        type="text"
+                        className="rental-form-input"
+                        value={equipmentForm.features}
+                        onChange={(e) => setEquipmentForm({ ...equipmentForm, features: e.target.value })}
+                        placeholder="e.g. 50HP, AC Cabin, GPS Enabled (comma separated)"
+                      />
+                    </div>
+
+                    <div className="rental-form-group full-width">
+                      <label>Equipment Image *</label>
+                      <div className="rental-image-upload-area">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEquipmentImageUpload}
+                          style={{ display: 'none' }}
+                          id="rental-image-input"
+                        />
+                        <label htmlFor="rental-image-input" style={{ cursor: 'pointer', color: '#4b5563', textAlign: 'center' }}>
+                          <span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}>📸</span>
+                          <span style={{ fontWeight: '600', color: '#4F46E5' }}>Click to Upload Image</span>
+                          <span style={{ display: 'block', fontSize: '0.8rem', marginTop: '4px', color: '#9ca3af' }}>SVG, PNG, JPG or GIF</span>
+                        </label>
+
+                        <div style={{ width: '100%', height: '1px', background: '#e5e7eb', margin: '16px 0' }}></div>
+
+                        <div style={{ display: 'flex', width: '100%', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.8rem', color: '#6b7280', whiteSpace: 'nowrap' }}>OR URL:</span>
+                          <input
+                            type="text"
+                            className="rental-form-input"
+                            value={equipmentForm.image}
+                            onChange={(e) => setEquipmentForm({ ...equipmentForm, image: e.target.value })}
+                            placeholder="https://example.com/image.jpg"
+                            style={{ padding: '8px' }}
+                          />
+                        </div>
+
+                        {equipmentForm.image && (
+                          <div className="current-image-preview">
+                            <img src={equipmentForm.image} alt="Preview" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              <div className="rental-modal-footer">
+                <button type="button" onClick={() => setIsEquipmentModalOpen(false)} className="btn-cancel">
+                  Cancel
+                </button>
+                <button type="submit" form="equipment-form" className="btn-save">
+                  {editingEquipment ? 'Save Changes' : 'Add Equipment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="professional-admin">
       {/* Notification */}
@@ -3446,6 +4187,12 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
           >
             🚚 Dealers
           </button>
+          <button
+            className={currentView === 'rental-management' ? 'active' : ''}
+            onClick={() => setCurrentView('rental-management')}
+          >
+            🚜 Rentals
+          </button>
           <button onClick={onLogout} className="logout-btn">
             🚪 Logout
           </button>
@@ -3463,7 +4210,9 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         {currentView === 'sales-report' && renderSalesReport()}
         {currentView === 'stock-requests' && renderStockRequests()}
         {currentView === 'dealers' && renderDealerManagement()}
+        {currentView === 'rental-management' && renderRentalManagement()}
       </div>
+
 
       {/* Edit Product Modal */}
       {isEditModalOpen && (
@@ -3479,6 +4228,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
               </button>
             </div>
             <form onSubmit={handleUpdateProduct} className="product-form">
+              {/* Product Edit Form Fields */}
               <div className="form-row">
                 <div className="form-group">
                   <label>Product Name *</label>
@@ -3639,26 +4389,34 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
 
       {/* Stock Request Approval Modal */}
       {approvalModal.show && (
-        <div className="modal-overlay" onClick={() => setApprovalModal({ show: false, request: null, quantity: '', dealerId: '' })}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Approve Stock Request</h2>
-              <button className="close-btn" onClick={() => setApprovalModal({ show: false, request: null, quantity: '', dealerId: '' })}>×</button>
+        <div className="stock-approval-overlay" onClick={() => setApprovalModal({ show: false, request: null, quantity: '', dealerId: '' })}>
+          <div className="stock-approval-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="stock-approval-header">
+              <h2><span>📦</span> Approve Stock Request</h2>
+              <button className="stock-approval-close" onClick={() => setApprovalModal({ show: false, request: null, quantity: '', dealerId: '' })}>×</button>
             </div>
-            <div className="modal-body">
-              <div className="approval-product-info">
-                <h3>{approvalModal.request?.product?.name}</h3>
-                <p>Current Stock: <strong>{approvalModal.request?.currentStock}</strong></p>
-                <p>Requested Quantity: <strong>{approvalModal.request?.requestedQuantity}</strong></p>
+            <div className="stock-approval-body">
+              <div className="stock-info-card">
+                <h3><span>🏷️</span> {approvalModal.request?.product?.name}</h3>
+                <div className="stock-stat-row">
+                  <span className="stock-stat-label">Current Stock</span>
+                  <span className={`stock-stat-value ${!approvalModal.request?.currentStock ? 'highlight' : ''}`}>{approvalModal.request?.currentStock || 0}</span>
+                </div>
+                <div className="stock-stat-row">
+                  <span className="stock-stat-label">Requested Quantity</span>
+                  <span className="stock-stat-value success">{approvalModal.request?.requestedQuantity}</span>
+                </div>
               </div>
-              <div className="form-group">
-                <label>Select Dealer *</label>
+
+              <div className="stock-input-group">
+                <label>Select Dealer <span style={{ color: '#ef4444' }}>*</span></label>
                 <select
+                  className="stock-select"
                   value={approvalModal.dealerId}
                   onChange={(e) => setApprovalModal({ ...approvalModal, dealerId: e.target.value })}
                   required
                 >
-                  <option value="">-- Select Dealer --</option>
+                  <option value="">-- Choose a Dealer --</option>
                   {dealers.filter(d => d.status === 'active').map(dealer => (
                     <option key={dealer._id} value={dealer._id}>
                       {dealer.name} ({dealer.email})
@@ -3666,30 +4424,32 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
                   ))}
                 </select>
               </div>
-              <div className="form-group">
+
+              <div className="stock-input-group">
                 <label>Order Quantity</label>
                 <input
+                  className="stock-input"
                   type="number"
                   value={approvalModal.quantity}
                   onChange={(e) => setApprovalModal({ ...approvalModal, quantity: e.target.value })}
-                  placeholder={approvalModal.request?.requestedQuantity}
+                  placeholder={`Default: ${approvalModal.request?.requestedQuantity || 0}`}
                   min="1"
                 />
-                <small>Leave empty to use requested quantity</small>
+                <span className="stock-input-hint">Leave empty to use requested quantity.</span>
               </div>
             </div>
-            <div className="modal-footer">
+            <div className="stock-approval-footer">
               <button
-                className="cancel-btn"
+                className="stock-btn-cancel"
                 onClick={() => setApprovalModal({ show: false, request: null, quantity: '', dealerId: '' })}
               >
                 Cancel
               </button>
               <button
-                className="approve-btn"
+                className="stock-btn-approve"
                 onClick={() => handleApproveStockRequest(approvalModal.request)}
               >
-                Approve & Send Order
+                <span>✓</span> Approve & Send Order
               </button>
             </div>
           </div>

@@ -66,7 +66,7 @@ export default function ProductCarouselPage() {
             <style>{`
         .carousel-page-container {
           min-height: 100vh;
-          background: #0f172a; /* Dark premium background */
+          background: #c5ce15ff; /* Dark premium background */
           color: white;
           font-family: 'Inter', system-ui, sans-serif;
           overflow-x: hidden;
@@ -79,7 +79,7 @@ export default function ProductCarouselPage() {
           position: absolute;
           width: 60vw;
           height: 60vw;
-          background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, rgba(0,0,0,0) 70%);
+          background: radial-gradient(circle, rgba(235, 240, 225, 0.77) 0%, rgba(142, 210, 25, 0.87) 70%);
           top: -20%;
           left: 20%;
           z-index: 0;
@@ -87,8 +87,8 @@ export default function ProductCarouselPage() {
         }
 
         .header {
-          padding: 2rem;
-          text-align: center;
+          padding: 5rem;
+          text-align:left;
           position: relative;
           z-index: 10;
         }
@@ -96,11 +96,11 @@ export default function ProductCarouselPage() {
         .header h1 {
           font-size: 3.5rem;
           font-weight: 800;
-          background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+          background: linear-gradient(to right, #c1e954ff 0%, #e5fe00d6 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           margin-bottom: 0.5rem;
-          text-shadow: 0 0 30px rgba(79, 172, 254, 0.5);
+          text-shadow: 0 0 30px rgba(205, 242, 70, 0.5);
         }
 
         .header p {
@@ -188,7 +188,7 @@ export default function ProductCarouselPage() {
           font-size: 1.5rem;
           font-weight: 700;
           margin-bottom: 8px;
-          color: #f1f5f9;
+          color: #b4d012ff;
         }
 
         .price-row {
@@ -209,7 +209,7 @@ export default function ProductCarouselPage() {
           padding: 14px;
           border: none;
           border-radius: 12px;
-          background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+          background: linear-gradient(135deg, #0ea5e9 0%, #059669 100%);
           color: white;
           font-weight: 600;
           font-size: 1rem;

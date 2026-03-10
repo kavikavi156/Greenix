@@ -1,9 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import '../css/ProfessionalAdminDashboard.css'; // Reuse basic layout styles
 import { getImageUrl, API_BASE_URL } from '../config/api';
 import DealerInvoice from './DealerInvoice';
 import CustomerInvoice from './CustomerInvoice';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 // Create a separate CSS file for Dealer specific overrides if needed, 
 // for now we use inline styles mixed with reuse to ensure "good look" immediately.
@@ -150,62 +151,134 @@ export default function DealerDashboard({ token, onLogout }) {
     }
 
     // --- Report Download ---
-    function downloadReport() {
+    function downloadReport(format = 'excel') {
         const date = new Date().toLocaleDateString();
         const time = new Date().toLocaleTimeString();
-        let csvContent = "data:text/csv;charset=utf-8,";
 
-        // 1. Header
-        csvContent += `DEALER BUSINESS REPORT\n`;
-        csvContent += `Generated On:,${date} ${time}\n`;
-        csvContent += `Dealer:,${profile?.name || 'N/A'}\n\n`;
+        if (format === 'excel') {
+            let csvContent = "data:text/csv;charset=utf-8,";
 
-        // 2. Stats
-        csvContent += `SUMMARY STATS\n`;
-        csvContent += `Active Orders,${stats.activeOrders}\n`;
-        csvContent += `Completed Supply,${stats.completedOrders}\n`;
-        csvContent += `Total Items Supplied,${stats.totalItemsSupplied}\n`;
-        csvContent += `Customer Sales (Count),${stats.customerSales}\n\n`;
+            // 1. Header
+            csvContent += `DEALER BUSINESS REPORT\n`;
+            csvContent += `Generated On:,${date} ${time}\n`;
+            csvContent += `Dealer:,${profile?.name || 'N/A'}\n\n`;
 
-        // 3. Supply Orders
-        csvContent += `SUPPLY ORDERS (From Admin)\n`;
-        csvContent += `Order ID,Product,Quantity,Status,Date,Payment Status\n`;
-        orders.forEach(o => {
-            const row = [
-                o._id.slice(-6).toUpperCase(),
-                o.product?.name || 'Unknown',
-                o.quantity,
-                o.status,
-                new Date(o.createdAt).toLocaleDateString(),
-                o.paymentStatus || 'PENDING'
-            ];
-            csvContent += row.join(",") + "\n";
-        });
-        csvContent += `\n`;
+            // 2. Stats
+            csvContent += `SUMMARY STATS\n`;
+            csvContent += `Active Orders,${stats.activeOrders}\n`;
+            csvContent += `Completed Supply,${stats.completedOrders}\n`;
+            csvContent += `Total Items Supplied,${stats.totalItemsSupplied}\n`;
+            csvContent += `Customer Sales (Count),${stats.customerSales}\n\n`;
 
-        // 4. Customer Sales
-        csvContent += `CUSTOMER SALES (End Users)\n`;
-        csvContent += `Order ID,Customer,Items Count,Total Amount,Status,Date\n`;
-        customerOrders.forEach(o => {
-            const row = [
-                o._id.slice(-6).toUpperCase(),
-                o.user?.name || 'Guest',
-                o.items.length,
-                o.totalAmount.toFixed(2),
-                o.status,
-                new Date(o.createdAt).toLocaleDateString()
-            ];
-            csvContent += row.join(",") + "\n";
-        });
+            // 3. Supply Orders
+            csvContent += `SUPPLY ORDERS (From Admin)\n`;
+            csvContent += `Order ID,Product,Quantity,Status,Date,Payment Status\n`;
+            orders.forEach(o => {
+                const row = [
+                    o._id.slice(-6).toUpperCase(),
+                    o.product?.name || 'Unknown',
+                    o.quantity,
+                    o.status,
+                    new Date(o.createdAt).toLocaleDateString(),
+                    o.paymentStatus || 'PENDING'
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+            csvContent += `\n`;
 
-        // Trigger Download
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Dealer_Report_${new Date().toISOString().slice(0, 10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            // 4. Customer Sales
+            csvContent += `CUSTOMER SALES (End Users)\n`;
+            csvContent += `Order ID,Customer,Items Count,Total Amount,Status,Date\n`;
+            customerOrders.forEach(o => {
+                const row = [
+                    o._id.slice(-6).toUpperCase(),
+                    o.user?.name || 'Guest',
+                    o.items.length,
+                    o.totalAmount.toFixed(2),
+                    o.status,
+                    new Date(o.createdAt).toLocaleDateString()
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+
+            // Trigger Download
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Dealer_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else if (format === 'pdf') {
+            const doc = new jsPDF();
+
+            // Header
+            doc.setFontSize(20);
+            doc.text('Dealer Business Report', 14, 22);
+            doc.setFontSize(11);
+            doc.text(`Generated On: ${date} ${time}`, 14, 30);
+            doc.text(`Dealer: ${profile?.name || 'N/A'}`, 14, 36);
+
+            // Stats
+            doc.setFontSize(14);
+            doc.text('Summary Stats', 14, 46);
+            doc.autoTable({
+                startY: 50,
+                head: [['Metric', 'Value']],
+                body: [
+                    ['Active Orders', stats.activeOrders],
+                    ['Completed Supply', stats.completedOrders],
+                    ['Total Items Supplied', stats.totalItemsSupplied],
+                    ['Customer Sales (Count)', stats.customerSales]
+                ],
+                theme: 'striped',
+                headStyles: { fillColor: [59, 130, 246] },
+                margin: { bottom: 10 }
+            });
+
+            let currentY = doc.lastAutoTable.finalY + 10;
+
+            // Supply Orders
+            doc.setFontSize(14);
+            doc.text('Supply Orders (From Admin)', 14, currentY);
+            doc.autoTable({
+                startY: currentY + 4,
+                head: [['Order ID', 'Product', 'Quantity', 'Status', 'Date', 'Payment Status']],
+                body: orders.map(o => [
+                    o._id.slice(-6).toUpperCase(),
+                    o.product?.name || 'Unknown',
+                    o.quantity,
+                    o.status,
+                    new Date(o.createdAt).toLocaleDateString(),
+                    o.paymentStatus || 'PENDING'
+                ]),
+                theme: 'striped',
+                headStyles: { fillColor: [16, 185, 129] },
+                margin: { bottom: 10 }
+            });
+
+            currentY = doc.lastAutoTable.finalY + 10;
+
+            // Customer Sales
+            doc.setFontSize(14);
+            doc.text('Customer Sales (End Users)', 14, currentY);
+            doc.autoTable({
+                startY: currentY + 4,
+                head: [['Order ID', 'Customer', 'Items Count', 'Total Amount', 'Status', 'Date']],
+                body: customerOrders.map(o => [
+                    o._id.slice(-6).toUpperCase(),
+                    o.user?.name || 'Guest',
+                    o.items.length,
+                    `Rs. ${o.totalAmount.toFixed(2)}`,
+                    o.status,
+                    new Date(o.createdAt).toLocaleDateString()
+                ]),
+                theme: 'striped',
+                headStyles: { fillColor: [59, 130, 246] }
+            });
+
+            doc.save(`Dealer_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+        }
     }
 
     // --- Actions ---
@@ -383,7 +456,7 @@ export default function DealerDashboard({ token, onLogout }) {
                         onClick={() => setActiveTab('orders')}
                     >
                         📦 Assigned Orders
-                        {stats.activeOrders > 0 && <span className="badge" style={{ marginLeft: 'auto', background: '#3b82f6', padding: '2px 8px', borderRadius: '10px', fontSize: '12px' }}>{stats.activeOrders}</span>}
+                        {stats.activeOrders > 0 && <span className="badge" style={{ marginLeft: 'auto', background: '#10b981', padding: '2px 8px', borderRadius: '10px', fontSize: '12px' }}>{stats.activeOrders}</span>}
                     </button>
                     <button
                         className={activeTab === 'requests' ? 'active' : ''}
@@ -420,9 +493,14 @@ export default function DealerDashboard({ token, onLogout }) {
                         <button onClick={() => setShowRequestModal(true)} className="action-btn" style={{ background: '#10b981', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span>+</span> New Supply/Stock Request
                         </button>
-                        <button onClick={downloadReport} className="action-btn" style={{ background: '#3b82f6', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>📊</span> Download Report
-                        </button>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={() => downloadReport('pdf')} className="action-btn" style={{ background: '#ef4444', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span>📄</span> Download PDF
+                            </button>
+                            <button onClick={() => downloadReport('excel')} className="action-btn" style={{ background: '#10b981', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span>📊</span> Download Excel
+                            </button>
+                        </div>
                         <button onClick={() => fetchData()} className="refresh-btn">
                             🔄 Sync
                         </button>
@@ -433,8 +511,8 @@ export default function DealerDashboard({ token, onLogout }) {
                     <>
                         {/* Stats Grid */}
                         <div className="stats-grid">
-                            <div className="stat-card" style={{ borderLeft: '4px solid #3b82f6' }}>
-                                <div className="stat-icon" style={{ background: '#eff6ff', color: '#3b82f6' }}>📦</div>
+                            <div className="stat-card" style={{ borderLeft: '4px solid #10b981' }}>
+                                <div className="stat-icon" style={{ background: '#eff6ff', color: '#10b981' }}>📦</div>
                                 <div className="stat-info">
                                     <h3>Active Orders</h3>
                                     <p className="stat-number">{stats.activeOrders}</p>
@@ -516,7 +594,7 @@ export default function DealerDashboard({ token, onLogout }) {
                         <div className="profile-container" style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
                             <div className="profile-card" style={{ flex: '1', minWidth: '300px', background: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', border: '1px solid #e2e8f0' }}>
                                 <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                                    <div style={{ width: '80px', height: '80px', background: '#eff6ff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', color: '#3b82f6', margin: '0 auto 16px' }}>
+                                    <div style={{ width: '80px', height: '80px', background: '#eff6ff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', color: '#10b981', margin: '0 auto 16px' }}>
                                         🏪
                                     </div>
                                     <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', color: '#0f172a' }}>{profile?.name || 'Dealer'}</h3>
@@ -591,12 +669,12 @@ export default function DealerDashboard({ token, onLogout }) {
                                 </form>
                             </div>
 
-                            <div className="support-card" style={{ flex: '1', minWidth: '300px', maxHeight: '250px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', padding: '30px', borderRadius: '12px', color: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <div className="support-card" style={{ flex: '1', minWidth: '300px', maxHeight: '250px', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', padding: '30px', borderRadius: '12px', color: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                 <h3 style={{ margin: '0 0 16px 0', fontSize: '24px' }}>Need Support?</h3>
                                 <p style={{ margin: '0 0 24px 0', lineHeight: '1.6', opacity: '0.9' }}>
                                     Contact the administration for any stock discrepancies or urgent order modifications.
                                 </p>
-                                <button style={{ background: 'white', color: '#2563eb', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', width: 'fit-content' }} onClick={() => window.open('mailto:support@greenix.com')}>
+                                <button style={{ background: 'white', color: '#059669', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', width: 'fit-content' }} onClick={() => window.open('mailto:support@greenix.com')}>
                                     ✉️ Contact Admin
                                 </button>
                             </div>
@@ -664,7 +742,7 @@ export default function DealerDashboard({ token, onLogout }) {
                                                             </button>
                                                         )}
                                                         {order.status === 'APPROVED' && (
-                                                            <button onClick={() => updateOrderStatus(order._id, 'confirm')} className="edit-btn" style={{ backgroundColor: '#3b82f6' }}>
+                                                            <button onClick={() => updateOrderStatus(order._id, 'confirm')} className="edit-btn" style={{ backgroundColor: '#10b981' }}>
                                                                 🚀 Confirm Supply
                                                             </button>
                                                         )}
@@ -806,8 +884,8 @@ export default function DealerDashboard({ token, onLogout }) {
                                                     onClick={() => setSelectedCustomerInvoiceOrder(order)}
                                                     style={{
                                                         background: 'white',
-                                                        color: '#3b82f6',
-                                                        border: '1px solid #3b82f6',
+                                                        color: '#10b981',
+                                                        border: '1px solid #10b981',
                                                         padding: '4px 10px',
                                                         borderRadius: '4px',
                                                         cursor: 'pointer',
@@ -887,7 +965,7 @@ export default function DealerDashboard({ token, onLogout }) {
                                             style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
                                         />
                                     </div>
-                                    <button type="submit" className="submit-btn" style={{ width: '100%', padding: '12px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '15px' }}>
+                                    <button type="submit" className="submit-btn" style={{ width: '100%', padding: '12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '15px' }}>
                                         📩 Submit Request
                                     </button>
                                 </form>

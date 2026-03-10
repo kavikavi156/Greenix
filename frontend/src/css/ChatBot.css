@@ -37,7 +37,7 @@
 
 .mic-btn:hover {
     background: #f1f5f9;
-    color: #1e3c72;
+    color: #064e3b;
     transform: scale(1.1);
 }
 
@@ -69,7 +69,7 @@
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
     color: white;
     border: none;
     box-shadow: 0 4px 20px rgba(30, 60, 114, 0.4);
@@ -125,7 +125,7 @@
 
 /* Header */
 .chatbot-header {
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
     color: white;
     padding: 16px 20px;
     display: flex;
@@ -234,7 +234,7 @@
 }
 
 .message.user {
-    background: #2a5298;
+    background: #022c22;
     color: white;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
@@ -349,7 +349,7 @@
 }
 
 .chatbot-input:focus {
-    border-color: #2a5298;
+    border-color: #022c22;
     background: white;
     box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
 }
@@ -358,7 +358,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
     color: white;
     border: none;
     cursor: pointer;

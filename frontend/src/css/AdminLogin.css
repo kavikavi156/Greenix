@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   padding: 20px;
   overflow: hidden;
@@ -121,7 +121,7 @@
   font-weight: 700;
   color: #1f2937;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -150,13 +150,13 @@
 .logo-text {
   font-size: 24px;
   font-weight: 800;
-  color: #1e3c72;
+  color: #064e3b;
   text-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
 }
 
 .tagline {
   font-size: 14px;
-  color: #2a5298;
+  color: #022c22;
   font-weight: 600;
   font-style: italic;
 }
@@ -215,7 +215,7 @@
 
 .login-input:focus {
   outline: none;
-  border-color: #1e3c72;
+  border-color: #064e3b;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
   transform: translateY(-2px);
 }
@@ -229,7 +229,7 @@
 .login-button {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
   border: none;
   border-radius: 12px;
   color: white;

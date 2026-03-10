@@ -20,7 +20,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #4299e1, #8b5cf6, #06d6a0);
+  background: linear-gradient(90deg, #10b981, #8b5cf6, #06d6a0);
   border-radius: 16px 16px 0 0;
 }
 
@@ -99,7 +99,7 @@
 }
 
 .chart-control-btn.active {
-  background: #4299e1;
+  background: #10b981;
   color: white;
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
@@ -135,15 +135,15 @@
   left: 0;
   width: 4px;
   height: 100%;
-  background: var(--card-color, #4299e1);
+  background: var(--card-color, #10b981);
 }
 
 .analytics-card.revenue {
-  --card-color: #4299e1;
+  --card-color: #10b981;
 }
 
 .analytics-card.orders {
-  --card-color: #4299e1;
+  --card-color: #10b981;
 }
 
 .analytics-card.growth {
@@ -200,7 +200,7 @@
 }
 
 .analytics-card-change.positive {
-  color: #4299e1;
+  color: #10b981;
 }
 
 .analytics-card-change.negative {
@@ -284,7 +284,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid #f3f4f6;
-  border-top: 3px solid #4299e1;
+  border-top: 3px solid #10b981;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -309,7 +309,7 @@
 
 /* Professional Gradients */
 .gradient-blue {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
 }
 
 .gradient-green {
@@ -317,7 +317,7 @@
 }
 
 .gradient-purple {
-  background: linear-gradient(135deg, #4299e1 0%, #64b5f6 100%);
+  background: linear-gradient(135deg, #10b981 0%, #64b5f6 100%);
 }
 
 .gradient-orange {

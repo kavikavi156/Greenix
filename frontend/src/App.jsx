@@ -6,6 +6,7 @@ import ProductShowcase from './components/ProductShowcase.jsx';
 import LoginPage from './components/LoginPage.jsx';
 import ForgotPassword from './components/ForgotPassword.jsx';
 import EnhancedHomePageNew from './components/EnhancedHomePageNew.jsx';
+import AboutUs from './components/AboutUs.jsx';
 import Checkout from './components/Checkout.jsx';
 import ProfessionalToast from './components/ProfessionalToast.jsx';
 import { useState } from 'react';
@@ -57,10 +58,12 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/checkout" element={<CheckoutWrapper />} />
         <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/about" element={<AboutUs />} />
         <Route path="/dealer" element={<DealerLogin />} />
         <Route path="/customer" element={<Navigate to="/" replace />} />
         <Route path="/showcase" element={<ProductShowcase />} />
         <Route path="/products-carousel" element={<ProductCarouselPage />} />
+
         <Route path="*" element={<EnhancedHomePageNew />} />
       </Routes>
     </>

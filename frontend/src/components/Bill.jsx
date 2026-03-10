@@ -100,7 +100,7 @@ export default function Bill({
             }
             
             .bill-header { 
-              background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+              background: linear-gradient(135deg, #1e40af 0%, #10b981 100%);
               color: white; 
               padding: 30px 40px;
               text-align: left;
@@ -174,7 +174,7 @@ export default function Bill({
               background: #f8fafc;
               padding: 20px;
               border-radius: 8px;
-              border-left: 4px solid #3b82f6;
+              border-left: 4px solid #10b981;
             }
             
             .detail-item {
@@ -235,7 +235,7 @@ export default function Bill({
             
             .item-category {
               background: #dbeafe;
-              color: #1d4ed8;
+              color: #047857;
               padding: 2px 6px;
               border-radius: 4px;
               font-size: 10px;

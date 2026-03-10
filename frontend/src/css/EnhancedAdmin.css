@@ -4,9 +4,9 @@
   position: relative;
   overflow-x: hidden;
   background: linear-gradient(135deg, 
-    #1e3c72 0%, 
-    #2a5298 50%, 
-    #1e3c72 100%);
+    #064e3b 0%, 
+    #022c22 50%, 
+    #064e3b 100%);
 }
 
 /* Animated Background */
@@ -193,7 +193,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #1e3c72, #2a5298, #1e3c72);
+  background: linear-gradient(90deg, #064e3b, #022c22, #064e3b);
 }
 
 .admin-form-header {
@@ -204,9 +204,9 @@
 .admin-form-title {
   font-size: 2rem;
   font-weight: 700;
-  color: #1e3c72;
+  color: #064e3b;
   margin: 0 0 0.5rem 0;
-  background: linear-gradient(135deg, #1e3c72, #1e3c72);
+  background: linear-gradient(135deg, #064e3b, #064e3b);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -252,7 +252,7 @@
 
 .enhanced-input:focus {
   outline: none;
-  border-color: #1e3c72;
+  border-color: #064e3b;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   transform: translateY(-2px);
 }
@@ -269,7 +269,7 @@
 
 .enhanced-submit-btn {
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #1e3c72, #1e3c72);
+  background: linear-gradient(135deg, #064e3b, #064e3b);
   color: white;
   border: none;
   border-radius: 15px;
@@ -364,7 +364,7 @@
 
 .admin-form-container form input:focus {
   outline: none;
-  border-color: #1e3c72;
+  border-color: #064e3b;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   transform: translateY(-2px);
 }
@@ -375,7 +375,7 @@
 
 .admin-form-container form button {
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #1e3c72, #1e3c72);
+  background: linear-gradient(135deg, #064e3b, #064e3b);
   color: white;
   border: none;
   border-radius: 15px;
@@ -403,7 +403,7 @@
   padding: 1rem;
   background: rgba(30, 60, 114, 0.1);
   border-radius: 12px;
-  border-left: 4px solid #1e3c72;
+  border-left: 4px solid #064e3b;
 }
 
 .security-icon {
@@ -538,7 +538,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #1e3c72;
+  color: #064e3b;
   font-weight: 700;
   font-size: 1.5rem;
 }
@@ -603,7 +603,7 @@
 
 .admin-panel-header {
   padding: 3rem 3rem 2rem 3rem;
-  background: linear-gradient(135deg, #1e3c72, #1e3c72);
+  background: linear-gradient(135deg, #064e3b, #064e3b);
   color: white;
   text-align: center;
 }
@@ -644,12 +644,12 @@
 
 .tab-btn-enhanced:hover {
   background: rgba(102, 126, 234, 0.1);
-  color: #1e3c72;
+  color: #064e3b;
 }
 
 .tab-btn-enhanced.active {
   background: white;
-  color: #1e3c72;
+  color: #064e3b;
 }
 
 .tab-btn-enhanced.active::after {
@@ -659,7 +659,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #1e3c72, #2a5298);
+  background: linear-gradient(90deg, #064e3b, #022c22);
 }
 
 .tab-icon {
@@ -692,7 +692,7 @@
 }
 
 .admin-dashboard-footer {
-  background: #1e3c72;
+  background: #064e3b;
   color: white;
   padding: 2rem 0;
   text-align: center;
@@ -809,13 +809,13 @@
 }
 
 .status-select:hover {
-  border-color: #1e3c72;
+  border-color: #064e3b;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .status-select:focus {
   outline: none;
-  border-color: #1e3c72;
+  border-color: #064e3b;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
@@ -970,7 +970,7 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #4299e1;
+  border-color: #10b981;
   box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
 }
 
@@ -1024,12 +1024,12 @@
 }
 
 .submit-btn {
-  background: linear-gradient(135deg, #4299e1, #1e3c72);
+  background: linear-gradient(135deg, #10b981, #064e3b);
   color: white;
 }
 
 .submit-btn:hover {
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background: linear-gradient(135deg, #064e3b, #022c22);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
 }

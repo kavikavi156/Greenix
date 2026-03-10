@@ -510,7 +510,7 @@ export default function ProductShowcase() {
 
       {/* Professional Footer */}
       <footer style={{
-        background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+        background: 'linear-gradient(135deg, #064e3b 0%, #022c22 100%)',
         color: 'white',
         marginTop: '64px',
         width: '100%',

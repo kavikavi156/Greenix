@@ -1,9 +1,9 @@
 /* Modern E-commerce Styles - Professional Green Theme */
 /* Amazon-like responsive design with mobile-first approach */
 :root {
-  --primary-color: #1e3c72;
-  --secondary-color: #2a5298;
-  --accent-color: #4299e1;
+  --primary-color: #064e3b;
+  --secondary-color: #022c22;
+  --accent-color: #10b981;
   --success-color: #388e3c;
   --warning-color: #ff9800;
   --danger-color: #dc2626;
@@ -884,7 +884,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
   color: white;
   border-radius: 12px 12px 0 0;
 }
@@ -960,7 +960,7 @@
 }
 
 .progress-step.active .step-circle {
-  background: #1e3c72;
+  background: #064e3b;
   color: white;
   box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.2);
 }
@@ -979,7 +979,7 @@
 }
 
 .progress-step.active .step-title {
-  color: #1e3c72;
+  color: #064e3b;
   font-weight: 600;
 }
 
@@ -1220,7 +1220,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
   color: white;
 }
 
@@ -1648,7 +1648,7 @@
 }
 
 .back-btn {
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background: linear-gradient(135deg, #064e3b, #022c22);
   color: white;
   border: none;
   padding: 12px 20px;
@@ -1681,7 +1681,7 @@
 }
 
 .back-btn:hover {
-  background: linear-gradient(135deg, #2a5298, #1e3c72);
+  background: linear-gradient(135deg, #022c22, #064e3b);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
 }
@@ -1899,7 +1899,7 @@
 }
 
 .product-brand-large {
-  color: #1e3c72;
+  color: #064e3b;
   font-size: 14px;
   font-weight: 700;
   margin-bottom: 10px;
@@ -1931,7 +1931,7 @@
   left: 0;
   width: 60px;
   height: 4px;
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background: linear-gradient(135deg, #064e3b, #022c22);
   border-radius: 2px;
 }
 
@@ -2032,7 +2032,7 @@
 .current-price-large {
   font-size: 36px;
   font-weight: 800;
-  background: linear-gradient(135deg, #1e3c72, #4299e1);
+  background: linear-gradient(135deg, #064e3b, #10b981);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -2061,7 +2061,7 @@
 }
 
 .savings-info {
-  color: #1e3c72;
+  color: #064e3b;
   font-size: 16px;
   font-weight: 600;
   background: rgba(5, 150, 105, 0.1);
@@ -2397,8 +2397,8 @@
 
 .add-to-cart-large {
   background: white;
-  color: #1e3c72;
-  border: 2px solid #1e3c72;
+  color: #064e3b;
+  border: 2px solid #064e3b;
   box-shadow: 0 4px 15px rgba(5, 150, 105, 0.2);
 }
 
@@ -2418,7 +2418,7 @@
 }
 
 .add-to-cart-large:hover {
-  background: #1e3c72;
+  background: #064e3b;
   color: white;
   transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(5, 150, 105, 0.4);
@@ -2451,7 +2451,7 @@
 }
 
 .buy-now-large {
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background: linear-gradient(135deg, #064e3b, #022c22);
   color: white;
   position: relative;
   overflow: hidden;
@@ -2475,7 +2475,7 @@
 .buy-now-large:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(5, 150, 105, 0.4);
-  background: linear-gradient(135deg, #2a5298, #1e3c72);
+  background: linear-gradient(135deg, #022c22, #064e3b);
 }
 
 .buy-now-large:disabled {
@@ -2495,7 +2495,7 @@
   padding: 25px;
   background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
   border-radius: 15px;
-  border: 1px solid #4299e1;
+  border: 1px solid #10b981;
   position: relative;
   overflow: hidden;
 }
@@ -2557,7 +2557,7 @@
   font-size: 24px;
   width: 40px;
   text-align: center;
-  background: linear-gradient(135deg, #4299e1, #1e3c72);
+  background: linear-gradient(135deg, #10b981, #064e3b);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -2572,7 +2572,7 @@
 
 .delivery-item div div {
   font-size: 14px;
-  color: #2a5298;
+  color: #022c22;
 }
 
 /* Description Section */
@@ -3119,7 +3119,7 @@
 .professional-form select:focus,
 .professional-form textarea:focus {
   outline: none;
-  border-color: #1e3c72;
+  border-color: #064e3b;
   box-shadow: 0 0 0 2px rgba(40, 116, 240, 0.1);
 }
 
@@ -3148,7 +3148,7 @@
   text-align: center;
   margin-bottom: 40px;
   padding: 30px;
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background: linear-gradient(135deg, #064e3b, #022c22);
   color: #ffffff !important;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(40, 116, 240, 0.3);
@@ -3380,11 +3380,11 @@ select:focus {
 
 .nav-btn:hover {
   background: #f5f5f5;
-  color: #1e3c72;
+  color: #064e3b;
 }
 
 .nav-btn.active {
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background: linear-gradient(135deg, #064e3b, #022c22);
   color: #ffffff;
   box-shadow: 0 4px 12px rgba(40, 116, 240, 0.3);
 }
@@ -3559,7 +3559,7 @@ select:focus {
 }
 
 .checkbox-label input[type="checkbox"]:checked + .checkmark {
-  background: linear-gradient(135deg, var(--primary-color), #2a5298);
+  background: linear-gradient(135deg, var(--primary-color), #022c22);
   border-color: var(--primary-color);
 }
 
@@ -3827,7 +3827,7 @@ input[type="radio"] {
 }
 
 .btn-save-category {
-  background: #1e3c72;
+  background: #064e3b;
   color: #ffffff !important;
   border: none;
   padding: 12px 16px;
@@ -3992,7 +3992,7 @@ input[type="radio"] {
 
 .page-header h1 {
   font-size: 2.5rem;
-  color: #1e3c72;
+  color: #064e3b;
   margin-bottom: 16px;
   font-weight: 700;
 }
@@ -4012,7 +4012,7 @@ input[type="radio"] {
 
 .stat-item {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #1e3c72, #1557c7);
+  background: linear-gradient(135deg, #064e3b, #1557c7);
   color: white;
   border-radius: 25px;
   font-weight: 600;
@@ -4056,7 +4056,7 @@ input[type="radio"] {
 }
 
 .search-input:focus {
-  border-color: #1e3c72;
+  border-color: #064e3b;
   background: white;
   outline: none;
   box-shadow: 0 0 0 3px rgba(40, 116, 240, 0.1);
@@ -4093,7 +4093,7 @@ input[type="radio"] {
 }
 
 .category-select:focus {
-  border-color: #1e3c72;
+  border-color: #064e3b;
   outline: none;
   box-shadow: 0 0 0 3px rgba(40, 116, 240, 0.1);
 }
@@ -4194,7 +4194,7 @@ input[type="radio"] {
 
 .product-category {
   font-size: 0.9rem;
-  color: #1e3c72;
+  color: #064e3b;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -4219,7 +4219,7 @@ input[type="radio"] {
 .product-price {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1e3c72;
+  color: #064e3b;
 }
 
 .original-price {
@@ -4300,7 +4300,7 @@ input[type="radio"] {
 .prebook-btn {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #1e3c72, #1557c7);
+  background: linear-gradient(135deg, #064e3b, #1557c7);
   color: white;
   border: none;
   border-radius: 8px;
@@ -4378,7 +4378,7 @@ input[type="radio"] {
   padding: 32px;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  border-left: 4px solid #1e3c72;
+  border-left: 4px solid #064e3b;
 }
 
 .info-card h3 {
@@ -4648,7 +4648,7 @@ input[type="radio"] {
 
 .form-input[value*="Class III"] {
   background: #e3f2fd;
-  color: #2a5298;
+  color: #022c22;
 }
 
 .form-input[value*="Class IV"] {
@@ -4817,12 +4817,12 @@ input[type="radio"] {
 .calculated-price {
   font-weight: 700;
   font-size: 16px;
-  color: #1e3c72;
+  color: #064e3b;
   background: linear-gradient(135deg, #ecfdf5, #d1fae5);
   padding: 12px 16px;
   border-radius: 8px;
   text-align: center;
-  border: 1px solid #4299e1;
+  border: 1px solid #10b981;
 }
 
 .price-input-group {
@@ -4853,7 +4853,7 @@ input[type="radio"] {
 }
 
 .add-btn {
-  background: linear-gradient(135deg, #4299e1, #1d4ed8);
+  background: linear-gradient(135deg, #10b981, #047857);
   color: white;
   border: none;
   padding: 12px 20px;
@@ -4868,7 +4868,7 @@ input[type="radio"] {
 }
 
 .add-btn:hover {
-  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  background: linear-gradient(135deg, #047857, #1e40af);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
@@ -4978,7 +4978,7 @@ input[type="radio"] {
 .package-price {
   font-weight: 600;
   font-size: 16px;
-  color: #1e3c72;
+  color: #064e3b;
   margin-bottom: 5px;
 }
 
@@ -5015,7 +5015,7 @@ input[type="radio"] {
 
 /* Professional Invoice Header with Company Branding */
 .bill-header {
-  background: linear-gradient(135deg, #1e40af 0%, #4299e1 50%, #60a5fa 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #10b981 50%, #60a5fa 100%);
   color: white;
   padding: 40px 50px;
   position: relative;
@@ -5136,7 +5136,7 @@ input[type="radio"] {
   background: #f8fafc;
   padding: 25px;
   border-radius: 12px;
-  border-left: 4px solid #4299e1;
+  border-left: 4px solid #10b981;
 }
 
 .detail-item {
@@ -5214,7 +5214,7 @@ input[type="radio"] {
 
 .item-category {
   background: #dbeafe;
-  color: #1d4ed8;
+  color: #047857;
   padding: 4px 8px;
   border-radius: 6px;
   font-size: 12px;
@@ -5224,7 +5224,7 @@ input[type="radio"] {
 
 .item-price {
   font-weight: 600;
-  color: #1e3c72;
+  color: #064e3b;
 }
 
 .item-total {
@@ -5278,11 +5278,11 @@ input[type="radio"] {
 
 .final-total .total-value {
   font-size: 24px;
-  color: #1e3c72;
+  color: #064e3b;
   background: linear-gradient(135deg, #ecfdf5, #d1fae5);
   padding: 10px 20px;
   border-radius: 8px;
-  border: 2px solid #4299e1;
+  border: 2px solid #10b981;
 }
 
 /* Professional Action Buttons */
@@ -5325,13 +5325,13 @@ input[type="radio"] {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background: linear-gradient(135deg, #064e3b, #022c22);
   color: white;
   box-shadow: 0 4px 15px rgba(5, 150, 105, 0.2);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #2a5298, #065f46);
+  background: linear-gradient(135deg, #022c22, #065f46);
   transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(5, 150, 105, 0.3);
 }
@@ -5357,7 +5357,7 @@ input[type="radio"] {
   padding: 25px;
   background: linear-gradient(135deg, #ecfdf5, #d1fae5);
   border-radius: 15px;
-  border: 2px solid #4299e1;
+  border: 2px solid #10b981;
 }
 
 .success-icon {
@@ -5373,7 +5373,7 @@ input[type="radio"] {
 }
 
 .order-success-message p {
-  color: #2a5298;
+  color: #022c22;
   font-size: 16px;
   margin: 8px 0;
   line-height: 1.5;
@@ -5404,7 +5404,7 @@ input[type="radio"] {
   padding: 40px 30px;
   background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
   border-radius: 20px;
-  border: 3px solid #4299e1;
+  border: 3px solid #10b981;
   position: relative;
   overflow: hidden;
 }
@@ -5438,7 +5438,7 @@ input[type="radio"] {
 }
 
 .order-success-message p {
-  color: #2a5298;
+  color: #022c22;
   font-size: 16px;
   margin: 10px 0;
   line-height: 1.6;
@@ -5553,7 +5553,7 @@ input[type="radio"] {
   }
   
   .bill-header {
-    background: linear-gradient(135deg, #1e40af 0%, #4299e1 100%) !important;
+    background: linear-gradient(135deg, #1e40af 0%, #10b981 100%) !important;
     color: white !important;
     padding: 25px 30px !important;
     margin: 0 !important;
@@ -5614,8 +5614,8 @@ input[type="radio"] {
   
   .final-total .total-value {
     background: #ecfdf5 !important;
-    color: #1e3c72 !important;
-    border: 1px solid #4299e1 !important;
+    color: #064e3b !important;
+    border: 1px solid #10b981 !important;
   }
   
   .bill-actions,
@@ -5630,12 +5630,12 @@ input[type="radio"] {
   
   .detail-box {
     background: #f8fafc !important;
-    border-left: 4pt solid #4299e1 !important;
+    border-left: 4pt solid #10b981 !important;
   }
   
   .item-category {
     background: #dbeafe !important;
-    color: #1d4ed8 !important;
+    color: #047857 !important;
   }
 }
 

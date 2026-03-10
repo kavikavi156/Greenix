@@ -79,7 +79,7 @@
 .rating-text {
   display: inline-block;
   margin-left: 10px;
-  color: #1e3c72;
+  color: #064e3b;
   font-weight: 600;
   font-size: 16px;
 }
@@ -101,7 +101,7 @@
 
 .comment-input textarea:focus {
   outline: none;
-  border-color: #1e3c72;
+  border-color: #064e3b;
 }
 
 .character-count {
@@ -116,7 +116,7 @@
 }
 
 .submit-review-btn {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
   color: white;
   padding: 14px 32px;
   border: none;

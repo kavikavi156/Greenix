@@ -5,8 +5,11 @@ import EnhancedCart from './EnhancedCart.jsx';
 import MyOrders from './MyOrders.jsx';
 import ProductDetails from './ProductDetails.jsx';
 import ChatBot from './ChatBot.jsx';
+import CropCalendarModal from './CropCalendarModal.jsx';
 import '../css/ProfessionalEcommerce.css';
 import '../css/Overlays.css';
+import '../css/MobileResponsive.css';
+import '../css/CustomerFeatures.css';
 import ProfessionalToast from './ProfessionalToast.jsx';
 import { getApiUrl, getImageUrl } from '../config/api';
 
@@ -14,6 +17,8 @@ export default function EnhancedHomePage() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedBrand, setSelectedBrand] = useState('all');
+  const [availableBrands, setAvailableBrands] = useState([]);
   const [sortBy, setSortBy] = useState('name');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -25,6 +30,7 @@ export default function EnhancedHomePage() {
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [toast, setToast] = useState({ visible: false, title: '', message: '', type: 'info' });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showCropCalendar, setShowCropCalendar] = useState(false);
   const navigate = useNavigate();
 
   // Helper function to get product icon based on category
@@ -43,14 +49,51 @@ export default function EnhancedHomePage() {
   useEffect(() => {
     checkAuthStatus();
     fetchProducts();
-    if (isLoggedIn) {
+    if (localStorage.getItem('customerToken')) {
       fetchCartCounts();
     }
   }, []);
 
   useEffect(() => {
+    fetchBrands();
+    setSelectedBrand('all'); // Reset brand filter when category changes
+  }, [selectedCategory]);
+
+  const [topSellingProducts, setTopSellingProducts] = useState([]);
+  const [topRatedProducts, setTopRatedProducts] = useState([]);
+
+  useEffect(() => {
+    fetchTopSelling();
+    fetchTopRated();
+  }, []);
+
+  useEffect(() => {
     filterAndSortProducts();
-  }, [products, selectedCategory, sortBy, searchTerm]);
+  }, [products, selectedCategory, selectedBrand, sortBy, searchTerm]);
+
+  async function fetchTopSelling() {
+    try {
+      const response = await fetch(getApiUrl('/api/products?sort=popularity&limit=4'));
+      const data = await response.json();
+      if (data.products) {
+        setTopSellingProducts(data.products);
+      }
+    } catch (error) {
+      console.error('Error fetching top selling products:', error);
+    }
+  }
+
+  async function fetchTopRated() {
+    try {
+      const response = await fetch(getApiUrl('/api/products?sort=rating&limit=4'));
+      const data = await response.json();
+      if (data.products) {
+        setTopRatedProducts(data.products);
+      }
+    } catch (error) {
+      console.error('Error fetching top rated products:', error);
+    }
+  }
 
   function checkAuthStatus() {
     const token = localStorage.getItem('customerToken');
@@ -81,9 +124,20 @@ export default function EnhancedHomePage() {
       const response = await fetch(getApiUrl('/api/products'));
       const data = await response.json();
       console.log('Fetched products:', data);
-      setProducts(data.products || data || []);
+
+      // Handle both success and error responses
+      if (data.error) {
+        console.error('API returned error:', data);
+        setProducts([]);
+        return;
+      }
+
+      // Ensure we always set an array
+      const productsArray = Array.isArray(data) ? data : (Array.isArray(data.products) ? data.products : []);
+      setProducts(productsArray);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setProducts([]);
     }
   }
 
@@ -110,11 +164,35 @@ export default function EnhancedHomePage() {
     }
   }
 
+  async function fetchBrands() {
+    try {
+      let endpoint = '/api/products/filters/options';
+      if (selectedCategory !== 'all') {
+        endpoint += `?category=${encodeURIComponent(selectedCategory)}`;
+      }
+      const response = await fetch(getApiUrl(endpoint));
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableBrands(data.brands || []);
+      }
+    } catch (error) {
+      console.error('Error fetching brands:', error);
+    }
+  }
+
   function filterAndSortProducts() {
+    // Safety check: ensure products is an array
+    if (!Array.isArray(products)) {
+      console.error('Products is not an array:', products);
+      setFilteredProducts([]);
+      return;
+    }
+
     let filtered = products;
     console.log('Filtering products:', {
       totalProducts: products.length,
       selectedCategory,
+      selectedBrand,
       searchTerm,
       availableCategories: [...new Set(products.map(p => p.category))]
     });
@@ -131,6 +209,11 @@ export default function EnhancedHomePage() {
         return matches;
       });
       console.log('After category filter:', filtered.length);
+    }
+
+    // Filter by Brand
+    if (selectedBrand !== 'all') {
+      filtered = filtered.filter(product => product.brand === selectedBrand);
     }
 
     // Filter by search term
@@ -232,127 +315,362 @@ export default function EnhancedHomePage() {
       <ProfessionalToast visible={toast.visible} title={toast.title} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, visible: false })} />
 
       {/* Fresh Flow Header */}
-      <header className="fresh-flow-header custom-agri-header">
-        <div className="header-container">
-          {/* Logo */}
-          <Link to="/" className="fresh-logo" style={{ textDecoration: 'none' }}>
-            <svg className="leaf-icon" width="40" height="40" viewBox="0 0 40 40" fill="none" style={{ marginRight: '10px' }}>
-              <path d="M20 5C20 5 8 10 8 22C8 28 12 32 18 34C18 34 15 28 18 24C21 20 20 15 20 15C20 15 19 20 22 24C25 28 22 34 22 34C28 32 32 28 32 22C32 10 20 5 20 5Z" fill="#ffeb3b" />
-              <path d="M12 28C12 28 8 20 14 14C20 8 30 5 30 5C30 5 32 12 28 20C24 28 16 32 16 32" fill="#4caf50" opacity="0.8" />
-            </svg>
-            <span style={{ color: '#ffffff', fontWeight: '800', fontSize: '1.6rem' }}>Greenixx</span>
-          </Link>
+      <header className="fresh-flow-header">
+        <div className="header-top">
+          <div className="header-container">
+            {/* Logo */}
+            <Link to="/" className="fresh-logo">
+              <svg className="leaf-icon" width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <path d="M20 5C20 5 8 10 8 22C8 28 12 32 18 34C18 34 15 28 18 24C21 20 20 15 20 15C20 15 19 20 22 24C25 28 22 34 22 34C28 32 32 28 32 22C32 10 20 5 20 5Z" fill="currentColor" />
+              </svg>
+              <span style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.5rem' }}>Greenixx</span>
+            </Link>
 
-          {/* Navigation Menu */}
-          <nav className={`main-nav custom-agri-nav ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-            <button className="nav-item active">Home</button>
-            <button className="nav-item" onClick={() => {
-              const el = document.querySelector('.products-section');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}>Products</button>
-            <button className="nav-item" onClick={() => setShowCropCalendar(true)}>Crop Advisory</button>
-            <Link to="/rentals" className="nav-item" style={{ textDecoration: 'none' }}>Equipment Rentals</Link>
-            <Link to="/admin" className="nav-item" style={{ textDecoration: 'none' }}>Admin</Link>
-          </nav>
+            {/* Search Bar */}
+            <div className="header-search">
+              <input
+                type="text"
+                placeholder="Search for fertilizers, seeds, pesticides..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+              <button className="search-button">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M9 17A8 8 0 1 0 9 1a8 8 0 0 0 0 16zM19 19l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
 
-          {/* User Actions */}
-          <div className="header-actions custom-agri-actions">
-            <button onClick={() => setShowCart(true)} className="icon-action cart-action">
-              <span className="icon-text" style={{ fontSize: '1.05rem', fontWeight: '500' }}>Cart</span>
-              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-            </button>
+            {/* User Actions */}
+            <div className="header-actions">
+              <button
+                onClick={() => setShowCart(true)}
+                className="icon-action cart-action"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 2L7.17 4H3a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-4.17L15 2H9zm-6 6v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8H3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>Cart</span>
+                {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+              </button>
 
-            {isLoggedIn ? (
-              <div className="profile-menu">
-                <button className="profile-button">
-                  <span className="profile-name" style={{ color: '#fff' }}>{user?.name || 'User'}</span>
+              {isLoggedIn && (
+                <button
+                  onClick={() => setShowMyOrders(true)}
+                  className="icon-action orders-action"
+                  title="My Orders"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 17h6M9 13h6M9 9h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span>Orders</span>
                 </button>
-                <div className="profile-dropdown">
-                  <button onClick={() => setShowMyOrders(true)} className="dropdown-item">📦 My Orders</button>
-                  <button onClick={() => {
-                    localStorage.removeItem('customerToken');
-                    setIsLoggedIn(false);
-                    setCartCount(0);
-                    setUser(null);
-                  }} className="dropdown-item logout">🚪 Logout</button>
-                </div>
-              </div>
-            ) : (
-              <Link to="/login" className="login-link" style={{ fontSize: '1.05rem' }}>Login</Link>
-            )}
+              )}
 
+              <div className="user-profile">
+                {isLoggedIn ? (
+                  <div className="profile-menu">
+                    <button className="profile-button">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <div className="profile-info">
+                        <span className="profile-name">{user?.name || 'User'}</span>
+                      </div>
+                    </button>
+                    <div className="profile-dropdown">
+                      <button onClick={() => setShowMyOrders(true)} className="dropdown-item">
+                        📦 My Orders
+                      </button>
+                      <button
+                        onClick={() => {
+                          localStorage.removeItem('customerToken');
+                          setIsLoggedIn(false);
+                          setCartCount(0);
+                          setUser(null);
+                        }}
+                        className="dropdown-item logout"
+                      >
+                        🚪 Logout
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <Link to="/login" className="login-link">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </Link>
+                )}
+              </div>
+            </div>
             {/* Mobile Menu Toggle */}
-            <button className="mobile-menu-toggle" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            <button
+              className="mobile-menu-toggle"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle Menu"
+            >
               <span className="hamburger-icon">{isMobileMenuOpen ? '✕' : '☰'}</span>
             </button>
+          </div>
+        </div>
+
+        {/* Navigation Menu */}
+        <div className={`header-nav ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+          <div className="header-container">
+            <nav className="main-nav">
+              <Link to="/about" className="nav-item" style={{ textDecoration: 'none' }}>
+                About Us
+              </Link>
+              <button
+                className={selectedCategory === 'all' ? 'nav-item active' : 'nav-item'}
+                onClick={() => setSelectedCategory('all')}
+              >
+                All Products
+              </button>
+              <button
+                className={selectedCategory === 'fertilizers' ? 'nav-item active' : 'nav-item'}
+                onClick={() => setSelectedCategory('fertilizers')}
+              >
+                Fertilizers
+              </button>
+              <button
+                className={selectedCategory === 'seeds' ? 'nav-item active' : 'nav-item'}
+                onClick={() => setSelectedCategory('seeds')}
+              >
+                Seeds
+              </button>
+              <button
+                className={selectedCategory === 'pesticides' ? 'nav-item active' : 'nav-item'}
+                onClick={() => setSelectedCategory('pesticides')}
+              >
+                Pesticides
+              </button>
+              <button
+                className={selectedCategory === 'tools' ? 'nav-item active' : 'nav-item'}
+                onClick={() => setSelectedCategory('tools')}
+              >
+                Tools & Equipment
+              </button>
+              <button
+                className={selectedCategory === 'organic' ? 'nav-item active' : 'nav-item'}
+                onClick={() => setSelectedCategory('organic')}
+              >
+                Organic Products
+              </button>
+              <button className="nav-item" onClick={() => setShowCropCalendar(true)}>
+                Smart Crop Calendar
+              </button>
+
+            </nav>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="hero-section custom-agri-hero">
-        <div className="hero-overlay"></div>
-        <div className="hero-content-centered">
-          <h1 className="hero-main-title">
-            Empowering Farmers <span className="text-light-green">Digitally</span>
-          </h1>
-          <p className="hero-description-centered">
-            A unified digital ecosystem providing real-time weather analytics, market insights, and personalized crop guidance for sustainable agriculture.
-          </p>
-          <div className="hero-buttons-row">
-            <button className="primary-action-btn" onClick={() => {
-              const productsSection = document.querySelector('.products-section');
-              if (productsSection) productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }}>
-              EXPLORE SERVICES
-            </button>
-            <button className="secondary-action-btn">
-              GET EXPERT ADVISORY
-            </button>
+      <section className="hero-section">
+        <div className="hero-container">
+          <div className="hero-content">
+            <h1 className="hero-title">
+              Empowering Farmers <span className="hero-title-highlight">Digitally</span>
+            </h1>
+            <p className="hero-description">
+              A unified digital ecosystem providing real-time weather analytics, market insights, and personalized crop guidance for sustainable agriculture.
+            </p>
+            <div className="hero-actions">
+              <button className="shop-now-btn" onClick={() => {
+                const productsSection = document.querySelector('.products-section');
+                if (productsSection) {
+                  productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}>
+                EXPLORE PRODUCTS
+              </button>
+              <button className="secondary-btn" onClick={() => setShowCropCalendar(true)}>
+                SMART CROP CALENDAR
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
+      {/* Features Section */}
+      <section className="features-section">
+        <div className="section-header">
+          <span className="section-badge" style={{ background: '#16a34a' }}>Why Choose Us</span>
+          <h2>Empowering Your Agriculture</h2>
+          <p>We provide the best tools and resources for modern farming</p>
+        </div>
+        <div className="features-grid">
+          <div className="feature-card">
+            <div className="feature-icon">🚀</div>
+            <div className="feature-title">Fast Delivery</div>
+            <div className="feature-desc">Get your farming supplies delivered directly to your farm within 24-48 hours.</div>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">✅</div>
+            <div className="feature-title">Quality Assurance</div>
+            <div className="feature-desc">100% certified organic seeds and fertilizers tested for maximum yield.</div>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">💬</div>
+            <div className="feature-title">Expert Support</div>
+            <div className="feature-desc">24/7 access to agricultural experts for advice on crops and equipment.</div>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">💰</div>
+            <div className="feature-title">Best Prices</div>
+            <div className="feature-desc">Direct-from-manufacturer pricing to ensure you get the best value.</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Top Selling Products */}
+      {topSellingProducts.length > 0 && (
+        <section className="top-selling-section">
+          <div className="section-header">
+            <span className="section-badge">Trending Now</span>
+            <h2>Top Selling Products</h2>
+            <p>Most popular choices among farmers this week</p>
+          </div>
+          <div className="products-grid">
+            {topSellingProducts.map(product => (
+              <div key={product._id} className="product-card">
+                <div
+                  className="product-image-container"
+                  onClick={() => handleProductClick(product._id)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <img
+                    src={product.image?.startsWith('http') ? product.image : getImageUrl(product.image)}
+                    alt={product.name}
+                    className="product-image"
+                  />
+                  <div className="product-badge">Hot 🔥</div>
+                </div>
+                <div className="product-info" onClick={() => handleProductClick(product._id)} style={{ cursor: 'pointer' }}>
+                  <div className="product-category">{product.category}</div>
+                  <h3 className="product-name">{product.name}</h3>
+                  <div className="product-price">₹{product.price}</div>
+                  <div className="product-actions" style={{ marginTop: '10px' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToCart(product._id);
+                      }}
+                      className="add-to-cart-btn"
+                      style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Top Rated Products */}
+      {topRatedProducts.length > 0 && (
+        <section className="top-rated-section">
+          <div className="section-header">
+            <span className="section-badge" style={{ background: '#d97706' }}>Customer Favorites</span>
+            <h2>Top Rated Products</h2>
+            <p>Highly recommended by other farmers</p>
+          </div>
+          <div className="products-grid">
+            {topRatedProducts.map(product => (
+              <div key={product._id} className="product-card">
+                <div
+                  className="product-image-container"
+                  onClick={() => handleProductClick(product._id)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <img
+                    src={product.image?.startsWith('http') ? product.image : getImageUrl(product.image)}
+                    alt={product.name}
+                    className="product-image"
+                  />
+                  <div className="product-badge" style={{ background: '#fef3c7', color: '#d97706' }}>Top Rated ⭐</div>
+                </div>
+                <div className="product-info" onClick={() => handleProductClick(product._id)} style={{ cursor: 'pointer' }}>
+                  <div className="product-category">{product.category}</div>
+                  <h3 className="product-name">{product.name}</h3>
+                  <div className="product-price">₹{product.price}</div>
+                  <div className="product-actions" style={{ marginTop: '10px' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToCart(product._id);
+                      }}
+                      className="add-to-cart-btn"
+                      style={{ padding: '8px 16px', fontSize: '0.9rem', background: '#d97706' }}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Products Section */}
-      <div className="products-section">
-        <div className="section-title" style={{ marginBottom: '1.5rem' }}>
+      <div id="products-section" className="products-section">
+        <div className="section-title">
           <h2>Our Products</h2>
           <p>Premium quality agricultural products for your farming needs</p>
-        </div>
 
-        {/* Premium Search and Filter Bar */}
-        <div className="premium-filter-container">
-          <div className="compact-search-bar">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="search-icon">
-              <path d="M9 17A8 8 0 1 0 9 1a8 8 0 0 0 0 16zM19 19l-4.35-4.35" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search products by name or description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="compact-search-input"
-            />
-          </div>
-
-          <div className="category-pills-row">
-            {[
-              { id: 'all', label: 'All Products', icon: '✨' },
-              { id: 'fertilizers', label: 'Fertilizers', icon: '🌱' },
-              { id: 'seeds', label: 'Seeds', icon: '🌾' },
-              { id: 'pesticides', label: 'Pesticides', icon: '🦟' },
-              { id: 'tools', label: 'Tools', icon: '🔧' },
-              { id: 'organic', label: 'Organic', icon: '🍃' }
-            ].map(cat => (
-              <button
-                key={cat.id}
-                className={`category-pill ${selectedCategory === cat.id ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat.id)}
+          {/* Filters Bar */}
+          <div className="filters-bar" style={{
+            marginTop: '20px',
+            display: 'flex',
+            gap: '15px',
+            justifyContent: 'center',
+            flexWrap: 'wrap'
+          }}>
+            <div className="filter-item">
+              <select
+                value={selectedBrand}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className="filter-select"
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '20px',
+                  border: '1px solid #ddd',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
               >
-                <span className="pill-icon">{cat.icon}</span>
-                {cat.label}
-              </button>
-            ))}
+                <option value="all">All Brands</option>
+                {availableBrands.map((brand, idx) => (
+                  <option key={idx} value={brand}>{brand}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-item">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-select"
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '20px',
+                  border: '1px solid #ddd',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="name">Sort by Name</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="stock">Stock Level</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -449,6 +767,11 @@ export default function EnhancedHomePage() {
           token={localStorage.getItem('customerToken')}
           onClose={() => setShowMyOrders(false)}
         />
+      )}
+
+      {/* Crop Calendar Modal */}
+      {showCropCalendar && (
+        <CropCalendarModal onClose={() => setShowCropCalendar(false)} />
       )}
 
       {/* Product Details Modal */}

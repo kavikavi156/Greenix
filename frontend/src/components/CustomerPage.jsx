@@ -6,6 +6,7 @@ import ProductList from './ProductList.jsx';
 import Cart from './Cart.jsx';
 import MyOrders from './MyOrders.jsx';
 import React from 'react';
+import { getApiUrl } from '../config/api';
 
 function ErrorFallback({ error }) {
   return (
@@ -79,7 +80,7 @@ export default function CustomerPage() {
 
   async function handleAddToCart(productId, quantity = 1) {
     console.log('CustomerPage handleAddToCart called with:', { productId, token: !!token, userId });
-    
+
     if (!token || !userId) {
       console.log('User not logged in, showing login prompt');
       alert('Please login to add items to cart');
@@ -91,7 +92,7 @@ export default function CustomerPage() {
     // Add item to cart with quantity 1 by default
     try {
       console.log('Making API call to add to cart');
-      const res = await fetch(`http://localhost:3001/api/customer/cart/${userId}/${productId}`, {
+      const res = await fetch(getApiUrl(`/api/customer/cart/${userId}/${productId}`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +100,7 @@ export default function CustomerPage() {
         },
         body: JSON.stringify({ quantity: 1 }),
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         console.log('Add to cart successful:', data);
@@ -134,12 +135,12 @@ export default function CustomerPage() {
               {token ? (
                 <>
                   <button onClick={() => {
-                    setShowCart(!showCart); 
+                    setShowCart(!showCart);
                     setShowMyOrders(false);
                   }} className="flipkart-btn flipkart-btn-primary">
                     🛒 Cart
                   </button>
-                  <button onClick={() => {setShowMyOrders(!showMyOrders); setShowCart(false);}} className="flipkart-btn flipkart-btn-primary">
+                  <button onClick={() => { setShowMyOrders(!showMyOrders); setShowCart(false); }} className="flipkart-btn flipkart-btn-primary">
                     📦 My Orders
                   </button>
                   <button onClick={handleLogout} className="flipkart-btn flipkart-btn-secondary">

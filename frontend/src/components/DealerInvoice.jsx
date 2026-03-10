@@ -130,7 +130,7 @@ export default function DealerInvoice({ order, dealer }) {
             </div>
 
             <div className="no-print" style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
-                <button onClick={() => window.print()} style={{ padding: '10px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>🖨️ Print Invoice</button>
+                <button onClick={() => window.print()} style={{ padding: '10px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>🖨️ Print Invoice</button>
                 <button onClick={() => window.close()} style={{ padding: '10px 20px', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Close</button>
             </div>
 

@@ -37,7 +37,16 @@ export default function LoginForm({ role, onLogin }) {
       console.log('Login response status:', res.status);
 
       if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        let errorMsg = `HTTP error! status: ${res.status}`;
+        try {
+          const errorData = await res.json();
+          if (errorData.error) {
+            errorMsg = errorData.error;
+          }
+        } catch (e) {
+          console.error("Failed to parse error response", e);
+        }
+        throw new Error(errorMsg);
       }
 
       const data = await res.json();
