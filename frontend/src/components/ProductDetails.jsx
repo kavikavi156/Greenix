@@ -47,19 +47,19 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
         checkWishlistStatus();
       }
     }
-    
+
     // Prevent body scroll when modal is open
     document.body.style.overflow = 'hidden';
-    
+
     // Add keyboard event listener for ESC key
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         onClose();
       }
     };
-    
+
     document.addEventListener('keydown', handleKeyDown);
-    
+
     // Cleanup function
     return () => {
       document.body.style.overflow = 'auto';
@@ -79,7 +79,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
     if (product) {
       console.log('Product data loaded:', product);
       console.log('Package sizes:', product.packageSizes);
-      
+
       if (product.packageSizes && product.packageSizes.length > 0 && !selectedPackage) {
         // Select the first package size as default
         setSelectedPackage(product.packageSizes[0]);
@@ -107,13 +107,13 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
 
   async function calculateDynamicPrice() {
     if (!product || !selectedPackage || quantity <= 0) return;
-    
+
     setIsCalculatingPrice(true);
     try {
       // Calculate price based on selected package
       const packagePrice = selectedPackage.price;
       const totalPrice = packagePrice * quantity;
-      
+
       // Calculate savings if applicable
       let savings = 0;
       if (product.originalPrice && selectedPackage.size) {
@@ -146,23 +146,23 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
 
   async function fetchRelatedProducts() {
     if (!product) return;
-    
+
     setLoadingRelated(true);
     try {
       // Fetch products from the same category
       const response = await fetch(getApiUrl('/api/products'));
       if (response.ok) {
         const allProducts = await response.json();
-        
+
         // Filter products: same category but exclude current product
         const related = allProducts
-          .filter(p => 
-            p._id !== productId && 
+          .filter(p =>
+            p._id !== productId &&
             p.category === product.category &&
             p.stock > 0 // Only show products in stock
           )
           .slice(0, 6); // Limit to 6 related products
-        
+
         setRelatedProducts(related);
       }
     } catch (error) {
@@ -179,7 +179,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
       const response = await fetch(getApiUrl(`/api/products/${productId}`));
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('Product data received:', data);
@@ -297,7 +297,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
         unit: product.unit || 'unit',
         price: product.price
       };
-      
+
       const cartItem = {
         _id: `temp-${productId}`,
         product: product,
@@ -393,7 +393,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
   deliveryDate.setDate(deliveryDate.getDate() + 3);
 
   return (
-    <div className="product-details-overlay" style={{ 
+    <div className="product-details-overlay" style={{
       background: 'rgba(0, 0, 0, 0.75)',
       backdropFilter: 'blur(4px)',
       overflowY: 'auto'
@@ -438,10 +438,10 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
             lineHeight: '1'
           }}>×</button>
         </div>
-        
+
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {/* Left Section - Sticky Image */}
-          <div style={{ 
+          <div className="product-details-left-column" style={{
             width: '48%',
             padding: '20px',
             display: 'flex',
@@ -451,7 +451,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
             overflow: 'hidden'
           }}>
             {/* Main Image Container - Centered */}
-            <div style={{ 
+            <div style={{
               border: '1px solid #ddd',
               borderRadius: '8px',
               padding: '24px',
@@ -463,16 +463,16 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
               maxHeight: '600px',
               position: 'relative'
             }}>
-              <img 
+              <img
                 src={(() => {
                   if (product.images && product.images.length > 0) {
                     const selectedImage = product.images[selectedImageIndex] || product.image;
-                    return selectedImage?.startsWith('http') 
-                      ? selectedImage 
+                    return selectedImage?.startsWith('http')
+                      ? selectedImage
                       : getImageUrl(selectedImage);
                   }
-                  return product.image?.startsWith('http') 
-                    ? product.image 
+                  return product.image?.startsWith('http')
+                    ? product.image
                     : getImageUrl(product.image);
                 })()}
                 alt={product.name}
@@ -504,7 +504,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                 </div>
               )}
             </div>
-            
+
             {/* Thumbnail Gallery */}
             {product.images && product.images.length > 1 && (
               <div style={{
@@ -537,7 +537,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                 ))}
               </div>
             )}
-            
+
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={toggleWishlist} style={{
@@ -571,507 +571,507 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
           </div>
 
           {/* Right Section - Scrollable Product Details */}
-          <div style={{ 
+          <div className="product-details-right-column" style={{
             width: '52%',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden'
           }}>
             {/* Scrollable Content */}
-            <div style={{ 
+            <div style={{
               flex: 1,
               overflowY: 'auto',
               overflowX: 'hidden',
               padding: '20px 24px 80px 24px'
             }}>
-            {/* Product Title & Brand */}
-            {product.brand && (
-              <div style={{ marginBottom: '4px' }}>
-                <a href="#" style={{ color: '#007185', fontSize: '12px', textDecoration: 'none' }}>
-                  Visit the {product.brand} Store
-                </a>
-              </div>
-            )}
-            
-            <h1 style={{
-              fontSize: '20px',
-              fontWeight: '500',
-              lineHeight: '1.3',
-              color: '#0F1111',
-              marginBottom: '8px'
-            }}>
-              {product.name}
-            </h1>
-            
-            {/* Rating & Reviews */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
-              {product.rating && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {renderStars(product.rating)}
-                  </div>
-                  <span style={{ color: '#007185', fontSize: '13px', cursor: 'pointer' }}>
-                    {product.rating} out of 5
-                  </span>
+              {/* Product Title & Brand */}
+              {product.brand && (
+                <div style={{ marginBottom: '4px' }}>
+                  <a href="#" style={{ color: '#007185', fontSize: '12px', textDecoration: 'none' }}>
+                    Visit the {product.brand} Store
+                  </a>
                 </div>
               )}
-              {(product.reviews || 0) > 0 && (
-                <>
-                  <span style={{ color: '#d5d9d9' }}>|</span>
-                  <span style={{ color: '#007185', fontSize: '13px', cursor: 'pointer' }}>
-                    {product.reviews} ratings
-                  </span>
-                </>
-              )}
-              {product.sold > 0 && (
-                <>
-                  <span style={{ color: '#d5d9d9' }}>|</span>
-                  <span style={{ color: '#565959', fontSize: '13px' }}>
-                    {product.sold}+ bought
-                  </span>
-                </>
-              )}
-            </div>
-            
-            {/* Badges */}
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
-              {stockStatus.status === 'in-stock' && (
-                <span style={{
-                  background: '#F0F2F2',
-                  color: '#0F1111',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  fontWeight: '600'
-                }}>
-                  ✓ In Stock
-                </span>
-              )}
-              {product.discount > 0 && (
-                <span style={{
-                  background: '#CC0C39',
-                  color: '#fff',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  fontWeight: '600'
-                }}>
-                  Limited time deal
-                </span>
-              )}
-            </div>
-            
-            <hr style={{ border: 'none', borderTop: '1px solid #e7e7e7', margin: '10px 0' }} />
 
-            {/* Pricing Amazon Style */}
-            <div style={{ marginBottom: '10px' }}>
-              {isCalculatingPrice ? (
-                <span style={{ fontSize: '14px', color: '#565959' }}>Calculating...</span>
-              ) : (
-                <div>
-                  {product.originalPrice && product.originalPrice > (selectedPackage?.price || product.price) && (
-                    <div style={{ marginBottom: '3px' }}>
-                      <span style={{ fontSize: '12px', color: '#565959' }}>List Price: </span>
-                      <span style={{
-                        fontSize: '12px',
-                        color: '#565959',
-                        textDecoration: 'line-through'
-                      }}>₹{product.originalPrice}</span>
+              <h1 style={{
+                fontSize: '20px',
+                fontWeight: '500',
+                lineHeight: '1.3',
+                color: '#0F1111',
+                marginBottom: '8px'
+              }}>
+                {product.name}
+              </h1>
+
+              {/* Rating & Reviews */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                {product.rating && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      {renderStars(product.rating)}
                     </div>
-                  )}
-                  
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '3px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '13px', color: '#0F1111' }}>Price:</span>
-                    <span style={{
-                      fontSize: '18px',
-                      color: '#B12704',
-                      fontWeight: '600'
-                    }}>₹{dynamicPrice?.pricePerUnit || selectedPackage?.price || product.price}</span>
-                    {selectedPackage && (
-                      <span style={{ fontSize: '12px', color: '#565959' }}>
-                        ({selectedPackage.size} {selectedPackage.unit})
-                      </span>
+                    <span style={{ color: '#007185', fontSize: '13px', cursor: 'pointer' }}>
+                      {product.rating} out of 5
+                    </span>
+                  </div>
+                )}
+                {(product.reviews || 0) > 0 && (
+                  <>
+                    <span style={{ color: '#d5d9d9' }}>|</span>
+                    <span style={{ color: '#007185', fontSize: '13px', cursor: 'pointer' }}>
+                      {product.reviews} ratings
+                    </span>
+                  </>
+                )}
+                {product.sold > 0 && (
+                  <>
+                    <span style={{ color: '#d5d9d9' }}>|</span>
+                    <span style={{ color: '#565959', fontSize: '13px' }}>
+                      {product.sold}+ bought
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Badges */}
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                {stockStatus.status === 'in-stock' && (
+                  <span style={{
+                    background: '#F0F2F2',
+                    color: '#0F1111',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}>
+                    ✓ In Stock
+                  </span>
+                )}
+                {product.discount > 0 && (
+                  <span style={{
+                    background: '#CC0C39',
+                    color: '#fff',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}>
+                    Limited time deal
+                  </span>
+                )}
+              </div>
+
+              <hr style={{ border: 'none', borderTop: '1px solid #e7e7e7', margin: '10px 0' }} />
+
+              {/* Pricing Amazon Style */}
+              <div style={{ marginBottom: '10px' }}>
+                {isCalculatingPrice ? (
+                  <span style={{ fontSize: '14px', color: '#565959' }}>Calculating...</span>
+                ) : (
+                  <div>
+                    {product.originalPrice && product.originalPrice > (selectedPackage?.price || product.price) && (
+                      <div style={{ marginBottom: '3px' }}>
+                        <span style={{ fontSize: '12px', color: '#565959' }}>List Price: </span>
+                        <span style={{
+                          fontSize: '12px',
+                          color: '#565959',
+                          textDecoration: 'line-through'
+                        }}>₹{product.originalPrice}</span>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '3px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '13px', color: '#0F1111' }}>Price:</span>
+                      <span style={{
+                        fontSize: '18px',
+                        color: '#B12704',
+                        fontWeight: '600'
+                      }}>₹{dynamicPrice?.pricePerUnit || selectedPackage?.price || product.price}</span>
+                      {selectedPackage && (
+                        <span style={{ fontSize: '12px', color: '#565959' }}>
+                          ({selectedPackage.size} {selectedPackage.unit})
+                        </span>
+                      )}
+                    </div>
+
+                    {product.originalPrice && product.originalPrice > (selectedPackage?.price || product.price) && (
+                      <div style={{ marginBottom: '6px' }}>
+                        <span style={{ color: '#CC0C39', fontSize: '12px', fontWeight: '400' }}>
+                          Save ₹{(product.originalPrice - (selectedPackage?.price || product.price)).toFixed(2)} ({product.discount}%)
+                        </span>
+                      </div>
+                    )}
+
+                    {quantity > 1 && dynamicPrice && (
+                      <div style={{ fontSize: '13px', color: '#565959', marginBottom: '3px' }}>
+                        Total: ₹{dynamicPrice.totalPrice} for {quantity} {quantity > 1 ? 'units' : 'unit'}
+                      </div>
                     )}
                   </div>
-                  
-                  {product.originalPrice && product.originalPrice > (selectedPackage?.price || product.price) && (
-                    <div style={{ marginBottom: '6px' }}>
-                      <span style={{ color: '#CC0C39', fontSize: '12px', fontWeight: '400' }}>
-                        Save ₹{(product.originalPrice - (selectedPackage?.price || product.price)).toFixed(2)} ({product.discount}%)
-                      </span>
+                )}
+              </div>
+
+              {/* Delivery Info - Amazon Prime Style */}
+              {stockStatus.status === 'in-stock' && (
+                <div style={{
+                  background: '#F7F7F7',
+                  border: '1px solid #D5D9D9',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '24px' }}>🚚</span>
+                    <div>
+                      <div style={{ fontWeight: '700', color: '#0F1111', fontSize: '14px' }}>
+                        FREE Delivery {deliveryDate.toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric' })}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#565959' }}>
+                        Order within 4 hrs for delivery by tomorrow
+                      </div>
                     </div>
-                  )}
-                  
-                  {quantity > 1 && dynamicPrice && (
-                    <div style={{ fontSize: '13px', color: '#565959', marginBottom: '3px' }}>
-                      Total: ₹{dynamicPrice.totalPrice} for {quantity} {quantity > 1 ? 'units' : 'unit'}
-                    </div>
-                  )}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#007185', cursor: 'pointer' }}>
+                    Select delivery location
+                  </div>
                 </div>
               )}
-            </div>
-            
-            {/* Delivery Info - Amazon Prime Style */}
-            {stockStatus.status === 'in-stock' && (
+
+              {/* Features */}
+              {product.features && product.features.length > 0 && (
+                <div className="features-section">
+                  <h3>Key Features</h3>
+                  <div className="features-list">
+                    {product.features.map((feature, index) => (
+                      <div key={index} className="feature-item">
+                        <span className="feature-bullet">✓</span>
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Package Selection - Amazon Style */}
+              {product.packageSizes && product.packageSizes.length > 0 ? (
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#0F1111', marginBottom: '8px' }}>
+                    Size: <span style={{ fontWeight: '400' }}>{selectedPackage?.size} {selectedPackage?.unit}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {product.packageSizes.map((pkg, index) => (
+                      <div
+                        key={index}
+                        onClick={() => pkg.stock > 0 && setSelectedPackage(pkg)}
+                        style={{
+                          border: selectedPackage === pkg ? '2px solid #007185' : '1px solid #D5D9D9',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          cursor: pkg.stock > 0 ? 'pointer' : 'not-allowed',
+                          opacity: pkg.stock > 0 ? 1 : 0.5,
+                          background: selectedPackage === pkg ? '#F0F8FF' : '#fff',
+                          transition: 'all 0.2s',
+                          minWidth: '120px'
+                        }}
+                      >
+                        <div style={{ fontWeight: '600', fontSize: '14px', color: '#0F1111', marginBottom: '4px' }}>
+                          {pkg.size} {pkg.unit}
+                        </div>
+                        <div style={{ fontSize: '16px', color: '#B12704', fontWeight: '700' }}>
+                          ₹{pkg.price}
+                        </div>
+                        <div style={{ fontSize: '11px', color: pkg.stock > 0 ? '#007600' : '#B12704', marginTop: '4px' }}>
+                          {pkg.stock > 0 ? `${pkg.stock} in stock` : 'Out of stock'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Quantity Selector - Amazon Style */}
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ fontSize: '14px', fontWeight: '700', color: '#0F1111', marginBottom: '8px' }}>
+                  Quantity:
+                </div>
+                <div style={{
+                  display: 'inline-flex',
+                  border: '1px solid #D5D9D9',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  background: '#F0F2F2'
+                }}>
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      border: 'none',
+                      background: '#F0F2F2',
+                      cursor: quantity > 1 ? 'pointer' : 'not-allowed',
+                      fontSize: '18px',
+                      color: '#0F1111',
+                      fontWeight: '400'
+                    }}
+                  >
+                    -
+                  </button>
+                  <div style={{
+                    width: '50px',
+                    height: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#fff',
+                    borderLeft: '1px solid #D5D9D9',
+                    borderRight: '1px solid #D5D9D9',
+                    fontSize: '16px',
+                    fontWeight: '400',
+                    color: '#0F1111'
+                  }}>
+                    {quantity}
+                  </div>
+                  <button
+                    onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
+                    disabled={quantity >= currentStock}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      border: 'none',
+                      background: '#F0F2F2',
+                      cursor: quantity < currentStock ? 'pointer' : 'not-allowed',
+                      fontSize: '18px',
+                      color: '#0F1111',
+                      fontWeight: '400'
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Security & Trust Badges */}
               <div style={{
-                background: '#F7F7F7',
                 border: '1px solid #D5D9D9',
                 borderRadius: '8px',
                 padding: '12px',
+                background: '#F7FAFA',
                 marginBottom: '12px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '24px' }}>🚚</span>
-                  <div>
-                    <div style={{ fontWeight: '700', color: '#0F1111', fontSize: '14px' }}>
-                      FREE Delivery {deliveryDate.toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric' })}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#565959' }}>
-                      Order within 4 hrs for delivery by tomorrow
-                    </div>
+                <div style={{ fontSize: '12px', color: '#565959', lineHeight: '16px' }}>
+                  <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>✓</span>
+                    <span>Secure transaction</span>
+                  </div>
+                  <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>✓</span>
+                    <span>7-day return policy</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>✓</span>
+                    <span>Authentic products guaranteed</span>
                   </div>
                 </div>
-                <div style={{ fontSize: '12px', color: '#007185', cursor: 'pointer' }}>
-                  Select delivery location
-                </div>
               </div>
-            )}
 
-            {/* Features */}
-            {product.features && product.features.length > 0 && (
-              <div className="features-section">
-                <h3>Key Features</h3>
-                <div className="features-list">
-                  {product.features.map((feature, index) => (
-                    <div key={index} className="feature-item">
-                      <span className="feature-bullet">✓</span>
-                      <span>{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              <hr style={{ border: 'none', borderTop: '1px solid #e7e7e7', margin: '12px 0' }} />
 
-            {/* Package Selection - Amazon Style */}
-            {product.packageSizes && product.packageSizes.length > 0 ? (
-              <div style={{ marginBottom: '12px' }}>
-                <div style={{ fontSize: '14px', fontWeight: '700', color: '#0F1111', marginBottom: '8px' }}>
-                  Size: <span style={{ fontWeight: '400' }}>{selectedPackage?.size} {selectedPackage?.unit}</span>
+              {/* Product Description */}
+              <div className="description-section">
+                <h3>Product Description</h3>
+                <div className={`description-content ${showFullDescription ? 'expanded' : ''}`}>
+                  <p>
+                    {product.description || `Experience the premium quality of ${product.name} from ${product.brand || 'our trusted brand'}. This product offers exceptional value with its superior features and reliable performance. Perfect for daily use with long-lasting durability.`}
+                  </p>
+                  {!showFullDescription && (
+                    <div className="description-fade"></div>
+                  )}
                 </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {product.packageSizes.map((pkg, index) => (
-                    <div 
-                      key={index}
-                      onClick={() => pkg.stock > 0 && setSelectedPackage(pkg)}
-                      style={{
-                        border: selectedPackage === pkg ? '2px solid #007185' : '1px solid #D5D9D9',
-                        borderRadius: '8px',
-                        padding: '12px 16px',
-                        cursor: pkg.stock > 0 ? 'pointer' : 'not-allowed',
-                        opacity: pkg.stock > 0 ? 1 : 0.5,
-                        background: selectedPackage === pkg ? '#F0F8FF' : '#fff',
-                        transition: 'all 0.2s',
-                        minWidth: '120px'
-                      }}
-                    >
-                      <div style={{ fontWeight: '600', fontSize: '14px', color: '#0F1111', marginBottom: '4px' }}>
-                        {pkg.size} {pkg.unit}
-                      </div>
-                      <div style={{ fontSize: '16px', color: '#B12704', fontWeight: '700' }}>
-                        ₹{pkg.price}
-                      </div>
-                      <div style={{ fontSize: '11px', color: pkg.stock > 0 ? '#007600' : '#B12704', marginTop: '4px' }}>
-                        {pkg.stock > 0 ? `${pkg.stock} in stock` : 'Out of stock'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {/* Quantity Selector - Amazon Style */}
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ fontSize: '14px', fontWeight: '700', color: '#0F1111', marginBottom: '8px' }}>
-                Quantity:
-              </div>
-              <div style={{
-                display: 'inline-flex',
-                border: '1px solid #D5D9D9',
-                borderRadius: '8px',
-                overflow: 'hidden',
-                background: '#F0F2F2'
-              }}>
-                <button 
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={quantity <= 1}
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    border: 'none',
-                    background: '#F0F2F2',
-                    cursor: quantity > 1 ? 'pointer' : 'not-allowed',
-                    fontSize: '18px',
-                    color: '#0F1111',
-                    fontWeight: '400'
-                  }}
+                <button
+                  className="read-more-btn"
+                  onClick={() => setShowFullDescription(!showFullDescription)}
                 >
-                  -
-                </button>
-                <div style={{
-                  width: '50px',
-                  height: '40px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: '#fff',
-                  borderLeft: '1px solid #D5D9D9',
-                  borderRight: '1px solid #D5D9D9',
-                  fontSize: '16px',
-                  fontWeight: '400',
-                  color: '#0F1111'
-                }}>
-                  {quantity}
-                </div>
-                <button 
-                  onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
-                  disabled={quantity >= currentStock}
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    border: 'none',
-                    background: '#F0F2F2',
-                    cursor: quantity < currentStock ? 'pointer' : 'not-allowed',
-                    fontSize: '18px',
-                    color: '#0F1111',
-                    fontWeight: '400'
-                  }}
-                >
-                  +
+                  {showFullDescription ? 'Read Less' : 'Read More'}
                 </button>
               </div>
-            </div>
 
-            {/* Security & Trust Badges */}
-            <div style={{
-              border: '1px solid #D5D9D9',
-              borderRadius: '8px',
-              padding: '12px',
-              background: '#F7FAFA',
-              marginBottom: '12px'
-            }}>
-              <div style={{ fontSize: '12px', color: '#565959', lineHeight: '16px' }}>
-                <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>✓</span>
-                  <span>Secure transaction</span>
-                </div>
-                <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>✓</span>
-                  <span>7-day return policy</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>✓</span>
-                  <span>Authentic products guaranteed</span>
-                </div>
-              </div>
-            </div>
-            
-            <hr style={{ border: 'none', borderTop: '1px solid #e7e7e7', margin: '12px 0' }} />
-
-            {/* Product Description */}
-            <div className="description-section">
-              <h3>Product Description</h3>
-              <div className={`description-content ${showFullDescription ? 'expanded' : ''}`}>
-                <p>
-                  {product.description || `Experience the premium quality of ${product.name} from ${product.brand || 'our trusted brand'}. This product offers exceptional value with its superior features and reliable performance. Perfect for daily use with long-lasting durability.`}
-                </p>
-                {!showFullDescription && (
-                  <div className="description-fade"></div>
-                )}
-              </div>
-              <button 
-                className="read-more-btn"
-                onClick={() => setShowFullDescription(!showFullDescription)}
-              >
-                {showFullDescription ? 'Read Less' : 'Read More'}
-              </button>
-            </div>
-
-            {/* Specifications */}
-            <div className="specifications-section">
-              <h3 onClick={() => setShowSpecifications(!showSpecifications)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>Product Specifications</span>
-                <span style={{ fontSize: '18px' }}>{showSpecifications ? '−' : '+'}</span>
-              </h3>
-              {showSpecifications && (
-                <>
-                  <div className="spec-table">
-                    <div className="spec-row">
-                      <span className="spec-label">Brand</span>
-                      <span className="spec-value">{product.brand || 'Generic'}</span>
-                    </div>
-                    <div className="spec-row">
-                      <span className="spec-label">Category</span>
-                      <span className="spec-value">{product.category || 'General'}</span>
-                    </div>
-                    <div className="spec-row">
-                      <span className="spec-label">Stock Available</span>
-                      <span className="spec-value">{product.stock} units</span>
-                    </div>
-                    <div className="spec-row">
-                      <span className="spec-label">Weight</span>
-                      <span className="spec-value">{product.weight || 'As per product'}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Agricultural Product Details */}
-                  {(product.chemicalComposition || product.packaging || product.application) && (
-                <>
-                  <h3 style={{ marginTop: '2rem' }}>Agricultural Product Details</h3>
-                  
-                  {/* Chemical Composition */}
-                  {product.chemicalComposition && (
-                    <div className="agri-section">
-                      <h4>Chemical Composition</h4>
-                      <div className="spec-table">
-                        {product.chemicalComposition.nitrogen && (
-                          <div className="spec-row">
-                            <span className="spec-label">Nitrogen (N)</span>
-                            <span className="spec-value">{product.chemicalComposition.nitrogen}%</span>
-                          </div>
-                        )}
-                        {product.chemicalComposition.phosphorus && (
-                          <div className="spec-row">
-                            <span className="spec-label">Phosphorus (P)</span>
-                            <span className="spec-value">{product.chemicalComposition.phosphorus}%</span>
-                          </div>
-                        )}
-                        {product.chemicalComposition.potassium && (
-                          <div className="spec-row">
-                            <span className="spec-label">Potassium (K)</span>
-                            <span className="spec-value">{product.chemicalComposition.potassium}%</span>
-                          </div>
-                        )}
-                        {product.chemicalComposition.activeIngredients?.map((ingredient, index) => (
-                          <div key={index} className="spec-row">
-                            <span className="spec-label">{ingredient.name}</span>
-                            <span className="spec-value">{ingredient.percentage}%</span>
-                          </div>
-                        ))}
+              {/* Specifications */}
+              <div className="specifications-section">
+                <h3 onClick={() => setShowSpecifications(!showSpecifications)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Product Specifications</span>
+                  <span style={{ fontSize: '18px' }}>{showSpecifications ? '−' : '+'}</span>
+                </h3>
+                {showSpecifications && (
+                  <>
+                    <div className="spec-table">
+                      <div className="spec-row">
+                        <span className="spec-label">Brand</span>
+                        <span className="spec-value">{product.brand || 'Generic'}</span>
+                      </div>
+                      <div className="spec-row">
+                        <span className="spec-label">Category</span>
+                        <span className="spec-value">{product.category || 'General'}</span>
+                      </div>
+                      <div className="spec-row">
+                        <span className="spec-label">Stock Available</span>
+                        <span className="spec-value">{product.stock} units</span>
+                      </div>
+                      <div className="spec-row">
+                        <span className="spec-label">Weight</span>
+                        <span className="spec-value">{product.weight || 'As per product'}</span>
                       </div>
                     </div>
-                  )}
-                  
-                  {/* Packaging Information */}
-                  {product.packaging && (
-                    <div className="agri-section">
-                      <h4>Packaging Options</h4>
-                      <div className="packaging-options">
-                        {product.packaging.sizes?.map((size, index) => (
-                          <div key={index} className="packaging-item">
-                            <span className="packaging-size">{size.quantity} {size.unit}</span>
-                            <span className="packaging-price">₹{size.price}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="spec-table">
-                        <div className="spec-row">
-                          <span className="spec-label">Form</span>
-                          <span className="spec-value">{product.packaging.form}</span>
-                        </div>
-                        <div className="spec-row">
-                          <span className="spec-label">Storage</span>
-                          <span className="spec-value">{product.packaging.storage}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Application Information */}
-                  {product.application && (
-                    <div className="agri-section">
-                      <h4>Application Guidelines</h4>
-                      <div className="spec-table">
-                        {product.application.crops?.length > 0 && (
-                          <div className="spec-row">
-                            <span className="spec-label">Suitable Crops</span>
-                            <span className="spec-value">{product.application.crops.join(', ')}</span>
-                          </div>
-                        )}
-                        {product.application.dosage && (
-                          <div className="spec-row">
-                            <span className="spec-label">Dosage</span>
-                            <span className="spec-value">{product.application.dosage.amount} {product.application.dosage.unit} per {product.application.dosage.area}</span>
-                          </div>
-                        )}
-                        {product.application.instructions && (
-                          <div className="spec-row full-width">
-                            <span className="spec-label">Instructions</span>
-                            <div className="spec-value">
-                              <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
-                                {product.application.instructions.map((instruction, index) => (
-                                  <li key={index}>{instruction}</li>
-                                ))}
-                              </ul>
+
+                    {/* Agricultural Product Details */}
+                    {(product.chemicalComposition || product.packaging || product.application) && (
+                      <>
+                        <h3 style={{ marginTop: '2rem' }}>Agricultural Product Details</h3>
+
+                        {/* Chemical Composition */}
+                        {product.chemicalComposition && (
+                          <div className="agri-section">
+                            <h4>Chemical Composition</h4>
+                            <div className="spec-table">
+                              {product.chemicalComposition.nitrogen && (
+                                <div className="spec-row">
+                                  <span className="spec-label">Nitrogen (N)</span>
+                                  <span className="spec-value">{product.chemicalComposition.nitrogen}%</span>
+                                </div>
+                              )}
+                              {product.chemicalComposition.phosphorus && (
+                                <div className="spec-row">
+                                  <span className="spec-label">Phosphorus (P)</span>
+                                  <span className="spec-value">{product.chemicalComposition.phosphorus}%</span>
+                                </div>
+                              )}
+                              {product.chemicalComposition.potassium && (
+                                <div className="spec-row">
+                                  <span className="spec-label">Potassium (K)</span>
+                                  <span className="spec-value">{product.chemicalComposition.potassium}%</span>
+                                </div>
+                              )}
+                              {product.chemicalComposition.activeIngredients?.map((ingredient, index) => (
+                                <div key={index} className="spec-row">
+                                  <span className="spec-label">{ingredient.name}</span>
+                                  <span className="spec-value">{ingredient.percentage}%</span>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         )}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-                </>
-              )}
-            </div>
 
-            {/* Reviews Section - Read Only */}
-            <div ref={reviewSectionRef} style={{ marginTop: '20px' }}>
-              <div onClick={() => setShowReviews(!showReviews)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Customer Reviews</h3>
-                <span style={{ fontSize: '18px' }}>{showReviews ? '−' : '+'}</span>
+                        {/* Packaging Information */}
+                        {product.packaging && (
+                          <div className="agri-section">
+                            <h4>Packaging Options</h4>
+                            <div className="packaging-options">
+                              {product.packaging.sizes?.map((size, index) => (
+                                <div key={index} className="packaging-item">
+                                  <span className="packaging-size">{size.quantity} {size.unit}</span>
+                                  <span className="packaging-price">₹{size.price}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="spec-table">
+                              <div className="spec-row">
+                                <span className="spec-label">Form</span>
+                                <span className="spec-value">{product.packaging.form}</span>
+                              </div>
+                              <div className="spec-row">
+                                <span className="spec-label">Storage</span>
+                                <span className="spec-value">{product.packaging.storage}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Application Information */}
+                        {product.application && (
+                          <div className="agri-section">
+                            <h4>Application Guidelines</h4>
+                            <div className="spec-table">
+                              {product.application.crops?.length > 0 && (
+                                <div className="spec-row">
+                                  <span className="spec-label">Suitable Crops</span>
+                                  <span className="spec-value">{product.application.crops.join(', ')}</span>
+                                </div>
+                              )}
+                              {product.application.dosage && (
+                                <div className="spec-row">
+                                  <span className="spec-label">Dosage</span>
+                                  <span className="spec-value">{product.application.dosage.amount} {product.application.dosage.unit} per {product.application.dosage.area}</span>
+                                </div>
+                              )}
+                              {product.application.instructions && (
+                                <div className="spec-row full-width">
+                                  <span className="spec-label">Instructions</span>
+                                  <div className="spec-value">
+                                    <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                                      {product.application.instructions.map((instruction, index) => (
+                                        <li key={index}>{instruction}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
               </div>
-              {showReviews && (
-                <>
-                  <ReviewSection 
-                    productId={productId} 
-                    key={refreshReviews}
-                  />
-                  
-                  {!token && (
-                    <div style={{ 
-                      textAlign: 'center', 
-                      padding: '16px', 
-                      background: '#f7f7f7', 
-                      borderRadius: '6px',
-                      marginTop: '12px',
-                      border: '1px solid #e0e0e0'
-                    }}>
-                      <p style={{ color: '#565959', marginBottom: '8px', fontSize: '13px', fontWeight: '500' }}>
-                        💡 Want to review this product?
-                      </p>
-                      <p style={{ color: '#565959', marginBottom: '12px', fontSize: '12px' }}>
-                        Purchase this product and write your review from your Orders page
-                      </p>
-                      <button 
-                        onClick={() => navigate('/login')}
-                        style={{
-                          background: '#FFA41C',
-                          color: '#0F1111',
-                          padding: '8px 20px',
-                          border: '1px solid #FF8F00',
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Login to Purchase
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+
+              {/* Reviews Section - Read Only */}
+              <div ref={reviewSectionRef} style={{ marginTop: '20px' }}>
+                <div onClick={() => setShowReviews(!showReviews)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Customer Reviews</h3>
+                  <span style={{ fontSize: '18px' }}>{showReviews ? '−' : '+'}</span>
+                </div>
+                {showReviews && (
+                  <>
+                    <ReviewSection
+                      productId={productId}
+                      key={refreshReviews}
+                    />
+
+                    {!token && (
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '16px',
+                        background: '#f7f7f7',
+                        borderRadius: '6px',
+                        marginTop: '12px',
+                        border: '1px solid #e0e0e0'
+                      }}>
+                        <p style={{ color: '#565959', marginBottom: '8px', fontSize: '13px', fontWeight: '500' }}>
+                          💡 Want to review this product?
+                        </p>
+                        <p style={{ color: '#565959', marginBottom: '12px', fontSize: '12px' }}>
+                          Purchase this product and write your review from your Orders page
+                        </p>
+                        <button
+                          onClick={() => navigate('/login')}
+                          style={{
+                            background: '#FFA41C',
+                            color: '#0F1111',
+                            padding: '8px 20px',
+                            border: '1px solid #FF8F00',
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Login to Purchase
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Sticky Action Buttons at Bottom */}
@@ -1087,7 +1087,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
               gap: '10px',
               boxShadow: '0 -2px 10px rgba(0,0,0,0.05)'
             }}>
-              <button 
+              <button
                 onClick={handleAddToCart}
                 disabled={stockStatus.status === 'out-of-stock'}
                 style={{
@@ -1107,8 +1107,8 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
               >
                 Add to Cart
               </button>
-              
-              <button 
+
+              <button
                 onClick={handleBuyNow}
                 disabled={stockStatus.status === 'out-of-stock' || isBuyingNow}
                 style={{
@@ -1131,23 +1131,23 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
             </div>
           </div>
         </div>
-        
+
         {/* Related Products Section - Amazon Style Horizontal Carousel */}
         {relatedProducts.length > 0 && (
-          <div style={{ 
+          <div style={{
             background: '#fff',
             padding: '24px 32px 32px',
             borderTop: '1px solid #E7E7E7'
           }}>
-            <h2 style={{ 
-              fontSize: '21px', 
-              fontWeight: '700', 
+            <h2 style={{
+              fontSize: '21px',
+              fontWeight: '700',
               marginBottom: '16px',
               color: '#0F1111'
             }}>
               Related products
             </h2>
-            
+
             {/* Horizontal Scrollable Container */}
             <div style={{
               display: 'flex',
@@ -1163,9 +1163,9 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                 const relatedPrice = relatedProduct.packageSizes?.[0]?.price || relatedProduct.price;
                 const relatedOriginalPrice = relatedProduct.originalPrice;
                 const relatedDiscount = relatedOriginalPrice ? Math.round(((relatedOriginalPrice - relatedPrice) / relatedOriginalPrice) * 100) : 0;
-                
+
                 return (
-                  <div 
+                  <div
                     key={relatedProduct._id}
                     onClick={() => {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1202,8 +1202,8 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                     }}
                   >
                     {/* Product Image */}
-                    <div style={{ 
-                      position: 'relative', 
+                    <div style={{
+                      position: 'relative',
                       width: '100%',
                       height: '200px',
                       background: '#fff',
@@ -1213,7 +1213,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                       overflow: 'hidden',
                       padding: '16px'
                     }}>
-                      <img 
+                      <img
                         src={relatedProduct.image?.startsWith('http') ? relatedProduct.image : getImageUrl(relatedProduct.image)}
                         alt={relatedProduct.name}
                         style={{
@@ -1238,7 +1238,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Product Info */}
                     <div style={{ padding: '12px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <div style={{
@@ -1256,12 +1256,12 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                       }}>
                         {relatedProduct.name}
                       </div>
-                      
+
                       {/* Rating */}
                       {relatedProduct.rating > 0 && (
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
                           gap: '4px',
                           marginBottom: '6px',
                           fontSize: '12px'
@@ -1271,7 +1271,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                           <span style={{ color: '#565959', fontSize: '11px' }}>({relatedProduct.reviews || 0})</span>
                         </div>
                       )}
-                      
+
                       {/* Price */}
                       <div style={{ marginTop: 'auto' }}>
                         <div style={{
@@ -1293,7 +1293,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
                             </span>
                           </div>
                         )}
-                        
+
                         {/* Stock Badge */}
                         <div style={{ marginTop: '4px' }}>
                           {relatedProduct.stock > 0 ? (

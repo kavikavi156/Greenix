@@ -1,6 +1,9 @@
 const express = require('express');
 const Order = require('../models/Order.js');
 const Product = require('../models/Product.js');
+const StockRequest = require('../models/StockRequest.js');
+const Dealer = require('../models/Dealer.js');
+const DealerOrder = require('../models/DealerOrder.js');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
@@ -42,6 +45,89 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB limit
   }
 });
+
+// Helper function to check and create stock request for low stock products
+async function checkAndCreateStockRequest(product) {
+  try {
+    // Check if stock is at or below threshold
+    if (product.stock <= product.lowStockThreshold) {
+      // Check if there's already a pending or approved (but not completed) request for this product
+      // We look for requests starting from recently created ones to avoid duplicate orders
+      const existingRequest = await StockRequest.findOne({
+        product: product._id,
+        status: { $in: ['PENDING_ADMIN_APPROVAL', 'APPROVED'] }
+      }).sort({ createdAt: -1 });
+
+      // If there is an existing active request, do not create another one to prevent spamming
+      if (existingRequest) {
+        return null;
+      }
+
+      const quantityToOrder = product.reorderQuantity || 50;
+
+      // Try to find a dealer for this category (Automatic Ordering Logic)
+      // We look for an active dealer who supplies this product's category
+      let dealer = null;
+      if (product.category) {
+        dealer = await Dealer.findOne({
+          suppliedCategory: product.category,
+          status: 'active'
+        });
+      }
+
+      if (dealer) {
+        // Dealer Found: Automatically create APPROVED request and Place Order
+        console.log(`🤖 Auto-ordering logic triggered for ${product.name}`);
+
+        const stockRequest = new StockRequest({
+          product: product._id,
+          currentStock: product.stock,
+          requestedQuantity: quantityToOrder,
+          status: 'APPROVED',
+          approvedQuantity: quantityToOrder,
+          adminNote: 'Automatically ordered based on category match'
+        });
+        await stockRequest.save();
+
+        // Create Dealer Order
+        const dealerOrder = new DealerOrder({
+          dealer: dealer._id,
+          product: product._id,
+          quantity: quantityToOrder,
+          status: 'APPROVED', // Immediately approved/sent to dealer
+          stockRequestId: stockRequest._id,
+          notes: 'Auto-generated order due to low stock'
+        });
+        await dealerOrder.save();
+
+        // Link new dealer to product if different
+        if (!product.dealer || product.dealer.toString() !== dealer._id.toString()) {
+          await Product.findByIdAndUpdate(product._id, { dealer: dealer._id });
+        }
+
+        console.log(`✅ Auto-ordered ${quantityToOrder} of ${product.name} from dealer ${dealer.name}`);
+        return stockRequest;
+
+      } else {
+        // No Dealer Found: Fallback to Manual Stock Request
+        const stockRequest = new StockRequest({
+          product: product._id,
+          currentStock: product.stock,
+          requestedQuantity: quantityToOrder
+          // status defaults to PENDING_ADMIN_APPROVAL
+        });
+
+        await stockRequest.save();
+        console.log(`🚨 Low stock alert: Stock request created for product "${product.name}" (Stock: ${product.stock})`);
+        return stockRequest;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Error creating stock request:', error);
+    return null;
+  }
+}
 
 // Category Schema for storing custom categories
 const categorySchema = new mongoose.Schema({
@@ -653,6 +739,9 @@ router.put('/products/:productId/stock', async (req, res) => {
       });
     }
 
+    // Check if stock is now low and create stock request if needed
+    await checkAndCreateStockRequest(updatedProduct);
+
     res.json({
       message: 'Stock updated successfully',
       product: updatedProduct
@@ -684,23 +773,11 @@ router.post('/products', upload.single('image'), async (req, res) => {
     console.log('Received file:', req.file);
 
     // Map category to correct enum value
+    // Validate Category against enum
     const validCategories = ['Seeds', 'Herbicides', 'Insecticides', 'Fertilizers', 'Fungicides', 'Tools', 'Equipment', 'Organic Products'];
-    let category = req.body.category;
-
-    // Try to find a matching category (case-insensitive)
-    const matchedCategory = validCategories.find(cat =>
-      cat.toLowerCase() === category.toLowerCase()
-    );
-
-    if (!matchedCategory) {
-      // If no exact match, try partial matches
-      const partialMatch = validCategories.find(cat =>
-        cat.toLowerCase().includes(category.toLowerCase()) ||
-        category.toLowerCase().includes(cat.toLowerCase())
-      );
-      category = partialMatch || 'Tools'; // Default to Tools if no match
-    } else {
-      category = matchedCategory;
+    if (req.body.category && !validCategories.includes(req.body.category)) {
+      // If provided category is not in list, default to 'Tools' or handle as error
+      req.body.category = 'Tools';
     }
 
     const productData = {
@@ -709,7 +786,7 @@ router.post('/products', upload.single('image'), async (req, res) => {
       price: Number(req.body.price),
       basePrice: Number(req.body.basePrice || req.body.price), // Use basePrice if provided, otherwise use price
       originalPrice: Number(req.body.price), // Default to same as price
-      category: category,
+      category: req.body.category,
       stock: Number(req.body.stock),
       available: true,
       unit: req.body.unit || 'pieces',
@@ -749,23 +826,11 @@ router.put('/products/:id', upload.single('image'), async (req, res) => {
     console.log('New file:', req.file);
 
     // Map category to correct enum value
+    // Validate Category against enum
     const validCategories = ['Seeds', 'Herbicides', 'Insecticides', 'Fertilizers', 'Fungicides', 'Tools', 'Equipment', 'Organic Products'];
-    let category = req.body.category;
-
-    // Try to find a matching category (case-insensitive)
-    const matchedCategory = validCategories.find(cat =>
-      cat.toLowerCase() === category.toLowerCase()
-    );
-
-    if (!matchedCategory) {
-      // If no exact match, try partial matches
-      const partialMatch = validCategories.find(cat =>
-        cat.toLowerCase().includes(category.toLowerCase()) ||
-        category.toLowerCase().includes(cat.toLowerCase())
-      );
-      category = partialMatch || 'Tools'; // Default to Tools if no match
-    } else {
-      category = matchedCategory;
+    if (req.body.category && !validCategories.includes(req.body.category)) {
+      // If provided category is not in list, default to 'Tools' or handle as error
+      req.body.category = 'Tools';
     }
 
     const updateData = {
@@ -774,7 +839,7 @@ router.put('/products/:id', upload.single('image'), async (req, res) => {
       price: Number(req.body.price),
       basePrice: Number(req.body.basePrice || req.body.price), // Use basePrice if provided
       originalPrice: Number(req.body.price), // Update to same as price
-      category: category,
+      category: req.body.category,
       stock: Number(req.body.stock),
       unit: req.body.unit || 'pieces',
       brand: req.body.brand || 'Generic',
@@ -796,8 +861,11 @@ router.put('/products/:id', upload.single('image'), async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
+    // Check if stock is now low and create stock request if needed
+    await checkAndCreateStockRequest(product);
+
     console.log('Product updated successfully:', product._id);
-    res.json(product);
+    res.json({ product });
   } catch (error) {
     console.error('Error updating product:', error);
     res.status(500).json({ error: 'Failed to update product', details: error.message });
@@ -805,12 +873,20 @@ router.put('/products/:id', upload.single('image'), async (req, res) => {
 });
 
 // Delete a product (admin only)
+// Delete a product (admin only)
 router.delete('/products/:id', async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
+
+    // Delete related StockRequests and DealerOrders to clean up dashboard alerts
+    await Promise.all([
+      StockRequest.deleteMany({ product: req.params.id }),
+      DealerOrder.deleteMany({ product: req.params.id })
+    ]);
+
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (error) {
     console.error('Error deleting product:', error);

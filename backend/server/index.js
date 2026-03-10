@@ -11,10 +11,10 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pavith
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // CORS allowed origins - includes Netlify domain
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS ? 
-  process.env.ALLOWED_ORIGINS.split(',') : 
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS ?
+  process.env.ALLOWED_ORIGINS.split(',') :
   [
-    'http://localhost:5173', 
+    'http://localhost:5173',
     'http://localhost:3000',
     'https://greenixx.netlify.app',
     'https://greenix-3.onrender.com'
@@ -27,7 +27,7 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, etc.)
     if (!origin) return callback(null, true);
-    
+
     if (ALLOWED_ORIGINS.indexOf(origin) !== -1 || !origin) {
       callback(null, true);
     } else {
@@ -83,9 +83,9 @@ app.get('/api/health', async (req, res) => {
   try {
     const Product = require('./models/Product');
     const productCount = await Product.countDocuments();
-    
-    res.json({ 
-      status: 'OK', 
+
+    res.json({
+      status: 'OK',
       timestamp: new Date().toISOString(),
       mongodb: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
       environment: NODE_ENV,
@@ -93,8 +93,8 @@ app.get('/api/health', async (req, res) => {
       dbName: mongoose.connection.db?.databaseName || 'unknown'
     });
   } catch (error) {
-    res.status(500).json({ 
-      status: 'ERROR', 
+    res.status(500).json({
+      status: 'ERROR',
       error: error.message,
       mongodb: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'
     });
@@ -110,7 +110,7 @@ app.get('/api/debug/products', async (req, res) => {
   try {
     const Product = require('./models/Product');
     const products = await Product.find().limit(5);
-    
+
     // If no products exist, create sample products
     if (products.length === 0) {
       const sampleProducts = [
@@ -133,12 +133,12 @@ app.get('/api/debug/products', async (req, res) => {
           tags: ['fresh', 'sweet', 'healthy']
         }
       ];
-      
+
       await Product.insertMany(sampleProducts);
       const newProducts = await Product.find().limit(5);
-      
-      res.json({ 
-        status: 'OK', 
+
+      res.json({
+        status: 'OK',
         message: 'Created sample products',
         count: newProducts.length,
         products: newProducts.map(p => ({
@@ -149,8 +149,8 @@ app.get('/api/debug/products', async (req, res) => {
         }))
       });
     } else {
-      res.json({ 
-        status: 'OK', 
+      res.json({
+        status: 'OK',
         count: products.length,
         products: products.map(p => ({
           id: p._id,
@@ -174,13 +174,21 @@ try {
   app.use('/api/upload', require('./routes/upload'));
   app.use('/api/razorpay', require('./routes/razorpay')); // Add Razorpay routes
   app.use('/api/reviews', require('./routes/reviews')); // Add Reviews routes
+  app.use('/api/razorpay', require('./routes/razorpay')); // Add Razorpay routes
+  app.use('/api/reviews', require('./routes/reviews')); // Add Reviews routes
   app.use('/razorpay', require('./routes/razorpay')); // Also mount at /razorpay for frontend compatibility
-  
+
+  // NEW: Dealer & Admin Stock Routes
+  app.use('/api/admin-auth', require('./routes/adminAuth'));
+  app.use('/api/dealer-auth', require('./routes/dealerAuth'));
+  app.use('/api/admin-stock', require('./routes/adminStock'));
+  app.use('/api/dealer-orders', require('./routes/dealerOrders'));
+
   // Categories route (accessible to both admin and customer)
   app.get('/api/categories', async (req, res) => {
     try {
       const mongoose = require('mongoose');
-      
+
       // Check if Category model already exists
       let Category;
       try {
@@ -197,7 +205,7 @@ try {
         });
         Category = mongoose.model('Category', categorySchema);
       }
-      
+
       const categories = await Category.find({ isActive: true }).sort({ name: 1 });
       res.json({ categories });
     } catch (error) {
@@ -205,24 +213,24 @@ try {
       res.status(500).json({ error: 'Failed to fetch categories' });
     }
   });
-  
+
   console.log('Routes loaded successfully');
 } catch (error) {
   console.error('Error loading routes:', error);
 }
 
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Greenix Backend API is running', 
+  res.json({
+    message: 'Greenix Backend API is running',
     version: '1.0.0',
-    environment: NODE_ENV 
+    environment: NODE_ENV
   });
 });
 
 // Health check endpoint for Render
 app.get('/api/test', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   });
@@ -234,7 +242,7 @@ app.get('/api/health', async (req, res) => {
     // Check database connection
     const dbState = mongoose.connection.readyState;
     const dbStatus = dbState === 1 ? 'connected' : dbState === 2 ? 'connecting' : 'disconnected';
-    
+
     // Try to count products
     let productCount = 0;
     try {
@@ -243,7 +251,7 @@ app.get('/api/health', async (req, res) => {
     } catch (err) {
       console.error('Error counting products:', err);
     }
-    
+
     res.json({
       status: 'OK',
       database: dbStatus,

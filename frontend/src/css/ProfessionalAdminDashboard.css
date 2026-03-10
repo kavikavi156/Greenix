@@ -1926,3 +1926,302 @@
 .form-group textarea {
   width: 100%;
 }
+
+/* Low Stock Alerts Section */
+.low-stock-alerts-section {
+  margin: 30px 0;
+  padding: 25px;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+  border: 2px solid #feb2b2;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(254, 178, 178, 0.3);
+}
+
+.alerts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.alerts-header h2 {
+  color: #c53030;
+  font-size: 1.5rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alerts-count {
+  background: #c53030;
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.stock-alerts-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+}
+
+.stock-alert-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #f56565;
+  transition: all 0.3s ease;
+}
+
+.stock-alert-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.alert-product-info {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.alert-product-image {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.alert-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+}
+
+.alert-product-details h3 {
+  margin: 0 0 10px 0;
+  color: #2d3748;
+  font-size: 1.1rem;
+}
+
+.alert-stock-info {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.current-stock {
+  color: #c53030;
+}
+
+.threshold {
+  color: #718096;
+}
+
+.alert-request-quantity {
+  font-size: 0.95rem;
+  color: #4299e1;
+  font-weight: 500;
+}
+
+.alert-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.approve-btn,
+.reject-btn {
+  flex: 1;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.approve-btn {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+}
+
+.approve-btn:hover {
+  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
+}
+
+.reject-btn {
+  background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+  color: white;
+}
+
+.reject-btn:hover {
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(245, 101, 101, 0.3);
+}
+
+/* Approval Modal Styles */
+.approval-product-info {
+  background: #f7fafc;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.approval-product-info h3 {
+  margin: 0 0 10px 0;
+  color: #2d3748;
+}
+
+.approval-product-info p {
+  margin: 5px 0;
+  color: #4a5568;
+}
+
+.approval-product-info strong {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* =========================================
+   ENHANCED PREMIUM UI OVERRIDES (V2)
+   ========================================= */
+
+/* Sidebar - Dark & Premium */
+.admin-sidebar {
+  background: #0f172a !important;
+  /* Slate 900 */
+  border-right: 1px solid #1e293b;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2) !important;
+}
+
+.sidebar-header {
+  border-bottom: 1px solid #1e293b !important;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sidebar-nav button {
+  color: #94a3b8 !important;
+  /* Slate 400 */
+  font-weight: 500 !important;
+  border-right: 3px solid transparent !important;
+  margin-bottom: 4px;
+}
+
+.sidebar-nav button:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #f1f5f9 !important;
+  /* Slate 100 */
+  padding-left: 28px !important;
+}
+
+.sidebar-nav button.active {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, transparent 100%) !important;
+  color: #60a5fa !important;
+  /* Blue 400 */
+  border-right: 3px solid #3b82f6 !important;
+}
+
+/* Stat Cards - Modern */
+.stat-card {
+  background: white !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  border-color: #cbd5e1 !important;
+}
+
+.stat-icon {
+  border-radius: 14px !important;
+  /* color adjustment handled by inline styles or specifc classes */
+}
+
+/* Tables - Clean & Spacious */
+.table-container {
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+.data-table th {
+  background: #f8fafc !important;
+  /* Slate 50 */
+  color: #475569 !important;
+  /* Slate 600 */
+  text-transform: uppercase;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.05em !important;
+  padding: 16px 24px !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+}
+
+.data-table td {
+  padding: 16px 24px !important;
+  color: #334155 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.data-table tr:hover {
+  background: #f8fafc !important;
+}
+
+/* Buttons & Badges */
+.status-badge {
+  padding: 6px 12px !important;
+  border-radius: 999px !important;
+  /* Pill shape */
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+}
+
+.submit-btn,
+.refresh-btn {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.025em;
+  transition: all 0.2s ease !important;
+}
+
+.submit-btn:hover,
+.refresh-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Modal Enhancements */
+.admin-modal-overlay {
+  backdrop-filter: blur(8px) !important;
+  background: rgba(15, 23, 42, 0.7) !important;
+}
+
+.admin-modal-card {
+  border-radius: 20px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.admin-modal-header {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
