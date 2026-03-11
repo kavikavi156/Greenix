@@ -452,22 +452,24 @@ export default function ProductShowcase() {
                     display: 'flex',
                     gap: '8px'
                   }}>
-                    <button style={{
-                      flex: 1,
-                      background: '#2874f0',
-                      color: 'white',
-                      border: 'none',
-                      padding: '10px 16px',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'background 0.2s ease'
-                    }}
-                      onMouseEnter={(e) => e.target.style.background = '#1565c0'}
-                      onMouseLeave={(e) => e.target.style.background = '#2874f0'}
+                    <button
+                      disabled={product.stock <= 0}
+                      style={{
+                        flex: 1,
+                        background: product.stock <= 0 ? '#ececec' : '#2874f0',
+                        color: product.stock <= 0 ? '#999' : 'white',
+                        border: 'none',
+                        padding: '10px 16px',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: product.stock <= 0 ? 'not-allowed' : 'pointer',
+                        transition: 'background 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => product.stock > 0 && (e.target.style.background = '#1565c0')}
+                      onMouseLeave={(e) => product.stock > 0 && (e.target.style.background = '#2874f0')}
                     >
-                      Add to Cart
+                      {product.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
                     </button>
                     <button style={{
                       background: '#ffffff',

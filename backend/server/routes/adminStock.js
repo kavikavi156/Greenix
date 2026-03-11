@@ -31,14 +31,14 @@ router.get('/stock-requests', verifyAdmin, async (req, res) => {
     try {
         // 1. Find all low stock products
         const lowStockProducts = await Product.find({
-            $expr: { $lte: ['$stock', '$lowStockThreshold'] }
+            $expr: { $lt: ['$stock', '$lowStockThreshold'] }
         });
 
         // 2. For each low stock product, ensure a pending request exists
         for (const product of lowStockProducts) {
             const existingRequest = await StockRequest.findOne({
                 product: product._id,
-                status: 'PENDING_ADMIN_APPROVAL'
+                status: { $in: ['PENDING_ADMIN_APPROVAL', 'APPROVED'] }
             });
 
             if (!existingRequest) {
@@ -74,14 +74,14 @@ router.get('/stock-requests/pending', verifyAdmin, async (req, res) => {
     try {
         // 1. Find all low stock products
         const lowStockProducts = await Product.find({
-            $expr: { $lte: ['$stock', '$lowStockThreshold'] }
+            $expr: { $lt: ['$stock', '$lowStockThreshold'] }
         });
 
         // 2. For each low stock product, ensure a pending request exists
         for (const product of lowStockProducts) {
             const existingRequest = await StockRequest.findOne({
                 product: product._id,
-                status: 'PENDING_ADMIN_APPROVAL'
+                status: { $in: ['PENDING_ADMIN_APPROVAL', 'APPROVED'] }
             });
 
             if (!existingRequest) {
@@ -280,6 +280,10 @@ router.post('/confirm-receipt/:requestId', verifyAdmin, async (req, res) => {
         dealerOrder.paymentId = `COD-${Date.now()}`;
         dealerOrder.transactionDate = Date.now();
         await dealerOrder.save();
+
+        // Mark stock request as COMPLETED
+        stockRequest.status = 'COMPLETED';
+        await stockRequest.save();
 
         // Resolve Stock Alert
         const StockAlert = require('../models/StockAlert');

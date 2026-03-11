@@ -353,7 +353,7 @@ export default function ProductDetails({ productId, token, onClose, onAddToCart 
   }
 
   function getStockStatus(stock) {
-    if (stock === 0) return { status: 'out-of-stock', text: 'Out of Stock' };
+    if (stock <= 0) return { status: 'out-of-stock', text: 'Out of Stock' };
     if (stock <= 5) return { status: 'low-stock', text: `Only ${stock} left` };
     return { status: 'in-stock', text: 'In Stock' };
   }

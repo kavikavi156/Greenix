@@ -6,7 +6,7 @@ const stockRequestSchema = new mongoose.Schema({
     requestedQuantity: { type: Number, required: true }, // Default matches reorderQuantity
     status: {
         type: String,
-        enum: ['PENDING_ADMIN_APPROVAL', 'APPROVED', 'REJECTED'],
+        enum: ['PENDING_ADMIN_APPROVAL', 'APPROVED', 'REJECTED', 'COMPLETED'],
         default: 'PENDING_ADMIN_APPROVAL'
     },
     adminNote: { type: String }, // Optional reason for rejection or modification

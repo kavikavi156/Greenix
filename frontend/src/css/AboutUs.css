@@ -1,0 +1,308 @@
+/* AboutUs.css */
+:root {
+    --primary-green: #0f3b21;
+    --accent-green: #72cf61;
+    --text-slate: #475569;
+    --bg-light: #f8fafc;
+    --white: #ffffff;
+}
+
+.about-container {
+    font-family: 'Inter', sans-serif;
+    color: var(--primary-green);
+    overflow-x: hidden;
+}
+
+/* Hero Section */
+.about-hero-section {
+    position: relative;
+    padding: 8rem 2rem;
+    background: linear-gradient(rgba(15, 59, 33, 0.8), rgba(15, 59, 33, 0.9)),
+        url('../assets/pavithra_traders_store_mockup.png') center/cover no-repeat;
+    color: var(--white);
+    text-align: center;
+    border-bottom: 5px solid var(--accent-green);
+}
+
+.about-hero-section h1 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.about-hero-section h1 span {
+    color: var(--accent-green);
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    max-width: 800px;
+    margin: 0 auto;
+    opacity: 0.95;
+    line-height: 1.6;
+    animation: fadeInUp 1s ease-out;
+}
+
+/* Features Grid */
+.mission-vision-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 3rem;
+    max-width: 1200px;
+    margin: -4rem auto 5rem;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 10;
+}
+
+.info-card {
+    background: var(--white);
+    padding: 3.5rem 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(15, 59, 33, 0.05);
+}
+
+.info-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 30px 60px rgba(114, 207, 97, 0.15);
+}
+
+.card-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1.5rem;
+    display: block;
+}
+
+.info-card h3 {
+    font-size: 1.8rem;
+    margin-bottom: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-green);
+}
+
+.info-card p {
+    color: var(--text-slate);
+    line-height: 1.8;
+}
+
+/* Stats */
+.stats-section {
+    padding: 6rem 2rem;
+    background: var(--white);
+}
+
+.stats-grid {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 3rem;
+    max-width: 1100px;
+    margin: 4rem auto 0;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 4rem;
+    font-weight: 800;
+    color: var(--accent-green);
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-slate);
+}
+
+/* Story Section */
+.story-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    max-width: 1200px;
+    margin: 5rem auto;
+    padding: 0 2rem;
+}
+
+.story-content h2 {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    font-weight: 800;
+}
+
+.story-content p {
+    font-size: 1.15rem;
+    line-height: 1.8;
+    color: var(--text-slate);
+    margin-bottom: 1.5rem;
+}
+
+.story-image-container {
+    border-radius: 30px;
+    overflow: hidden;
+    box-shadow: 20px 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+.story-image-container img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.story-image-container:hover img {
+    transform: scale(1.05);
+}
+
+/* Team Section */
+.team-section {
+    padding: 7rem 2rem;
+    background: var(--bg-light);
+}
+
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 4rem;
+    max-width: 1000px;
+    margin: 4rem auto 0;
+    justify-content: center;
+}
+
+.team-card {
+    background: var(--white);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease;
+}
+
+.team-card:hover {
+    transform: scale(1.03);
+}
+
+.team-img {
+    height: 350px;
+    background-size: cover;
+    background-position: center;
+}
+
+.team-info {
+    padding: 2rem;
+    text-align: center;
+}
+
+.team-info h4 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.team-info p {
+    color: var(--accent-green);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+}
+
+/* Location Section */
+.location-section {
+    padding: 7rem 2rem;
+    background: var(--white);
+}
+
+.location-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 4rem;
+    align-items: center;
+}
+
+.address-box {
+    padding: 3rem;
+    background: var(--primary-green);
+    color: var(--white);
+    border-radius: 24px;
+    box-shadow: 20px 20px 60px rgba(15, 59, 33, 0.2);
+}
+
+.address-box h3 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    color: var(--accent-green);
+}
+
+.address-box p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+.contact-info {
+    margin-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 2rem;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.map-placeholder {
+    height: 450px;
+    background: #e2e8f0;
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.map-placeholder iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 1024px) {
+
+    .story-layout,
+    .location-container {
+        grid-template-columns: 1fr;
+    }
+
+    .story-image-container {
+        order: -1;
+    }
+}

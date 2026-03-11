@@ -554,16 +554,26 @@ export default function EnhancedHomePage() {
                   <h3 className="product-name">{product.name}</h3>
                   <div className="product-price">₹{product.price}</div>
                   <div className="product-actions" style={{ marginTop: '10px' }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToCart(product._id);
-                      }}
-                      className="add-to-cart-btn"
-                      style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-                    >
-                      Add to Cart
-                    </button>
+                    {product.stock > 0 ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(product._id);
+                        }}
+                        className="add-to-cart-btn"
+                        style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                      >
+                        Add to Cart
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="add-to-cart-btn"
+                        style={{ padding: '8px 16px', fontSize: '0.9rem', background: '#e0e0e0', cursor: 'not-allowed', color: '#888' }}
+                      >
+                        Out of Stock
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -600,16 +610,26 @@ export default function EnhancedHomePage() {
                   <h3 className="product-name">{product.name}</h3>
                   <div className="product-price">₹{product.price}</div>
                   <div className="product-actions" style={{ marginTop: '10px' }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToCart(product._id);
-                      }}
-                      className="add-to-cart-btn"
-                      style={{ padding: '8px 16px', fontSize: '0.9rem', background: '#d97706' }}
-                    >
-                      Add to Cart
-                    </button>
+                    {product.stock > 0 ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(product._id);
+                        }}
+                        className="add-to-cart-btn"
+                        style={{ padding: '8px 16px', fontSize: '0.9rem', background: '#d97706' }}
+                      >
+                        Add to Cart
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="add-to-cart-btn"
+                        style={{ padding: '8px 16px', fontSize: '0.9rem', background: '#e0e0e0', cursor: 'not-allowed', color: '#888' }}
+                      >
+                        Out of Stock
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

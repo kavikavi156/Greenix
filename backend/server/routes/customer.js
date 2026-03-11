@@ -52,6 +52,11 @@ router.post('/cart/:userId/:productId', async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
+    // Check if product is in stock
+    if (product.stock < parseInt(quantity)) {
+      return res.status(400).json({ error: 'Not enough stock available' });
+    }
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -278,6 +283,17 @@ router.post('/order/:userId', async (req, res) => {
     console.log('Creating order with items:', orderItems);
     console.log('Total amount:', totalAmount);
 
+    // CRITICAL: Check stock for all items before creating the order
+    for (const orderItem of orderItems) {
+      const product = await Product.findById(orderItem.product);
+      if (!product || product.stock < orderItem.quantity) {
+        return res.status(400).json({
+          error: `Insufficient stock for product: ${product ? product.name : 'Unknown'}`,
+          productId: orderItem.product
+        });
+      }
+    }
+
     const order = new Order({
       user: user._id,
       items: orderItems,
@@ -301,8 +317,9 @@ router.post('/order/:userId', async (req, res) => {
 
     // Update product stock counts for each item in the order and check for low stock
     for (const orderItem of orderItems) {
-      const product = await Product.findByIdAndUpdate(
-        orderItem.product,
+      // Use findOneAndUpdate with a condition to double-check stock (optimistic locking)
+      const product = await Product.findOneAndUpdate(
+        { _id: orderItem.product, stock: { $gte: orderItem.quantity } },
         {
           $inc: {
             stock: -orderItem.quantity,
@@ -312,8 +329,14 @@ router.post('/order/:userId', async (req, res) => {
         { new: true } // Return the updated document
       );
 
-      // Automatic Stock Monitoring using centralized service
-      if (product) {
+      if (!product) {
+        // This should theoretically not happen because of the loop check above,
+        // but can happen in high-concurrency scenarios
+        console.error('CONCURRENCY ERROR: Stock depleted between check and update for product:', orderItem.product);
+        // At this point the order is already saved. We might want to mark it as 'payment-failed' or 'on-hold'
+        // or just log it for manual intervention.
+      } else {
+        // Automatic Stock Monitoring using centralized service
         await checkStockAndReorder(product._id);
       }
     }

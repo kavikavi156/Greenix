@@ -1,154 +1,143 @@
 import { Link } from 'react-router-dom';
 import '../css/ProfessionalEcommerce.css';
 import '../css/Overlays.css';
+import '../css/AboutUs.css';
+import storeHero from '../assets/store-hero.png';
+import proprietorImg from '../assets/proprietor.png';
 
 export default function AboutUs() {
     return (
-        <div className="enhanced-home">
-            {/* Shared Header for consistency */}
-            <header className="fresh-flow-header" style={{ position: 'relative', background: 'rgba(15, 59, 33, 0.95)' }}>
-                <div className="header-top" style={{ background: '#0f3b21' }}>
-                    <div className="header-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Link to="/" className="fresh-logo" style={{ textDecoration: 'none' }}>
+        <div className="about-container">
+            {/* Consistent Multi-page Header */}
+            <header className="fresh-flow-header" style={{ position: 'relative', background: 'var(--primary-green)' }}>
+                <div className="header-top" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                    <div className="header-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto', padding: '1rem' }}>
+                        <Link to="/" className="fresh-logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
                             <svg className="leaf-icon" width="40" height="40" viewBox="0 0 40 40" fill="none">
                                 <path d="M20 5C20 5 8 10 8 22C8 28 12 32 18 34C18 34 15 28 18 24C21 20 20 15 20 15C20 15 19 20 22 24C25 28 22 34 22 34C28 32 32 28 32 22C32 10 20 5 20 5Z" fill="#72cf61" />
                             </svg>
-                            <span style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.5rem', marginLeft: '10px' }}>Greenixx</span>
+                            <span style={{ color: '#ffffff', fontWeight: '800', fontSize: '1.8rem', marginLeft: '12px', letterSpacing: '-1px' }}>Greenixx</span>
                         </Link>
 
-                        <div className="header-actions">
-                            <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: '500', marginRight: '20px' }}>Home</Link>
-                            <Link to="/about" style={{ color: '#72cf61', textDecoration: 'none', fontWeight: '500' }}>About Us</Link>
-                        </div>
+                        <nav className="header-actions">
+                            <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: '600', marginRight: '30px' }}>Home</Link>
+                            <Link to="/about" style={{ color: 'var(--accent-green)', textDecoration: 'none', fontWeight: '600' }}>About Us</Link>
+                        </nav>
                     </div>
                 </div>
             </header>
 
-            {/* About Us Hero */}
-            <section className="about-hero" style={{
-                padding: '6rem 2rem',
-                background: 'linear-gradient(rgba(15, 59, 33, 0.85), rgba(15, 59, 33, 0.85)), url("/hero-bg-agri.jpg") center/cover',
-                color: 'white',
-                textAlign: 'center'
-            }}>
-                <h1 style={{ fontSize: '3.5rem', fontWeight: '800', marginBottom: '1rem', marginTop: '2rem' }}>Cultivating <span style={{ color: '#72cf61' }}>Excellence</span></h1>
-                <p style={{ fontSize: '1.2rem', maxWidth: '800px', margin: '0 auto', opacity: 0.9, lineHeight: 1.6 }}>
-                    At Greenixx, we believe in the power of modern agriculture to feed the world sustainably.
-                    Our mission is to empower farmers with cutting-edge tools, premium supplies, and real-time digital insights.
+            {/* Premium Hero Section */}
+            <section className="about-hero-section">
+                <h1>Cultivating <span className="highlight">Excellence</span> Since 2021</h1>
+                <p className="hero-subtitle">
+                    Welcome to Pavithra Traders, where we combine decades of agricultural wisdom with modern innovation. Located in the heart of Thoppampatti, Palani, we are dedicated to empowering farmers with premium supplies and sustainable solutions.
                 </p>
             </section>
 
-            {/* Mission & Vision Section */}
-            <section style={{ padding: '5rem 2rem', background: '#f8fafc' }}>
-                <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '3rem' }}>
-
-                    <div style={{ background: 'white', padding: '3rem', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎯</div>
-                        <h3 style={{ color: '#0f3b21', fontSize: '1.8rem', marginBottom: '1rem', fontWeight: '700' }}>Our Mission</h3>
-                        <p style={{ color: '#475569', lineHeight: 1.7 }}>
-                            To revolutionize traditional farming by providing accessible, high-quality agricultural inputs and data-driven crop advisory. We aim to increase crop yields while promoting sustainable and eco-friendly farming practices.
-                        </p>
-                    </div>
-
-                    <div style={{ background: 'white', padding: '3rem', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🌍</div>
-                        <h3 style={{ color: '#0f3b21', fontSize: '1.8rem', marginBottom: '1rem', fontWeight: '700' }}>Our Vision</h3>
-                        <p style={{ color: '#475569', lineHeight: 1.7 }}>
-                            To be the leading digital agricultural ecosystem in the nation, bridging the gap between technological innovation and grassroots farming communities for a greener, more prosperous future.
-                        </p>
-                    </div>
-
-                </div>
-            </section>
-
-            {/* Stats/Timeline Section */}
-            <section style={{ padding: '5rem 2rem', background: 'white' }}>
-                <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
-                    <h2 style={{ fontSize: '2.5rem', color: '#0f3b21', marginBottom: '1rem', fontWeight: '800' }}>The Greenixx Journey</h2>
-                    <p style={{ color: '#64748b', fontSize: '1.1rem', marginBottom: '4rem' }}>Over two decades of dedication to the agricultural sector.</p>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '2rem' }}>
-                        <div>
-                            <div style={{ fontSize: '3.5rem', fontWeight: '800', color: '#72cf61' }}>25+</div>
-                            <div style={{ color: '#475569', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '0.5rem' }}>Years of Excellence</div>
-                        </div>
-                        <div>
-                            <div style={{ fontSize: '3.5rem', fontWeight: '800', color: '#72cf61' }}>10K+</div>
-                            <div style={{ color: '#475569', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '0.5rem' }}>Happy Farmers</div>
-                        </div>
-                        <div>
-                            <div style={{ fontSize: '3.5rem', fontWeight: '800', color: '#72cf61' }}>500+</div>
-                            <div style={{ color: '#475569', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '0.5rem' }}>Products Sourced</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Core Values Section */}
-            <section style={{ padding: '5rem 2rem', background: '#f8fafc' }}>
-                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-                        <h2 style={{ fontSize: '2.5rem', color: '#0f3b21', marginBottom: '1rem', fontWeight: '800' }}>Our Core Values</h2>
-                        <p style={{ color: '#64748b', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
-                            These principles guide every decision we make and every product we deliver.
-                        </p>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
-                        {[
-                            { icon: '🌱', title: 'Sustainability', desc: 'Promoting farming practices that protect our earth for future generations.' },
-                            { icon: '🤝', title: 'Community', desc: 'Building strong relationships with farmers, dealers, and agricultural experts.' },
-                            { icon: '💡', title: 'Innovation', desc: 'Leveraging modern technology to solve traditional farming challenges.' },
-                            { icon: '🛡️', title: 'Integrity', desc: 'Ensuring transparency, quality, and trust in every transaction.' }
-                        ].map((value, index) => (
-                            <div key={index} style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', textAlign: 'center', transition: 'transform 0.3s ease' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{value.icon}</div>
-                                <h4 style={{ color: '#0f3b21', fontSize: '1.4rem', marginBottom: '1rem', fontWeight: '700' }}>{value.title}</h4>
-                                <p style={{ color: '#64748b', lineHeight: 1.6 }}>{value.desc}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Our Story Section / Approach */}
-            <section style={{ padding: '6rem 2rem', background: 'white' }}>
-                <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '4rem', alignItems: 'center' }}>
-                    <div style={{ textAlign: 'center', maxWidth: '800px' }}>
-                        <h2 style={{ fontSize: '2.5rem', color: '#0f3b21', marginBottom: '1.5rem', fontWeight: '800' }}>Our Story</h2>
-                        <p style={{ color: '#475569', fontSize: '1.1rem', lineHeight: 1.8, marginBottom: '2rem' }}>
-                            Founded with a deep respect for farming communities, Greenixx started as a small local supplier and has grown into a comprehensive digital platform. We recognized that farmers needed more than just supplies; they needed a trusted partner who could provide real-time insights, quality checks, and seamless market access.
-                        </p>
-                        <p style={{ color: '#475569', fontSize: '1.1rem', lineHeight: 1.8 }}>
-                            Today, our platform connects thousands of users, bridging the gap between traditional agriculture and modern technological advancements. We are committed to fostering an ecosystem where every seed planted yields maximum potential.
-                        </p>
-                    </div>
-                </div>
-            </section>
-
-            {/* Meet Our Team Section */}
-            <section style={{ padding: '5rem 2rem', background: '#f8fafc' }}>
-                <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
-                    <h2 style={{ fontSize: '2.5rem', color: '#0f3b21', marginBottom: '1rem', fontWeight: '800' }}>Meet The Team</h2>
-                    <p style={{ color: '#64748b', fontSize: '1.1rem', marginBottom: '4rem', maxWidth: '600px', margin: '0 auto 4rem auto' }}>
-                        Dedicated professionals with decades of combined experience in agriculture, technology, and supply chain management.
+            {/* Info Cards */}
+            <div className="mission-vision-grid">
+                <div className="info-card">
+                    <span className="card-icon">🎯</span>
+                    <h3>Our Mission</h3>
+                    <p>
+                        To revolutionize farming in the Thoppampatti region by providing high-quality fertilizers, seeds, and oils that maximize productivity while protecting our soil for future generations.
                     </p>
+                </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '3rem' }}>
-                        {[
-                            { name: 'Arun Kumar', role: 'Chief Executive Officer', bg: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=600&auto=format&fit=crop' },
-                            { name: 'Dr. Priya Sharma', role: 'Head of Agronomy', bg: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=600&auto=format&fit=crop' },
-                            { name: 'Vikram Singh', role: 'Supply Chain Director', bg: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=600&auto=format&fit=crop' },
-                            { name: 'Anita Patel', role: 'Community Outreach', bg: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=600&auto=format&fit=crop' }
-                        ].map((member, index) => (
-                            <div key={index} style={{ background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', transition: 'transform 0.3s ease' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-10px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                                <div style={{ height: '250px', backgroundImage: `url(${member.bg})`, backgroundSize: 'cover', backgroundPosition: 'center top' }}></div>
-                                <div style={{ padding: '1.5rem' }}>
-                                    <h4 style={{ color: '#0f3b21', fontSize: '1.25rem', fontWeight: '700', margin: '0 0 0.5rem 0' }}>{member.name}</h4>
-                                    <p style={{ color: '#72cf61', fontWeight: '600', margin: 0, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{member.role}</p>
-                                </div>
+                <div className="info-card">
+                    <span className="card-icon">🌍</span>
+                    <h3>Our Vision</h3>
+                    <p>
+                        To become the region's most trusted agricultural hub, bridging the gap between national quality standards and local farming needs through transparent and fair practices.
+                    </p>
+                </div>
+            </div>
+
+            {/* Story & Image Section */}
+            <section className="story-layout">
+                <div className="story-content">
+                    <h2>Our Journey</h2>
+                    <p>
+                        Pavithra Traders was founded with a simple yet powerful goal: to provide the farming community of Thoppampatti and Palani with access to world-class agricultural inputs. What started as a local dream has grown into a cornerstone for local agriculture.
+                    </p>
+                    <p>
+                        Under the leadership of our proprietor, Sureshkumar, we have consistently expanded our catalog to include specialized mineral fertilizers, vegetable oils, and organic soil enhancers. We believe that every farmer deserves the best tools to nurture their land.
+                    </p>
+                </div>
+                <div className="story-image-container">
+                    <img src={storeHero} alt="Pavithra Traders Storefront" />
+                </div>
+            </section>
+
+            {/* Stats Section */}
+            <section className="stats-section">
+                <div className="stats-grid">
+                    <div className="stat-item">
+                        <span className="stat-number">4+</span>
+                        <span className="stat-label">Years of Trust</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-number">1000+</span>
+                        <span className="stat-label">Local Farmers</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-number">50+</span>
+                        <span className="stat-label">Quality Products</span>
+                    </div>
+                </div>
+            </section>
+
+            {/* Team/Proprietor Section */}
+            <section className="team-section">
+                <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                    <h2 style={{ fontSize: '2.5rem', fontWeight: '800' }}>Leadership</h2>
+                </div>
+                <div className="team-grid">
+                    <div className="team-card">
+                        <div className="team-img" style={{ backgroundImage: `url(${proprietorImg})` }}></div>
+                        <div className="team-info">
+                            <h4>Sureshkumar</h4>
+                            <p>Proprietor & Founder</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Location Section */}
+            <section className="location-section">
+                <div className="location-container">
+                    <div className="address-box">
+                        <h3>Visit Our Store</h3>
+                        <p><strong>Pavithra Traders</strong></p>
+                        <p>2/382, Palani Main Road,</p>
+                        <p>Thoppampatti, Dindigul District,</p>
+                        <p>Tamil Nadu - 624617, India</p>
+
+                        <div className="contact-info">
+                            <div className="contact-item">
+                                <span>📧</span>
+                                <div>info@pavithratraders.com</div>
                             </div>
-                        ))}
+                            <div className="contact-item">
+                                <span>📞</span>
+                                <div>+91 (Area Code) XXXXX-XXXXX</div>
+                            </div>
+                            <div className="contact-item">
+                                <span>🕒</span>
+                                <div>Mon - Sat: 9:00 AM - 8:00 PM</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="map-placeholder">
+                        <iframe
+                            title="Google Maps Location"
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15690.000000000002!2d77.493863!3d10.552885!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba9d00000000001%3A0x0!2sThoppampatti%2C%20Tamil%20Nadu!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+                            allowFullScreen=""
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade">
+                        </iframe>
                     </div>
                 </div>
             </section>
@@ -156,22 +145,19 @@ export default function AboutUs() {
             {/* CTA Section */}
             <section style={{ padding: '6rem 2rem', background: '#0f3b21', color: 'white', textAlign: 'center' }}>
                 <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-                    <h2 style={{ fontSize: '3rem', fontWeight: '800', marginBottom: '1.5rem' }}>Ready to Grow Together?</h2>
+                    <h2 style={{ fontSize: '3rem', fontWeight: '800', marginBottom: '1.5rem' }}>Empowering Agriculture Together</h2>
                     <p style={{ fontSize: '1.2rem', opacity: 0.9, lineHeight: 1.6, marginBottom: '2.5rem' }}>
-                        Join the agricultural revolution. Explore our wide range of premium products and get intelligent crop advisory right at your fingertips.
+                        Join thousands of farmers who trust Pavithra Traders for their agricultural needs. Get the best results for your crops today.
                     </p>
-                    <Link to="/" style={{ background: '#72cf61', color: '#0f3b21', padding: '1rem 2.5rem', borderRadius: '50px', fontSize: '1.1rem', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block', transition: 'background-color 0.2s ease', boxShadow: '0 4px 15px rgba(114, 207, 97, 0.4)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#8ae677'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#72cf61'}>
-                        Get Started Today
+                    <Link to="/" style={{ background: 'var(--accent-green)', color: '#0f3b21', padding: '1.2rem 3rem', borderRadius: '50px', fontSize: '1.1rem', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block', transition: 'all 0.3s ease', boxShadow: '0 10px 25px rgba(114, 207, 97, 0.4)' }}>
+                        Shop Our Collection
                     </Link>
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer className="professional-footer" style={{ background: '#0f3b21' }}>
-                <div style={{ textAlign: 'center', padding: '2rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                    <p style={{ color: '#94a3b8' }}>&copy; {new Date().getFullYear()} Greenixx Agricultural Solutions. All rights reserved.</p>
-                </div>
-            </footer>
-        </div>
+            <footer className="professional-footer" style={{ background: 'var(--primary-green)', textAlign: 'center', padding: '3rem 2rem' }}>
+                <p style={{ color: 'rgba(255,255,255,0.6)' }}>&copy; {new Date().getFullYear()} Pavithra Traders & Greenixx Solutions. All rights reserved.</p>
+            </footer >
+        </div >
     );
 }

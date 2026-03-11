@@ -310,7 +310,7 @@ export default function ProfessionalAdminDashboard({ token, onLogout }) {
         const threshold = p.lowStockThreshold !== undefined && p.lowStockThreshold !== null
           ? Number(p.lowStockThreshold)
           : 10;
-        return p && p.stock <= threshold;
+        return p && p.stock < threshold;
       }).length;
       const pendingOrders = (ordersData || []).filter(order =>
         order && (order.status === 'pending' || order.status === 'ordered')

@@ -32,10 +32,10 @@ const productSchema = new mongoose.Schema({
 
   // Inventory
   available: { type: Boolean, default: true },
-  prebooked: { type: Number, default: 0 },
+  prebooked: { type: Number, default: 0, min: 0 },
   prebookingEnabled: { type: Boolean, default: true },
   unit: { type: String, default: 'bags' },
-  stock: { type: Number, default: 100 },
+  stock: { type: Number, default: 100, min: 0 },
   lowStockThreshold: { type: Number, default: 10 }, // Configurable low stock alert level
   weight: { type: String }, // e.g., "1.5 kg", "500 g"
 

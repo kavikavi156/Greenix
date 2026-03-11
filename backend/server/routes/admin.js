@@ -49,8 +49,8 @@ const upload = multer({
 // Helper function to check and create stock request for low stock products
 async function checkAndCreateStockRequest(product) {
   try {
-    // Check if stock is at or below threshold
-    if (product.stock <= product.lowStockThreshold) {
+    // Check if stock is below threshold
+    if (product.stock < (product.lowStockThreshold || 10)) {
       // Check if there's already a pending or approved (but not completed) request for this product
       // We look for requests starting from recently created ones to avoid duplicate orders
       const existingRequest = await StockRequest.findOne({
@@ -534,6 +534,151 @@ router.get('/revenue/monthly', async (req, res) => {
   }
 });
 
+// Get yearly revenue data
+router.get('/revenue/yearly', async (req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const startYear = currentYear - 4;
+    const startDate = new Date(startYear, 0, 1);
+
+    const yearlyData = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate },
+          status: { $nin: ['cancelled'] }
+        }
+      },
+      {
+        $group: {
+          _id: { $year: '$createdAt' },
+          revenue: { $sum: '$totalAmount' },
+          orders: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id': 1 } }
+    ]);
+
+    const yearlyRevenue = [];
+    for (let year = startYear; year <= currentYear; year++) {
+      const existingData = yearlyData.find(data => data._id === year);
+      yearlyRevenue.push({
+        year: year,
+        revenue: existingData ? existingData.revenue : 0,
+        orders: existingData ? existingData.orders : 0
+      });
+    }
+
+    res.json({ yearlyRevenue });
+  } catch (error) {
+    console.error('Error fetching yearly revenue:', error);
+    res.status(500).json({ error: 'Failed to fetch yearly revenue data' });
+  }
+});
+
+// Get individual product sales for a specific month and year
+router.get('/product-monthly-sales', async (req, res) => {
+  try {
+    const { month, year } = req.query;
+    const targetMonth = parseInt(month) || new Date().getMonth() + 1;
+    const targetYear = parseInt(year) || new Date().getFullYear();
+
+    console.log(`Fetching product sales for: ${targetMonth}/${targetYear}`);
+
+    // Create date range for the month
+    const startDate = new Date(targetYear, targetMonth - 1, 1);
+    const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+
+    // Filter for orders in the range - include all except cancelled
+    const matchStage = {
+      createdAt: { $gte: startDate, $lte: endDate },
+      status: { $nin: ['cancelled'] }
+    };
+
+    // Aggregate product sales from orders
+    const salesData = await Order.aggregate([
+      { $match: matchStage },
+      // Handle both items array and legacy products array
+      {
+        $facet: {
+          itemsFromNewFormat: [
+            { $unwind: { path: '$items', preserveNullAndEmptyArrays: false } },
+            {
+              $group: {
+                _id: '$items.product',
+                totalQuantity: { $sum: '$items.quantity' },
+                totalRevenue: { $sum: { $multiply: ['$items.quantity', '$items.price'] } },
+                orderCount: { $sum: 1 }
+              }
+            }
+          ],
+          itemsFromLegacyFormat: [
+            { $match: { $or: [{ items: { $exists: false } }, { items: { $size: 0 } }] } }, // Only if items don't exist or are empty
+            { $unwind: { path: '$products', preserveNullAndEmptyArrays: false } },
+            {
+              $group: {
+                _id: '$products',
+                totalQuantity: { $sum: 1 }, // Legacy format assumed 1 quty per product
+                totalRevenue: { $sum: { $divide: ['$totalAmount', { $cond: { if: { $gt: [{ $size: '$products' }, 0] }, then: { $size: '$products' }, else: 1 } }] } }, // Estimate revenue per product
+                orderCount: { $sum: 1 }
+              }
+            }
+          ]
+        }
+      },
+      // Combine results
+      {
+        $project: {
+          allSales: { $concatArrays: ['$itemsFromNewFormat', '$itemsFromLegacyFormat'] }
+        }
+      },
+      { $unwind: '$allSales' },
+      // Group again to merge any potential duplicates between formats (unlikely but safe)
+      {
+        $group: {
+          _id: '$allSales._id',
+          totalQuantity: { $sum: '$allSales.totalQuantity' },
+          totalRevenue: { $sum: '$allSales.totalRevenue' },
+          orderCount: { $sum: '$allSales.orderCount' }
+        }
+      },
+      // Join with product details
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      { $unwind: '$productInfo' },
+      // Final projection to match frontend expectation
+      {
+        $project: {
+          _id: 1,
+          productName: '$productInfo.name',
+          productImage: '$productInfo.image',
+          productCategory: '$productInfo.category',
+          totalQuantity: 1,
+          totalRevenue: 1,
+          orderCount: 1
+        }
+      },
+      { $sort: { totalRevenue: -1 } }
+    ]);
+
+    console.log(`Found ${salesData.length} products with sales in ${targetMonth}/${targetYear}`);
+
+    res.json({
+      month: targetMonth,
+      year: targetYear,
+      salesData
+    });
+  } catch (error) {
+    console.error('Error fetching product monthly sales:', error);
+    res.status(500).json({ error: 'Failed to fetch product monthly sales' });
+  }
+});
+
 // Category Management Endpoints
 
 // Get all categories
@@ -739,6 +884,14 @@ router.put('/products/:productId/stock', async (req, res) => {
       });
     }
 
+    // If stock is now at or above threshold, mark any pending/approved requests for this product as COMPLETED
+    if (newStock >= (updatedProduct.lowStockThreshold || 10)) {
+      await StockRequest.updateMany(
+        { product: productId, status: { $in: ['PENDING_ADMIN_APPROVAL', 'APPROVED'] } },
+        { status: 'COMPLETED' }
+      );
+    }
+
     // Check if stock is now low and create stock request if needed
     await checkAndCreateStockRequest(updatedProduct);
 
@@ -787,7 +940,7 @@ router.post('/products', upload.single('image'), async (req, res) => {
       basePrice: Number(req.body.basePrice || req.body.price), // Use basePrice if provided, otherwise use price
       originalPrice: Number(req.body.price), // Default to same as price
       category: req.body.category,
-      stock: Number(req.body.stock),
+      stock: Math.max(0, Number(req.body.stock)),
       available: true,
       unit: req.body.unit || 'pieces',
       brand: req.body.brand || 'Generic',
@@ -840,7 +993,7 @@ router.put('/products/:id', upload.single('image'), async (req, res) => {
       basePrice: Number(req.body.basePrice || req.body.price), // Use basePrice if provided
       originalPrice: Number(req.body.price), // Update to same as price
       category: req.body.category,
-      stock: Number(req.body.stock),
+      stock: Math.max(0, Number(req.body.stock)),
       unit: req.body.unit || 'pieces',
       brand: req.body.brand || 'Generic',
       weight: req.body.weight || '1 unit',

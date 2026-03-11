@@ -34,10 +34,11 @@ console.log('Starting server...');
 // Change working directory
 process.chdir(backendDir);
 
-// Start the server
-const server = spawn('node', ['index.js'], {
+// Start the server with nodemon for hot-reloading
+const server = spawn('npx', ['nodemon', 'index.js'], {
     stdio: 'inherit',
-    cwd: backendDir
+    cwd: backendDir,
+    shell: true // Important for Windows to handle npx/nodemon
 });
 
 server.on('close', (code) => {
