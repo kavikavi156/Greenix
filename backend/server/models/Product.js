@@ -7,7 +7,7 @@ const productSchema = new mongoose.Schema({
   brand: { type: String, required: true },
   category: {
     type: String,
-    enum: ['Seeds', 'Herbicides', 'Insecticides', 'Fertilizers', 'Fungicides', 'Tools', 'Equipment', 'Organic Products'],
+    enum: ['Seeds', 'Herbicides', 'Insecticides', 'Fertilizers', 'Fungicides', 'Tools', 'Equipment', 'Organic Products', 'Pesticides'],
     default: 'Seeds'
   },
   productType: { type: String }, // e.g., "Organic Fertilizer", "NPK Fertilizer", "Weedkiller", etc.

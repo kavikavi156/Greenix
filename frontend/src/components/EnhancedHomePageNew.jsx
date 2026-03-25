@@ -19,6 +19,7 @@ export default function EnhancedHomePage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [availableBrands, setAvailableBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [sortBy, setSortBy] = useState('name');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -35,6 +36,10 @@ export default function EnhancedHomePage() {
 
   // Helper function to get product icon based on category
   function getProductIcon(category) {
+    const matchedCategory = categories.find(c => c.name.toLowerCase() === category?.toLowerCase());
+    if (matchedCategory && matchedCategory.icon) {
+      return matchedCategory.icon;
+    }
     const icons = {
       'fertilizers': '🌱',
       'seeds': '🌾',
@@ -43,16 +48,29 @@ export default function EnhancedHomePage() {
       'irrigation': '💧',
       'organic': '🍃'
     };
-    return icons[category] || '📦';
+    return icons[category?.toLowerCase()] || '📦';
   }
 
   useEffect(() => {
     checkAuthStatus();
+    fetchCategories();
     fetchProducts();
     if (localStorage.getItem('customerToken')) {
       fetchCartCounts();
     }
   }, []);
+
+  async function fetchCategories() {
+    try {
+      const response = await fetch(getApiUrl('/api/categories'));
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories || []);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  }
 
   useEffect(() => {
     fetchBrands();
@@ -425,40 +443,28 @@ export default function EnhancedHomePage() {
               </Link>
               <button
                 className={selectedCategory === 'all' ? 'nav-item active' : 'nav-item'}
-                onClick={() => setSelectedCategory('all')}
+                onClick={() => {
+                  setSelectedCategory('all');
+                  document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
               >
                 All Products
               </button>
-              <button
-                className={selectedCategory === 'fertilizers' ? 'nav-item active' : 'nav-item'}
-                onClick={() => setSelectedCategory('fertilizers')}
-              >
-                Fertilizers
-              </button>
-              <button
-                className={selectedCategory === 'seeds' ? 'nav-item active' : 'nav-item'}
-                onClick={() => setSelectedCategory('seeds')}
-              >
-                Seeds
-              </button>
-              <button
-                className={selectedCategory === 'pesticides' ? 'nav-item active' : 'nav-item'}
-                onClick={() => setSelectedCategory('pesticides')}
-              >
-                Pesticides
-              </button>
-              <button
-                className={selectedCategory === 'tools' ? 'nav-item active' : 'nav-item'}
-                onClick={() => setSelectedCategory('tools')}
-              >
-                Tools & Equipment
-              </button>
-              <button
-                className={selectedCategory === 'organic' ? 'nav-item active' : 'nav-item'}
-                onClick={() => setSelectedCategory('organic')}
-              >
-                Organic Products
-              </button>
+              
+              {categories.map((cat) => (
+                <button
+                  key={cat._id || cat.name}
+                  className={selectedCategory === cat.name ? 'nav-item active' : 'nav-item'}
+                  onClick={() => {
+                    setSelectedCategory(cat.name);
+                    document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  style={{ textTransform: 'capitalize' }}
+                >
+                  {cat.name}
+                </button>
+              ))}
+
               <button className="nav-item" onClick={() => setShowCropCalendar(true)}>
                 Smart Crop Calendar
               </button>
